@@ -12,7 +12,7 @@
 #' @importFrom quitte madrat_mule
 #' @importFrom rlang .data .env sym syms
 #' @importFrom tidyr nest pivot_longer unnest
-#' @importFrom dplyr desc 
+#' @importFrom dplyr desc
 
 #' @export
 calcIndustry_EEK <- function(kap) {
@@ -44,7 +44,7 @@ calcIndustry_EEK <- function(kap) {
     madrat_mule()
 
   ## industry subsector activity and FE projections ----
-  FEdemand <- calcOutput(type = 'FEdemand', aggregate = FALSE, supplementary = FALSE)
+  FEdemand <- calcOutput("FEdemand", scenario = "SSP2", aggregate = FALSE, supplementary = FALSE)
 
   # calculate EEK ----
   ## split industry VA into IEA investment sectors ----

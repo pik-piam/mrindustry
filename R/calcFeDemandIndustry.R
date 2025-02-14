@@ -1,6 +1,7 @@
 #' Calculates FE demand in industry as REMIND variables
 #'
 #' @md
+#' @param scenario string or vector of strings, e.g. c("SSPs").
 #' @param use_ODYM_RECC per-capita pathways for `SDP_xx` scenarios?  (Defaults
 #'   to `FALSE`.)
 #' @param last_empirical_year Last year for which empirical data is available.
@@ -21,10 +22,19 @@
 #' @importFrom tidyselect all_of
 #' @author Michaja Pehl
 #'
-calcFeDemandIndustry <- function(use_ODYM_RECC = FALSE, last_empirical_year = 2020) {
+calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical_year = 2020) {
+
+  # Replace calls to SSPs and SSP2IndiaDEAs to individual scenarios, if present
+  if ("SSPs" %in% scenario) {
+    scenario <- c(scenario[!grepl("SSPs", scenario)], c("SSP1", "SSP2", "SSP3", "SSP4", "SSP5"))
+  }
+  if ("SSP2IndiaDEAs" %in% scenario) {
+    scenario <- c(scenario[!grepl("SSP2IndiaDEAs", scenario)], c("SSP2IndiaMedium", "SSP2IndiaHigh"))
+  }
+
 
   # ---- Industry subsectors data and FE stubs ----
-  stationary <- readSource("Stationary")[, , c("feindheat", "feh2i")]
+  stationary <- readSource("Stationary", subset = scenario)[, , c("feindheat", "feh2i")]
 
   # aggregate to 5-year averages to suppress volatility
   stationary <- mrremind::toolAggregateTimeSteps(stationary)
@@ -148,11 +158,6 @@ calcFeDemandIndustry <- function(use_ODYM_RECC = FALSE, last_empirical_year = 20
     remind[, , getNames(tmp)] <- tmp
   }
 
-  remind_scenarios <- c(
-    paste0("SSP", c(1:5, "2_lowEn", "2_highDemDEU")),
-    paste0("SDP", c("", "_EI", "_RC", "_MC"))
-  )
-
   remind_years <- seq(1995, 2150, 5)
 
   # ---- Industry subsectors data and FE stubs ----
@@ -162,8 +167,9 @@ calcFeDemandIndustry <- function(use_ODYM_RECC = FALSE, last_empirical_year = 20
     select(iso3c = 'CountryCode', region = 'RegionCode')
 
   fixing_year <- calcOutput(
-    type = 'industry_subsectors_specific', subtype = 'fixing_year',
-    scenarios = remind_scenarios,
+    type = 'industry_subsectors_specific',
+    subtype = 'fixing_year',
+    scenarios = scenario,
     regions = unique(region_mapping_21$region),
     aggregate = FALSE
   ) %>%
@@ -202,9 +208,10 @@ calcFeDemandIndustry <- function(use_ODYM_RECC = FALSE, last_empirical_year = 20
   )
 
   ## re-curve specific industry activity per unit GDP ----
+  gdpScen <- subset[subset %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario]
   GDP <- calcOutput(
     type = "GDP",
-    scenario = c("SSPs", "SDPs"),
+    scenario = gdpScen,
     naming = "scenario",
     average2020 = FALSE,
     years = sort(union(remind_years,
@@ -548,6 +555,9 @@ calcFeDemandIndustry <- function(use_ODYM_RECC = FALSE, last_empirical_year = 20
 
   ### per-capita projections ----
   . <- NULL
+  popScen <- subset[
+    subset %in% mrdrivers::toolGetScenarioDefinition(driver = "Population", aslist = TRUE)$scenario
+  ]
 
   if (use_ODYM_RECC) {
     foo4 <- bind_rows(
@@ -572,7 +582,7 @@ calcFeDemandIndustry <- function(use_ODYM_RECC = FALSE, last_empirical_year = 20
         select(-"scenario", -"GDP", -"year") %>%
         inner_join(
           calcOutput(type = "Population",
-                     scenario = c("SSPs", "SDPs"),
+                     scenario = popScen,
                      naming = "scenario",
                      aggregate = FALSE,
                      years = remind_years) %>%
