@@ -9,7 +9,8 @@ calcIndustry_Value_Added(
   match.steel.historic.values = TRUE,
   match.steel.estimates = "none",
   save.plots = NULL,
-  China_Production = NULL
+  China_Production = NULL,
+  INDSTAT = "INDSTAT3"
 )
 }
 \arguments{
@@ -36,6 +37,8 @@ directories to.}
 \item{China_Production}{A data frame with columns \code{period} and
 \code{total.production} prescribing total production for China to have,
 disregarding results from the stock saturation model.}
+
+\item{INDSTAT}{Gets passed to \code{\link[=readUNIDO]{readUNIDO()}} as \code{subtype} argument.}
 }
 \value{
 A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
