@@ -17,8 +17,7 @@ in years.
 A \code{\link[magclass:magclass-package]{magpie}} object.
 }
 \description{
-Read data from Pauliuk et al. 2013
-(https://dx.doi.org/10.1016/j.resconrec.2012.11.008).
+Read data from Pauliuk et al. 2013 \href{https://dx.doi.org/10.1016/j.resconrec.2012.11.008}{link}.
 }
 \seealso{
 \code{\link[=readSource]{readSource()}}

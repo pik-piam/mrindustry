@@ -12,7 +12,7 @@ readADVANCE_WP2(subtype)
 \item \code{clinker-to-cement-ratio} for the clinker-to-cement ratios from figure 21
 of Edelenbosch, O. \emph{Enhancing the representation of energy demand
 developments in IAM models - A Modeling Guide for the Cement Industry}
-(2015) \url{zotero://select/items/JP8X2QFK}
+(2015)
 }}
 }
 \value{

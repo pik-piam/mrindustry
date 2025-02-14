@@ -12,8 +12,9 @@ A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \
 }
 \description{
 Estimated shares of cement in \code{NONMET} final energy use based on OECD and
-Non-OECD figures from IEA 2017 \href{https://www.zotero.org/groups/52011/rd3/items/X8XCUJ5U}{Energy Technology Perspectives}.  Shares are weighted
-by GDP for aggregation and converge towards global values by 2100.
+Non-OECD figures from IEA 2017
+\href{https://www.zotero.org/groups/52011/rd3/items/X8XCUJ5U}{Energy Technology Perspectives}.
+Shares are weighted by GDP for aggregation and converge towards global values by 2100.
 }
 \seealso{
 \code{\link[=calcOutput]{calcOutput()}}

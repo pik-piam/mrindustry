@@ -5,7 +5,6 @@
 #'   - 'cement': read cement production data from
 #'     [U.S. Geological Survey Minerals Yearbook](https://www.usgs.gov/centers/national-minerals-information-center/cement-statistics-and-information)
 #'     (unit: tonnes per year)
-#' @param x Data returned by [readUSGS()].
 #'
 #' @return A [`magpie`][magclass::magclass] object.
 #'
@@ -154,7 +153,7 @@ readUSGS <- function(subtype = 'cement') {
                 'XX' == .data$value ~ '0',
                 TRUE ~ .data$value)) %>%
             left_join(country.name_iso3c, 'country.name') %>%
-            assert(not_na, 'iso3c',
+            assertr::assert(assertr::not_na, 'iso3c',
                    error_fun = function(errors, data, warn) {
                      error_df <- data[errors[[1]]$error_df$index,]
 
@@ -192,7 +191,6 @@ readUSGS <- function(subtype = 'cement') {
         left_join(
           calcOutput("GDP",
                      scenario = "SSP2",
-                     naming = "scenario",
                      aggregate = FALSE,
                      average2020 = FALSE,
                      years = unique(to_estimate$year)) %>%
@@ -237,39 +235,6 @@ readUSGS <- function(subtype = 'cement') {
         summarise(value = sum(.data$value), .groups = 'drop')
 
       return(madrat_mule(data))
-    }
-  )
-
-  # check if the subtype called is available ----
-  if (!subtype %in% names(switchboard)) {
-    stop(paste('Invalid subtype -- supported subtypes are:',
-               paste(names(switchboard), collapse = ', ')))
-  }
-
-  # load data and to whatever ----
-  return(switchboard[[subtype]]())
-}
-
-#' @export
-#' @rdname USGS
-convertUSGS <- function(x, subtype = 'cement') {
-  . <- NULL
-  # subtype switchboard ----
-  switchboard <- list(
-    'cement' = function() {
-      x %>%
-        madrat_mule() %>%
-        group_by(!!!syms(c('iso3c', 'year'))) %>%
-        filter(max(.data$reporting.year) == .data$reporting.year) %>%
-        ungroup() %>%
-        select(-'reporting.year') %>%
-        complete(nesting(!!sym('year')),
-                 iso3c = toolGetMapping(name = getConfig('regionmapping'),
-                                        type = 'regional') %>%
-                   pull('CountryCode') %>%
-                   unique(),
-                 fill = list(value = 0)) %>%
-        as.magpie(spatial = 2, temporal = 1, datacol = ncol(.))
     }
   )
 

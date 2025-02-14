@@ -5,14 +5,9 @@
 \alias{calcindustry_subsectors_specific}
 \title{industry/subsector change factors}
 \usage{
-readindustry_subsectors_specific(subtype = NULL)
+readindustry_subsectors_specific(subtype)
 
-calcindustry_subsectors_specific(
-  subtype = NULL,
-  scenarios = NULL,
-  regions = NULL,
-  direct = NULL
-)
+calcindustry_subsectors_specific(subtype, scenarios, regions, direct = NULL)
 }
 \arguments{
 \item{subtype}{One of
@@ -24,6 +19,8 @@ material demand decreases relative to the \code{SSP2} scenario
 relative to baseline scenarios
 \item \code{material_relative_change} for scaling factors of specific material
 demand \emph{change} relative to baseline scenarios
+\item \code{industry_specific_FE_limits}
+\item \code{fixing_year} year until which scenarios are fixed to the default scenario
 }}
 
 \item{scenarios}{A vector of scenarios for which factors are to be returned.}

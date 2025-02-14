@@ -262,7 +262,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     # FIXME: filter countries/years that have no inputs into blast furnaces, yet
     # outputs from them and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
-    assert(not_na, everything(),
+    assertr::assert(assertr::not_na, everything(),
            description = 'Only valid blast furnace replacement data') %>%
     mutate(value = .data$value * .data$factor) %>%
     group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
@@ -341,7 +341,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     # FIXME: filter countries/year that have no inputs into coke ovens but use
     # coke oven outputs (which most likely are imported)
     filter(!is.na(.data$product)) %>%
-    assert(not_na, everything(),
+    assertr::assert(assertr::not_na, everything(),
            description = 'Only valid coke oven replacement data') %>%
     mutate(value = .data$value * .data$factor) %>%
     select('iso3c', 'year', 'product', 'flow', 'value')
@@ -363,7 +363,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     # FIXME: filter countries/year that have no inputs into coke ovens but use
     # coke oven outputs (which most likely are imported)
     filter(!is.na(.data$product)) %>%
-    assert(not_na, everything(),
+    assertr::assert(assertr::not_na, everything(),
            description = 'Only valid coke oven loss data') %>%
     group_by(!!!syms(c('iso3c', 'year'))) %>%
     mutate(value = (sum(-.data$value) - .data$output)
@@ -415,7 +415,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     # FIXME: filter countries/years that have no inputs into blast furnaces, yet
     # outputs from them and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
-    assert(not_na, everything(),
+    assertr::assert(assertr::not_na, everything(),
            description = 'Only valid blast furnace replacement data') %>%
     mutate(value = .data$value * .data$factor) %>%
     group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
@@ -439,7 +439,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     # FIXME: filter countries/years that have no inputs into blast furnaces, yet
     # outputs from them and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
-    assert(not_na, everything(),
+    assertr::assert(assertr::not_na, everything(),
            description = 'Only valid blast furnace loss data') %>%
     group_by(!!!syms(c('iso3c', 'year'))) %>%
     mutate(value = (sum(-.data$value) - .data$output)
@@ -524,7 +524,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     mutate(year = as.integer(as.character(.data$year))) %>%
     filter(0 != .data$value) %>%
     inner_join(region_mapping, 'iso3c') %>%
-    assert(not_na, .data$region)
+    assertr::assert(assertr::not_na, .data$region)
 
   ## apply five-year moving average ----
   data_industry <- data_industry %>%
@@ -601,7 +601,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     mutate(value = .data$TOTIND * .data$value) %>%
     select(.data$iso3c, .data$region, .data$year, .data$product, .data$flow,
            .data$value) %>%
-    assert(not_na, .data$value) %>%
+    assertr::assert(assertr::not_na, .data$value) %>%
     overwrite(data_industry)
 
   # redistribute at least <threshold> of each product into each subsector ----

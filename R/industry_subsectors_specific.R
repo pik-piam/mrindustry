@@ -12,6 +12,8 @@
 #'     relative to baseline scenarios
 #'   - `material_relative_change` for scaling factors of specific material
 #'     demand _change_ relative to baseline scenarios
+#'   - `industry_specific_FE_limits`
+#'   - `fixing_year` year until which scenarios are fixed to the default scenario
 #'
 #' @param scenarios A vector of scenarios for which factors are to be returned.
 #' @param regions A vector of regions for which factors are to be returned.
@@ -49,138 +51,71 @@
 #'
 #' @author Michaja Pehl
 #'
-#' @importFrom dplyr across anti_join as_tibble bind_rows filter mutate select
-#' @importFrom madrat toolGetMapping
-#' @importFrom quitte madrat_mule
-#' @importFrom tidyr complete nesting
-
 #' @export
 #' @rdname industry_subsector_specific
-readindustry_subsectors_specific <- function(subtype = NULL) {
+#'
+readindustry_subsectors_specific <- function(subtype) {
 
-  .clean <- function(d)
-  {
-    d %>%
-      mutate(across(dplyr::where(is.character), trimws),
-             across(dplyr::where(is.character),
-                    \(x) ifelse('NA' == x, NA_character_, x)))
-  }
+  file <- switch (
+    subtype,
 
-  # subtype switchboard ----
-  switchboard <- list(
-    'FE' = function() {
-      # autonomous energy efficiency improvement rate per annum, see Pehl et al.
-      # (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.6
-      toolGetMapping(name = 'specific_FE.csv', where = 'mrindustry') %>%
-        as_tibble() %>%
-        .clean() %>%
-        madrat_mule()
-    },
+    # "FE": autonomous energy efficiency improvement rate per annum, see Pehl et al.
+    # (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.6
+    "FE"                          = "specific_FE.csv",
 
-    'material_alpha' = function() {
-      # alpha and T_C-parameters of the "declining improvement method" detailed
-      # in Pehl et al. (2024) [https://doi.org/10.5194/gmd-17-2015-2024],
-      # section 3.7
-      toolGetMapping(name = 'specific_material_alpha.csv',
-                     where = 'mrindustry') %>%
-        as_tibble() %>%
-        .clean() %>%
-        madrat_mule()
+    # "material_alpha": alpha and T_C-parameters of the "declining improvement method" detailed
+    # in Pehl et al. (2024) [https://doi.org/10.5194/gmd-17-2015-2024],
+    # section 3.7
+    "material_alpha"              = "specific_material_alpha.csv",
 
-    },
+    # "material_relative": alpha-parameter of the "fixed ratio method" detailed in Pehl et al.
+    # (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.7
+    "material_relative"           = "specific_material_relative.csv",
 
-    'material_relative' = function() {
-      # alpha-parameter of the "fixed ratio method" detailed in Pehl et al.
-      # (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.7
-      toolGetMapping(name = 'specific_material_relative.csv',
-                     where = 'mrindustry') %>%
-        as_tibble() %>%
-        .clean() %>%
-        madrat_mule()
-    },
+    # "material_relative_change": alpha-parameter for the "modified rates of change" method from Pehl et
+    # al. (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.7
+    "material_relative_change"    = "specific_material_relative_change.csv",
 
-    'material_relative_change' = function() {
-      # alpha-parameter for the "modified rates of change" method from Pehl et
-      # al. (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.7
-      toolGetMapping(name = 'specific_material_relative_change.csv',
-                     where = 'mrindustry') %>%
-        as_tibble() %>%
-        .clean() %>%
-        madrat_mule()
-    },
+    # "industry_specific_FE_limits": Thermodynamic limits on industry specific FE consumption by Silvia
+    # Madeddu (see post
+    # https://mattermost.pik-potsdam.de/rd3/pl/u7eg6ed5gpr85rabznepnaoqrr and
+    # https://mattermost.pik-potsdam.de/rd3/pl/g74og14a7igi8n6trjbhgcntrc).
+    # GJ/t for absolute subsectors, share for relative subsectors
+    "industry_specific_FE_limits" = "industry_specific_FE_limits.csv",
 
-    'industry_specific_FE_limits' = function() {
-      # Thermodynamic limits on industry specific FE consumption by Silvia
-      # Madeddu (see post
-      # https://mattermost.pik-potsdam.de/rd3/pl/u7eg6ed5gpr85rabznepnaoqrr and
-      # https://mattermost.pik-potsdam.de/rd3/pl/g74og14a7igi8n6trjbhgcntrc).
-      # GJ/t for absolute subsectors, share for relative subsectors
-      toolGetMapping(name = 'industry_specific_FE_limits.csv',
-                     where = 'mrindustry') %>%
-        as_tibble() %>%
-        .clean() %>%
-        madrat_mule()
-    },
+    # "fixing_year": year until which scenarios are fixed to the default scenario
+    "fixing_year"                 = "fixing_year.csv",
 
-    'fixing_year' = function()
-    {
-      # year until which scenarios are fixed to the default scenario
-      toolGetMapping('fixing_year.csv', where = 'mrindustry') %>%
-        as_tibble() %>%
-        .clean() %>%
-        madrat_mule()
-    }
+    stop("Unknown subtype")
   )
 
-  # check if the subtype called is available ----
-  if (!subtype %in% names(switchboard)) {
-    stop(paste('Invalid subtype -- supported subtypes are:',
-               paste(names(switchboard), collapse = ', ')))
-  }
-
-  # load data and to whatever ----
-  return(switchboard[[subtype]]())
+  toolGetMapping(file, where = "mrindustry") %>%
+    tibble::as_tibble() %>%
+    dplyr::mutate(dplyr::across(tidyselect::where(is.character), trimws),
+                  dplyr::across(tidyselect::where(is.character), \(x) ifelse('NA' == x, NA_character_, x))) %>%
+    quitte::madrat_mule()
 }
 
 #' @export
 #' @rdname industry_subsector_specific
-calcindustry_subsectors_specific <- function(subtype = NULL, scenarios = NULL,
-                                             regions = NULL, direct = NULL) {
-  if (is.null(scenarios)) {
-    stop('Scenario definitions missing.')
-  }
-
-  if (is.null(regions)) {
-    stop('Region definitions missing.')
-  }
-
-  . <- NULL
-
+calcindustry_subsectors_specific <- function(subtype, scenarios, regions, direct = NULL) {
   if (is.null(direct)) {
-    x <- readSource(type = 'industry_subsectors_specific', subtype = subtype,
-		    convert = FALSE) %>%
-      madrat_mule()
-  }
-  else {
+    x <- readSource(type = "industry_subsectors_specific", subtype = subtype, convert = FALSE) %>%
+      quitte::madrat_mule()
+  } else {
     if (!is.data.frame(direct)) {
-      stop('`direct` is not a data frame')
+      stop("`direct` is not a data frame")
     }
-    if (!all(c('scenario', 'region') %in% colnames(direct))) {
-      stop('`direct` is missing columns: ',
-	   paste(setdiff(c('scenario', 'region'),
-			 colnames(direct)),
-		 collapse = ', '))
+    if (!all(c("scenario", "region") %in% colnames(direct))) {
+      stop("`direct` is missing columns: ", paste(setdiff(c("scenario", "region"), colnames(direct)), collapse = ", "))
     }
     x <- direct
   }
 
-  return(list(
-    x = x %>%
-      tool_expand_tibble(scenarios, regions,
-			 structure.columns = 'subsector') %>%
-      pivot_longer(
-        !all_of(names(which('character' == unlist(lapply(., typeof)))))
-      ) %>%
-      as.magpie(spatial = 0, temporal = 0, data = ncol(.)),
-    weight = NULL, unit = '', description = ''))
+  x <- x %>%
+    tool_expand_tibble(scenarios, regions, structure.columns = "subsector") %>%
+    tidyr::pivot_longer(tidyselect::where(is.numeric)) %>%
+    as.magpie(spatial = 0, temporal = 0, data = "value")
+
+  list(x = x, weight = NULL, unit = "", description = "")
 }

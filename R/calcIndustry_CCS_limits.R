@@ -3,7 +3,7 @@
 #' @md
 #' @details
 #' The limits on industry CCS capacities are calculated from data of the
-#' [Global Status of CCS 2023](zotero://select/items/3_E5GNNPZ8) report (through
+#' Global Status of CCS 2023 report (through
 #' mrremind::readGlobalCCSinstitute().  CCS projects are
 #' - filtered for valid (i.e. not "Under Evaluation") data for "Operation date"
 #'   and "CO~2~ capture capacity"
@@ -87,7 +87,7 @@ calcIndustry_CCS_limits <- function(
   remind_timesteps <- unique(quitte::remind_timesteps$period)
 
   ## read SSP2 industry activity ----
-  ind_activity <- calcOutput('FEdemand', aggregate = FALSE, years = remind_timesteps) %>%
+  ind_activity <- calcOutput("FEdemand", scenario = "SSP2", aggregate = FALSE, years = remind_timesteps) %>%
     `[`(,,paste0('SSP2.', c('ue_cement', 'ue_chemicals', 'ue_steel_primary'))) %>%
     magclass_to_tibble() %>%
     mutate(subsector = sub('ue_([^_]+).*', '\\1', .data$item), .keep = 'unused') %>%

@@ -1,7 +1,6 @@
 #' Read Pauliuk et al. 2013 data
 #'
-#' Read data from Pauliuk et al. 2013
-#' (https://dx.doi.org/10.1016/j.resconrec.2012.11.008).
+#' Read data from Pauliuk et al. 2013 [link](https://dx.doi.org/10.1016/j.resconrec.2012.11.008).
 #'
 #' @md
 #' @param subtype One of:

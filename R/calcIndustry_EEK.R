@@ -2,6 +2,7 @@
 #'
 #' @param kap General internal capital stock, as calculated internally by
 #'   `calcCapital()`.
+#' @param scenario string or vector of strings, designating the scenarios to be returned.
 #'
 #' @return A list with a [`magpie`][magclass::magclass] object `x`, `weight`,
 #'   `unit`, and `description` fields.
@@ -12,10 +13,10 @@
 #' @importFrom quitte madrat_mule
 #' @importFrom rlang .data .env sym syms
 #' @importFrom tidyr nest pivot_longer unnest
-#' @importFrom dplyr desc 
-
+#' @importFrom dplyr desc
 #' @export
-calcIndustry_EEK <- function(kap) {
+#'
+calcIndustry_EEK <- function(kap, scenario) {
   # setup ----
   i <- log(4) / 50    # assuming 50 year lifetime of EEK
   base_year <- 2015
@@ -27,14 +28,18 @@ calcIndustry_EEK <- function(kap) {
   industry_VA <- calcOutput(
     type = 'Industry_Value_Added',
     subtype = 'economic',
+    scenario = "SSP2",
     match.steel.historic.values = TRUE,
     match.steel.estimates = 'IEA_ETP',
     China_Production = readSource(type = 'ExpertGuess',
                                   subtype = 'Chinese_Steel_Production',
                                   convert = FALSE) %>%
       madrat_mule(),
-    aggregate = FALSE, years = base_year, supplementary = FALSE, warnNA = FALSE) %>%
-    `[`(,,'SSP2') %>%
+    aggregate = FALSE,
+    years = base_year,
+    supplementary = FALSE,
+    warnNA = FALSE
+  ) %>%
     quitte::magclass_to_tibble() %>%
     select('iso3c', subsector = 'name', VA = 'value') %>%
     mutate(subsector = sub('_VA$', '', .data$subsector))
@@ -44,20 +49,15 @@ calcIndustry_EEK <- function(kap) {
     madrat_mule()
 
   ## industry subsector activity and FE projections ----
-  FEdemand <- calcOutput(type = 'FEdemand', aggregate = FALSE, supplementary = FALSE)
+  FEdemand <- calcOutput("FEdemand", scenario = c("SSP2", scenario), aggregate = FALSE, supplementary = FALSE)
 
   # calculate EEK ----
   ## split industry VA into IEA investment sectors ----
   # Cement, Chemicals, and Steel are 'energy intensive', Other Industry is
   # 'non-energy intensive'
   industry_VA <- industry_VA %>%
-    full_join(
-      IEA_WEIO_2014 %>%
-        getElement('country_groups'),
-
-      'iso3c'
-    ) %>%
-    assert(not_na, everything()) %>%
+    full_join(getElement(IEA_WEIO_2014, 'country_groups'), by = 'iso3c') %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     mutate(name = ifelse('otherInd' == .data$subsector,
                          'Non-energy intensive',
                          'Energy intensive')) %>%
@@ -70,11 +70,7 @@ calcIndustry_EEK <- function(kap) {
   EEK <- IEA_WEIO_2014 %>%
     getElement('data') %>%
     # combine investment estimates with subsector VA figures
-    inner_join(
-      industry_VA,
-
-      c('IEA region', 'name')
-    ) %>%
+    inner_join(industry_VA, by = c('IEA region', 'name')) %>%
     # assuming a "steady state", where investments only replace existing EEK
     # stock
     mutate(EEK = .data$VA.share * .data$value / .env$i) %>%
@@ -100,7 +96,7 @@ calcIndustry_EEK <- function(kap) {
         ungroup() %>%
         select(-'FE'),
 
-      c('iso3c', 'subsector')
+      by = c('iso3c', 'subsector')
     ) %>%
     mutate(subsector = ifelse(is.na(.data$foo), .data$subsector, .data$foo),
            EEK       = ifelse(is.na(.data$foo), .data$EEK,
@@ -111,8 +107,8 @@ calcIndustry_EEK <- function(kap) {
   EEK <- EEK %>%
     dplyr::rename("value" = "EEK") %>%
     GDPuc::toolConvertGDP(unit_in = "constant 2012 US$MER",
-                      unit_out = mrdrivers::toolGetUnitDollar(),
-                      replace_NAs = "with_USA") %>%
+                          unit_out = mrdrivers::toolGetUnitDollar(),
+                          replace_NAs = "with_USA") %>%
     dplyr::mutate(value = .data$value * 1e-3) %>%
     dplyr::rename("EEK" = "value")
 
@@ -125,12 +121,11 @@ calcIndustry_EEK <- function(kap) {
       summarise(EEK = sum(.data$EEK), .groups = 'drop') %>%
       sum_total_(group = 'iso3c', value = 'EEK', name = 'World'),
 
-      kap %>%
-        sum_total_(group = 'iso3c', value = 'kap', name = 'World'),
+    kap %>% sum_total_(group = 'iso3c', value = 'kap', name = 'World'),
 
-      'iso3c'
-    ) %>%
-    assert(not_na, everything()) %>%
+    by = 'iso3c'
+  ) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     mutate(
       kap_ind_share = .data$EEK / .data$kap,
       temper = .data$kap_ind_share['World' == .data$iso3c],
@@ -144,14 +139,7 @@ calcIndustry_EEK <- function(kap) {
       temper = .data$kap_ind_tempered / .data$EEK) %>%
     filter('World' != .data$iso3c)
 
-  EEK <- full_join(
-    EEK,
-
-    temper %>%
-      select('iso3c', 'temper'),
-
-    'iso3c'
-  ) %>%
+  EEK <- full_join(EEK, select(temper, 'iso3c', 'temper'), by = 'iso3c') %>%
     mutate(EEK = .data$EEK * .data$temper) %>%
     select(-'temper')
 
@@ -188,11 +176,11 @@ calcIndustry_EEK <- function(kap) {
     filter(base_year <= .data$year) %>%
     summarise(
       valid = all(.data$change >= ( lag(.data$change, order_by = .data$year)
-                                  * (1 - i)
-                                  ^ (.data$year - lag(.data$year,
-                                                      order_by = .data$year))
-                                  ),
-                  na.rm = TRUE),
+                                    * (1 - i)
+                                    ^ (.data$year - lag(.data$year,
+                                                        order_by = .data$year))
+      ),
+      na.rm = TRUE),
       .groups = 'drop') %>%
     filter(!.data$valid) %>%
     select(-'valid')
@@ -202,12 +190,12 @@ calcIndustry_EEK <- function(kap) {
     summarise(
       valid = all(.data$change <= ( lag(.data$change,
                                         order_by = desc(.data$year))
-                                  * (1 - i)
-                                  ^ (.data$year - lag(.data$year,
-                                                      order_by = desc(.data$year))
+                                    * (1 - i)
+                                    ^ (.data$year - lag(.data$year,
+                                                        order_by = desc(.data$year))
                                     )
-                                  ),
-                  na.rm = TRUE),
+      ),
+      na.rm = TRUE),
       .groups = 'drop') %>%
     filter(!.data$valid) %>%
     select(-'valid')
@@ -216,11 +204,7 @@ calcIndustry_EEK <- function(kap) {
   EEK_change_valid_forward <- EEK_change %>%
     ungroup() %>%
     filter(base_year <= .data$year) %>%
-    semi_join(
-      EEK_change_invalid_forward,
-
-      c('iso3c', 'scenario', 'subsector')
-    ) %>%
+    semi_join(EEK_change_invalid_forward, by = c('iso3c', 'scenario', 'subsector')) %>%
     # duplicate year, as the variable gets lost during nesting
     mutate(year2 = .data$year) %>%
     group_by(.data$year2) %>%
@@ -258,11 +242,7 @@ calcIndustry_EEK <- function(kap) {
   EEK_change_valid_backward <- EEK_change %>%
     ungroup() %>%
     filter(base_year >= .data$year) %>%
-    semi_join(
-      EEK_change_invalid_backward,
-
-      c('iso3c', 'scenario', 'subsector')
-    ) %>%
+    semi_join(EEK_change_invalid_backward, by = c('iso3c', 'scenario', 'subsector')) %>%
     mutate(year2 = .data$year) %>%
     group_by(.data$year2) %>%
     nest() %>%
@@ -282,8 +262,8 @@ calcIndustry_EEK <- function(kap) {
               # the inverse of the depreciation rate i
               pmin(.data$change,
                    ( lead(.data$change, order_by = .data$year)
-                   * (1 - i)
-                   ^ (.data$year - lead(.data$year, order_by = .data$year))
+                     * (1 - i)
+                     ^ (.data$year - lead(.data$year, order_by = .data$year))
                    )))) %>%
           ungroup() %>%
           select(-'value')
@@ -295,38 +275,22 @@ calcIndustry_EEK <- function(kap) {
     # valid data forward
     EEK_change %>%
       filter(base_year <= .data$year) %>%
-      anti_join(
-        EEK_change_invalid_forward,
-
-        c('iso3c', 'scenario', 'subsector')
-      ),
-
+      anti_join(EEK_change_invalid_forward, by = c('iso3c', 'scenario', 'subsector')),
     # valid data backward
     EEK_change %>%
       filter(base_year > .data$year) %>%
-      anti_join(
-        EEK_change_invalid_backward,
-
-        c('iso3c', 'scenario', 'subsector')
-      ),
-
+      anti_join(EEK_change_invalid_backward, by = c('iso3c', 'scenario', 'subsector')),
     # fixed rates
     EEK_change_valid_forward,
-
     EEK_change_valid_backward
   ) %>%
-    distinct(.data$iso3c, .data$scenario, .data$subsector, .data$year,
-             .data$change)
+    distinct(.data$iso3c, .data$scenario, .data$subsector, .data$year, .data$change)
 
   EEK <- full_join(
-    EEK %>%
-      mutate(subsector = paste0('ue_', .data$subsector)),
-
-    EEK_change,
-
-    c('iso3c', 'subsector')
+    mutate(EEK, subsector = paste0('ue_', .data$subsector)),
+    EEK_change, by = c('iso3c', 'subsector')
   ) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     mutate(value = .data$EEK * .data$change,
            subsector = sub('^ue_', 'kap_', .data$subsector)) %>%
     select('iso3c', 'year', 'scenario', 'subsector', 'value')
@@ -344,8 +308,7 @@ calcIndustry_EEK <- function(kap) {
                year = 2025,
                scenario = 'SSP5',
                subsector = 'kap_steel_primary'),
-
-        c('iso3c', 'year', 'scenario', 'subsector')
+        by = c('iso3c', 'year', 'scenario', 'subsector')
       ),
 
     EEK %>%
@@ -359,10 +322,8 @@ calcIndustry_EEK <- function(kap) {
       summarise(value = mean(.data$value), year = 2025L, .groups = 'drop')
   )
 
-  # return ----
-  return(list(x = EEK %>%
-                as.magpie(spatial = 1, temporal = 2, data = ncol(.)),
-              weight = NULL,
-              unit = 'trillion US$2017',
-              description = 'Industry energy efficiency capital stock'))
+  list(x = as.magpie(EEK, spatial = 1, temporal = 2, data = ncol(.)),
+       weight = NULL,
+       unit = 'trillion US$2017',
+       description = 'Industry energy efficiency capital stock')
 }

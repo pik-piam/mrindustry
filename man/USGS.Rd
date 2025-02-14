@@ -2,12 +2,9 @@
 % Please edit documentation in R/readUSGS.R
 \name{readUSGS}
 \alias{readUSGS}
-\alias{convertUSGS}
 \title{Read U.S. Geological Survey data}
 \usage{
 readUSGS(subtype = "cement")
-
-convertUSGS(x, subtype = "cement")
 }
 \arguments{
 \item{subtype}{One of
@@ -16,8 +13,6 @@ convertUSGS(x, subtype = "cement")
 \href{https://www.usgs.gov/centers/national-minerals-information-center/cement-statistics-and-information}{U.S. Geological Survey Minerals Yearbook}
 (unit: tonnes per year)
 }}
-
-\item{x}{Data returned by \code{\link[=readUSGS]{readUSGS()}}.}
 }
 \value{
 A \code{\link[magclass:magclass-package]{magpie}} object.

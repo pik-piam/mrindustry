@@ -1,9 +1,9 @@
 #' Calculate Cement Share in NONMET FE Use
 #'
 #' Estimated shares of cement in `NONMET` final energy use based on OECD and
-#' Non-OECD figures from IEA 2017 [Energy Technology Perspectives](
-#' https://www.zotero.org/groups/52011/rd3/items/X8XCUJ5U).  Shares are weighted
-#' by GDP for aggregation and converge towards global values by 2100.
+#' Non-OECD figures from IEA 2017
+#' [Energy Technology Perspectives](https://www.zotero.org/groups/52011/rd3/items/X8XCUJ5U).
+#' Shares are weighted by GDP for aggregation and converge towards global values by 2100.
 #'
 #' @md
 #' @return A list with a [`magpie`][magclass::magclass] object `x`, `weight`,
@@ -60,9 +60,8 @@ calcCementShare <- function() {
     select('iso3c', 'year', 'fety', 'value') %>%
     as.magpie(spatial = 1, temporal = 2, data = 4),
 
-  weight = calcOutput('GDP', scenario = "SSP2", naming = "scenario", aggregate = FALSE) %>%
-    `[`(, unique(quitte::remind_timesteps$period), ) %>%
-    dimSums(dim = 3),
+  weight = calcOutput("GDP", scenario = "SSP2", aggregate = FALSE, years = unique(quitte::remind_timesteps$period)) %>%
+    collapseDim(dim = 3),
 
   unit = 'share',
   description = 'Share of Cement in NONMET FE use',

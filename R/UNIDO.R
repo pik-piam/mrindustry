@@ -3,12 +3,14 @@
 #' Read and convert data from United Nations Industrial Organisation.
 #'
 #' @md
-#' @param subtype one of
-#'     - `INDSTAT2`: read INDSTAT 2 data
-#'     - `INDSTAT3`: read INDSTAT 3 data from [https://stat.unido.org/data/download?dataset=indstat&revision=3]
-#'     - `INDSTAT4`: read INDSTAT 4 data from [https://stat.unido.org/data/download?dataset=indstat&revision=4]
+#' @param subtype A string. One of:
+#' \itemize{
+#'   \item "INDSTAT2": read INDSTAT 2 data
+#'   \item "INDSTAT3": read INDSTAT 3 data from [here](https://stat.unido.org/data/download?dataset=indstat&revision=3)
+#'   \item "INDSTAT4": read INDSTAT 4 data from [here](https://stat.unido.org/data/download?dataset=indstat&revision=4)
 #'       INDSTAT 4 data quality has not been vetted and should not be used for
 #'       production.
+#' }
 #' @param exclude Exclude faulty data (`TRUE`, default) or not.  Return a tibble
 #'     of country/subsector/year combinations for `exclude = 'return'`.
 #'     (Work-in-progress)
@@ -72,7 +74,6 @@
 #'
 #' @seealso [`readSource()`], [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na verify
 #' @importFrom dplyr anti_join between bind_rows filter group_by inner_join
 #'     left_join mutate n select summarise ungroup
 #' @importFrom GDPuc convertGDP
@@ -84,7 +85,7 @@
 #' @importFrom rlang !!! .data is_empty syms
 #' @importFrom tibble tibble tribble
 #' @importFrom tidyr drop_na expand_grid unite
-
+#'
 #' @rdname UNIDO
 #' @export
 readUNIDO <- function(subtype = 'INDSTAT3')
@@ -260,7 +261,7 @@ convertUNIDO <- function(x, subtype = 'INDSTAT3', exclude = TRUE)
                 c('country' = 'un')
             ) %>%
             select(-'country') %>%
-            assert(not_na, everything())
+          assertr::assert(assertr::not_na, everything())
 
     }
 

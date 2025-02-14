@@ -1,7 +1,7 @@
 #' Read World Steel Statistical Yearbook Data
 #'
 #' Read combined data of World Steel Association statistical yearbooks
-#' (https://www.worldsteel.org/steel-by-topic/statistics/steel-statistical-yearbook.html).
+#' [link](https://www.worldsteel.org/steel-by-topic/statistics/steel-statistical-yearbook.html).
 #'
 #' @param subtype One of
 #'   - `detailed` returning data for the worksheets
@@ -63,7 +63,7 @@ readworldsteel <- function(subtype = 'detailed') {
           mutate(iso3c = ifelse(!is.na(.data$iso3c), .data$iso3c,
                                 .data$iso3c.alt)) %>%
           select('iso3c', 'year', 'name', 'value') %>%
-          assert(not_na, 'iso3c') %>%
+          assertr::assert(assertr::not_na, 'iso3c') %>%
           # combine country aggregates
           group_by(.data$iso3c, .data$year, .data$name) %>%
           summarise(value = sum(.data$value, na.rm = TRUE),

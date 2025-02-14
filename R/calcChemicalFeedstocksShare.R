@@ -11,15 +11,14 @@
 #'
 #' @seealso [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na
 #' @importFrom dplyr filter group_by inner_join mutate pull select summarise
 #' @importFrom quitte character.data.frame interpolate_missing_periods_
 #' @importFrom rlang .data sym
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr complete everything nesting
 #' @importFrom magclass collapseDim
-
 #' @export
+#'
 calcChemicalFeedstocksShare <- function()
 {
   region_mapping <- toolGetMapping(
@@ -82,10 +81,10 @@ calcChemicalFeedstocksShare <- function()
       value = 'share', expand.values = TRUE) %>%
     full_join(region_mapping, 'region') %>%
     select('iso3c', 'year', 'share') %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
-  weight <- calcOutput('GDP', scenario = "SSP2", naming = "scenario", aggregate = FALSE) %>%
-    dimSums(dim = 3)
+  weight <- calcOutput("GDP", scenario = "SSP2", aggregate = FALSE) %>%
+    collapseDim(dim = 3)
 
   return(
     list(
@@ -93,9 +92,7 @@ calcChemicalFeedstocksShare <- function()
       filter(.data$year %in% unique(quitte::remind_timesteps$period)) %>%
       as.magpie(spatial = 1, temporal = 2, tidy = TRUE) %>%
       collapseDim(dim = 3),
-
-    weight = weight[,unique(quitte::remind_timesteps$period),],
-
+    weight = weight[, unique(quitte::remind_timesteps$period), ],
     unit = 'share',
     description = 'Share of feedstocks in chemicals FE input',
     min = 0, max = 1)

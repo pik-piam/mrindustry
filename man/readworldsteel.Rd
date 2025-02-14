@@ -24,7 +24,7 @@ A [`magpie`][magclass::magclass] object.
 }
 \description{
 Read combined data of World Steel Association statistical yearbooks
-(https://www.worldsteel.org/steel-by-topic/statistics/steel-statistical-yearbook.html).
+[link](https://www.worldsteel.org/steel-by-topic/statistics/steel-statistical-yearbook.html).
 }
 \seealso{
 [`readSource()`]
