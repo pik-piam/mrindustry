@@ -46,6 +46,12 @@
 tool_expand_tibble <- function(d, scenarios, regions, structure.columns = NULL) {
   . <- NULL
 
+  # If there is not a single row for a scenario in scenarios, add a row
+  if (any(! scenarios %in% unique(d$scenario))) {
+    misScen <- scenarios[! scenarios %in% unique(d$scenario)]
+    d <- tibble::add_row(d, scenario = misScen)
+  }
+
   # entries with both scenarios and regions defined
   d.scenario.region <- d %>%
     filter(!is.na(.data$scenario), .data$scenario %in% scenarios,
@@ -61,7 +67,7 @@ tool_expand_tibble <- function(d, scenarios, regions, structure.columns = NULL) 
 
   # entries with only regions defined
   d.region <- d %>%
-    filter(is.na(.data$scenario) | !.data$scenario %in% scenarios,
+    filter(is.na(.data$scenario),
            !is.na(.data$region),
            .data$region %in% regions) %>%
     complete(nesting(!!!syms(setdiff(colnames(.), 'scenario'))),

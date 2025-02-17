@@ -156,10 +156,7 @@ calcindustry_subsectors_specific <- function(subtype = NULL, scenarios = NULL, r
       stop('`direct` is not a data frame')
     }
     if (!all(c('scenario', 'region') %in% colnames(direct))) {
-      stop('`direct` is missing columns: ',
-	   paste(setdiff(c('scenario', 'region'),
-			 colnames(direct)),
-		 collapse = ', '))
+      stop('`direct` is missing columns: ', paste(setdiff(c('scenario', 'region'), colnames(direct)), collapse = ', '))
     }
     x <- direct
   }
