@@ -49,13 +49,13 @@ tool_expand_tibble <- function(d, scenarios, regions, structure.columns = NULL) 
   # If there is not a single row for a scenario in scenarios, add a row
   if (any(! scenarios %in% unique(d$scenario))) {
     misScen <- scenarios[! scenarios %in% unique(d$scenario)]
-    d <- bind_rows(d,
-                   purrr::map(misScen,
-                              ~d %>%
-                                filter(is.na(region)) %>%
-                                slice(1) %>%
-                                mutate(scenario = .x)) %>%
-                     purrr::list_rbind())
+    d <- dplyr::bind_rows(d,
+                          purrr::map(misScen,
+                                     ~d %>%
+                                       dplyr::filter(is.na(region)) %>%
+                                       dplyr::slice(1) %>%
+                                       dplyr::mutate(scenario = .x)) %>%
+                            purrr::list_rbind())
   }
 
   # entries with both scenarios and regions defined
