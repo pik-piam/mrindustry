@@ -208,22 +208,15 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   )
 
   ## re-curve specific industry activity per unit GDP ----
-  gdpScen <- subset[subset %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario]
-  GDP <- calcOutput(
-    type = "GDP",
-    scenario = gdpScen,
-    naming = "scenario",
-    average2020 = FALSE,
-    years = sort(union(remind_years,
-                       last_empirical_year:max(fixing_year$fixing_year))),
-    aggregate = FALSE,
-    supplementary = FALSE) %>%
-    as.data.frame() %>%
+  gdpScen <- scenario[scenario %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario]
+  GDP <- calcOutput("GDP",
+                    scenario = gdpScen,
+                    average2020 = FALSE,
+                    years = sort(union(remind_years, last_empirical_year:max(fixing_year$fixing_year))),
+                    aggregate = FALSE) %>%
     as_tibble() %>%
-    select(iso3c = "Region", year = "Year", scenario = "Data1",
-           GDP = "Value") %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year))
+    select(iso3c, year, scenario = "variable", GDP = "value") %>%
+    mutate(across(where(is.factor), as.character))
 
   ### calculate specific material demand factors ----
   foo <- full_join(
@@ -555,8 +548,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
   ### per-capita projections ----
   . <- NULL
-  popScen <- subset[
-    subset %in% mrdrivers::toolGetScenarioDefinition(driver = "Population", aslist = TRUE)$scenario
+  popScen <- scenario[
+    scenario %in% mrdrivers::toolGetScenarioDefinition(driver = "Population", aslist = TRUE)$scenario
   ]
 
   if (use_ODYM_RECC) {
@@ -581,11 +574,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         ) %>%
         select(-"scenario", -"GDP", -"year") %>%
         inner_join(
-          calcOutput(type = "Population",
-                     scenario = popScen,
-                     naming = "scenario",
-                     aggregate = FALSE,
-                     years = remind_years) %>%
+          calcOutput("Population", scenario = popScen, aggregate = FALSE, years = remind_years) %>%
             magclass_to_tibble() %>%
             select("iso3c", "scenario" = "variable", "year", "population" = "value") %>%
             filter(
