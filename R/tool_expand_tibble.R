@@ -43,8 +43,7 @@
 #' }
 
 #' @export
-tool_expand_tibble <- function(d, scenarios, regions,
-                               structure.columns = NULL) {
+tool_expand_tibble <- function(d, scenarios, regions, structure.columns = NULL) {
   . <- NULL
 
   # entries with both scenarios and regions defined
@@ -62,8 +61,9 @@ tool_expand_tibble <- function(d, scenarios, regions,
 
   # entries with only regions defined
   d.region <- d %>%
-    filter(is.na(.data$scenario),
-           !is.na(.data$region), .data$region %in% regions) %>%
+    filter(is.na(.data$scenario) | !.data$scenario %in% scenarios,
+           !is.na(.data$region),
+           .data$region %in% regions) %>%
     complete(nesting(!!!syms(setdiff(colnames(.), 'scenario'))),
              scenario = scenarios) %>%
     filter(!is.na(.data$scenario))
@@ -100,5 +100,5 @@ tool_expand_tibble <- function(d, scenarios, regions,
     ) %>%
     bind_rows(d.scenario.region) %>%
     select(all_of(colnames(d))) %>%
-    return()
+    filter(scenario %in% scenarios)
 }

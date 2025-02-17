@@ -79,7 +79,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
 
 
   ## population data ----
-  population <- calcOutput("Population", scenario = c("SSPs", "SDPs"), naming = "scenario", aggregate = FALSE) %>%
+  population <- calcOutput("Population", scenario = c("SSPs", "SDPs"), aggregate = FALSE) %>%
     as.data.frame() %>%
     as_tibble() %>%
     select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
@@ -93,7 +93,6 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
   GDP <- calcOutput(type = "GDP",
                     scenario = c("SSPs", "SDPs"),
                     average2020 = FALSE,
-                    naming = "scenario",
                     aggregate = FALSE) %>%
     as.data.frame() %>%
     as_tibble() %>%
@@ -1379,10 +1378,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
   }
 
   # return statement ----
-  return(list(x = x %>%
-                as.magpie(spatial = 2, temporal = 4, data = 5),
-              weight = NULL,
-              unit = 'trillion US$2017/year',
-              description = 'chemicals and other industry value added'))
+  list(x = as.magpie(x, spatial = 2, temporal = 4, data = 5),
+       weight = NULL,
+       unit = 'trillion US$2017/year',
+       description = 'chemicals and other industry value added')
 
 }

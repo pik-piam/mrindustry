@@ -58,12 +58,10 @@
 #' @rdname industry_subsector_specific
 readindustry_subsectors_specific <- function(subtype = NULL) {
 
-  .clean <- function(d)
-  {
+  .clean <- function(d) {
     d %>%
       mutate(across(dplyr::where(is.character), trimws),
-             across(dplyr::where(is.character),
-                    \(x) ifelse('NA' == x, NA_character_, x)))
+             across(dplyr::where(is.character), \(x) ifelse('NA' == x, NA_character_, x)))
   }
 
   # subtype switchboard ----
@@ -81,8 +79,7 @@ readindustry_subsectors_specific <- function(subtype = NULL) {
       # alpha and T_C-parameters of the "declining improvement method" detailed
       # in Pehl et al. (2024) [https://doi.org/10.5194/gmd-17-2015-2024],
       # section 3.7
-      toolGetMapping(name = 'specific_material_alpha.csv',
-                     where = 'mrindustry') %>%
+      toolGetMapping(name = 'specific_material_alpha.csv', where = 'mrindustry') %>%
         as_tibble() %>%
         .clean() %>%
         madrat_mule()
@@ -102,8 +99,7 @@ readindustry_subsectors_specific <- function(subtype = NULL) {
     'material_relative_change' = function() {
       # alpha-parameter for the "modified rates of change" method from Pehl et
       # al. (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.7
-      toolGetMapping(name = 'specific_material_relative_change.csv',
-                     where = 'mrindustry') %>%
+      toolGetMapping(name = 'specific_material_relative_change.csv', where = 'mrindustry') %>%
         as_tibble() %>%
         .clean() %>%
         madrat_mule()
@@ -115,15 +111,13 @@ readindustry_subsectors_specific <- function(subtype = NULL) {
       # https://mattermost.pik-potsdam.de/rd3/pl/u7eg6ed5gpr85rabznepnaoqrr and
       # https://mattermost.pik-potsdam.de/rd3/pl/g74og14a7igi8n6trjbhgcntrc).
       # GJ/t for absolute subsectors, share for relative subsectors
-      toolGetMapping(name = 'industry_specific_FE_limits.csv',
-                     where = 'mrindustry') %>%
+      toolGetMapping(name = 'industry_specific_FE_limits.csv', where = 'mrindustry') %>%
         as_tibble() %>%
         .clean() %>%
         madrat_mule()
     },
 
-    'fixing_year' = function()
-    {
+    'fixing_year' = function() {
       # year until which scenarios are fixed to the default scenario
       toolGetMapping('fixing_year.csv', where = 'mrindustry') %>%
         as_tibble() %>%
@@ -134,18 +128,16 @@ readindustry_subsectors_specific <- function(subtype = NULL) {
 
   # check if the subtype called is available ----
   if (!subtype %in% names(switchboard)) {
-    stop(paste('Invalid subtype -- supported subtypes are:',
-               paste(names(switchboard), collapse = ', ')))
+    stop(paste('Invalid subtype -- supported subtypes are:', paste(names(switchboard), collapse = ', ')))
   }
 
   # load data and to whatever ----
-  return(switchboard[[subtype]]())
+  switchboard[[subtype]]()
 }
 
 #' @export
 #' @rdname industry_subsector_specific
-calcindustry_subsectors_specific <- function(subtype = NULL, scenarios = NULL,
-                                             regions = NULL, direct = NULL) {
+calcindustry_subsectors_specific <- function(subtype = NULL, scenarios = NULL, regions = NULL, direct = NULL) {
   if (is.null(scenarios)) {
     stop('Scenario definitions missing.')
   }
@@ -157,11 +149,9 @@ calcindustry_subsectors_specific <- function(subtype = NULL, scenarios = NULL,
   . <- NULL
 
   if (is.null(direct)) {
-    x <- readSource(type = 'industry_subsectors_specific', subtype = subtype,
-		    convert = FALSE) %>%
+    x <- readSource(type = 'industry_subsectors_specific', subtype = subtype, convert = FALSE) %>%
       madrat_mule()
-  }
-  else {
+  } else {
     if (!is.data.frame(direct)) {
       stop('`direct` is not a data frame')
     }
@@ -174,13 +164,11 @@ calcindustry_subsectors_specific <- function(subtype = NULL, scenarios = NULL,
     x <- direct
   }
 
-  return(list(
-    x = x %>%
-      tool_expand_tibble(scenarios, regions,
-			 structure.columns = 'subsector') %>%
-      pivot_longer(
-        !all_of(names(which('character' == unlist(lapply(., typeof)))))
-      ) %>%
-      as.magpie(spatial = 0, temporal = 0, data = ncol(.)),
-    weight = NULL, unit = '', description = ''))
+  list(x = x %>%
+         tool_expand_tibble(scenarios, regions, structure.columns = 'subsector') %>%
+         pivot_longer(!all_of(names(which('character' == unlist(lapply(., typeof)))))) %>%
+         as.magpie(spatial = 0, temporal = 0, data = ncol(.)),
+       weight = NULL,
+       unit = '',
+       description = '')
 }
