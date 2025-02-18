@@ -13,8 +13,8 @@
 #' @importFrom rlang .data .env sym syms
 #' @importFrom tidyr nest pivot_longer unnest
 #' @importFrom dplyr desc
-
 #' @export
+#'
 calcIndustry_EEK <- function(kap) {
   # setup ----
   i <- log(4) / 50    # assuming 50 year lifetime of EEK
@@ -61,7 +61,7 @@ calcIndustry_EEK <- function(kap) {
 
       'iso3c'
     ) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     mutate(name = ifelse('otherInd' == .data$subsector,
                          'Non-energy intensive',
                          'Energy intensive')) %>%
@@ -134,7 +134,7 @@ calcIndustry_EEK <- function(kap) {
 
       'iso3c'
     ) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     mutate(
       kap_ind_share = .data$EEK / .data$kap,
       temper = .data$kap_ind_share['World' == .data$iso3c],
@@ -330,7 +330,7 @@ calcIndustry_EEK <- function(kap) {
 
     c('iso3c', 'subsector')
   ) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     mutate(value = .data$EEK * .data$change,
            subsector = sub('^ue_', 'kap_', .data$subsector)) %>%
     select('iso3c', 'year', 'scenario', 'subsector', 'value')
@@ -363,10 +363,8 @@ calcIndustry_EEK <- function(kap) {
       summarise(value = mean(.data$value), year = 2025L, .groups = 'drop')
   )
 
-  # return ----
-  return(list(x = EEK %>%
-                as.magpie(spatial = 1, temporal = 2, data = ncol(.)),
-              weight = NULL,
-              unit = 'trillion US$2017',
-              description = 'Industry energy efficiency capital stock'))
+  list(x = as.magpie(EEK, spatial = 1, temporal = 2, data = ncol(.)),
+       weight = NULL,
+       unit = 'trillion US$2017',
+       description = 'Industry energy efficiency capital stock')
 }

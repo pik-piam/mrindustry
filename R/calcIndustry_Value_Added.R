@@ -25,7 +25,6 @@
 #'
 #' @seealso [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na verify within_bounds
 #' @importFrom dplyr case_when bind_rows between distinct first last n
 #'   mutate pull right_join select semi_join vars
 #' @importFrom ggplot2 aes coord_cartesian expand_limits facet_wrap geom_area
@@ -341,7 +340,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
                             '\\1.production', .data$variable)) %>%
       filter(between(.data$year, 2000, 2100)) %>%
       full_join(region_mapping, 'iso3c') %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       group_by(!!!syms(c('scenario', 'region', 'iso3c', 'year'))) %>%
       summarise(steel.production = sum(.data$value), .groups = 'drop'),
 
@@ -1255,7 +1254,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
       c('scenario', 'iso3c', 'year')
     ) %>%
     pivot_longer(matches('VA$')) %>%
-    assert(within_bounds(0, Inf), .data$value) %>%
+    assertr::assert(assertr::within_bounds(0, Inf), .data$value) %>%
     group_by(!!!syms(c('scenario', 'region', 'year', 'name'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop') %>%
     pivot_wider() %>%
@@ -1351,7 +1350,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
       select('scenario', 'iso3c', 'year', ue_cement = 'cement.production',
              ue_chemicals = 'chemicals.VA', ue_otherInd = 'otherInd.VA') %>%
       pivot_longer(matches('^ue_'), names_to = 'pf') %>%
-      verify(!(is.na(.data$value) & between(.data$year, 2000, 2100))) %>%
+      assertr::verify(!(is.na(.data$value) & between(.data$year, 2000, 2100))) %>%
       # t/year * 1e-9 Gt/t = Gt/year      | cement
       # $/year * 1e-12 $tn/$ = $tn/year   | chemicals and other industry
       mutate(

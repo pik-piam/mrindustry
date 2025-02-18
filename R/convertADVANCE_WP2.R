@@ -38,7 +38,7 @@ convertADVANCE_WP2 <- function(x, subtype) {
 
           'region'
         ) %>%
-        assert(not_na, everything()) %>%
+        assertr::assert(assertr::not_na, everything()) %>%
         select(-'region') %>%
         as.magpie()
     }

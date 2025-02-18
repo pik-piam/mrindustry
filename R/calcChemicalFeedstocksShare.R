@@ -11,15 +11,14 @@
 #'
 #' @seealso [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na
 #' @importFrom dplyr filter group_by inner_join mutate pull select summarise
 #' @importFrom quitte character.data.frame interpolate_missing_periods_
 #' @importFrom rlang .data sym
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr complete everything nesting
 #' @importFrom magclass collapseDim
-
 #' @export
+#'
 calcChemicalFeedstocksShare <- function()
 {
   region_mapping <- toolGetMapping(
@@ -82,7 +81,7 @@ calcChemicalFeedstocksShare <- function()
       value = 'share', expand.values = TRUE) %>%
     full_join(region_mapping, 'region') %>%
     select('iso3c', 'year', 'share') %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   weight <- calcOutput('GDP', scenario = "SSP2", naming = "scenario", aggregate = FALSE) %>%
     dimSums(dim = 3)

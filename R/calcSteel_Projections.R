@@ -26,7 +26,6 @@
 #'
 #' @seealso [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na verify within_bounds
 #' @importFrom dplyr case_when bind_rows between distinct first last n
 #'   mutate pull right_join select semi_join vars
 #' @importFrom ggplot2 aes coord_cartesian expand_limits facet_wrap geom_area
@@ -158,7 +157,7 @@ calcSteel_Projections <- function(subtype = 'production',
   region_mapping__Belgium_Luxembourg <- region_mapping %>%
     filter(.data$iso3c %in% c('BEL', 'LUX')) %>%
     distinct(.data$region) %>%
-    verify(1 == length(.data$region)) %>%
+    assertr::verify(1 == length(.data$region)) %>%
     mutate(iso3c = 'blx')
 
   ## country mapping for Müller data ----
@@ -303,7 +302,7 @@ calcSteel_Projections <- function(subtype = 'production',
   steel_stock_estimates <- full_join(
     # GDP, population to calculate per-capita GDP
     full_join(GDP, population, c('scenario', 'iso3c', 'year')) %>%
-      assert(not_na, everything()),
+      assertr::assert(assertr::not_na, everything()),
 
     # regression parameters mapped to GDP and population scenarios
     full_join(
@@ -336,7 +335,7 @@ calcSteel_Projections <- function(subtype = 'production',
                       Asym = .data$Asym, xmid = .data$xmid, scal = .data$scal),
       source = 'computation') %>%
     select('scenario', 'iso3c', 'year', 'value', 'source') %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   steel_stock_estimates <- bind_rows(
     steel_stock_estimates,
@@ -355,7 +354,7 @@ calcSteel_Projections <- function(subtype = 'production',
   ) %>%
     full_join(region_mapping, 'iso3c') %>%
     pivot_wider(names_from = 'source') %>%
-    assert(not_na, .data$computation,
+    assertr::assert(assertr::not_na, .data$computation,
            error_fun = function(errors, data) {
              rows <- lapply(errors, function(x) { x$error_df$index }) %>%
                unlist() %>%
@@ -383,7 +382,7 @@ calcSteel_Projections <- function(subtype = 'production',
       steel.stock.per.capita = ifelse(is.na(.data$mix),
                                       .data$computation, .data$mix)) %>%
     select('scenario', 'iso3c', 'region', 'year', 'steel.stock.per.capita') %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   rm(list = c('fade_start', 'fade_end'))
 
@@ -403,7 +402,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'scenario'
       ) %>%
-      assert(not_na, everything()),
+      assertr::assert(assertr::not_na, everything()),
 
     # masked scenarios, OECD countries
     left_join(
@@ -419,7 +418,7 @@ calcSteel_Projections <- function(subtype = 'production',
       'scenario'
     ) %>%
       select(-'scenario', 'scenario' = 'scenario.mask') %>%
-      assert(not_na, everything()),
+      assertr::assert(assertr::not_na, everything()),
 
     # masked scenarios, non-OECD countries
     left_join(
@@ -435,13 +434,13 @@ calcSteel_Projections <- function(subtype = 'production',
       'scenario'
     ) %>%
       select(-'scenario', 'scenario' = 'scenario.mask') %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
   ) %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   ## calculate regional and global totals, as well as absolute stocks ----
   steel_stock_estimates <- steel_stock_estimates %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     full_join(population, c('scenario', 'iso3c', 'year')) %>%
     group_by(.data$scenario, .data$year, .data$region) %>%
     sum_total_(group = 'iso3c', value = 'steel.stock.per.capita',
@@ -453,7 +452,7 @@ calcSteel_Projections <- function(subtype = 'production',
     filter(!(.data$region == 'World' & .data$iso3c != 'Total')) %>%
     # absolute stocks
     mutate(steel.stock = .data$steel.stock.per.capita * .data$population) %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   if ('steel_stock_estimates' == subtype) {
     return(list(
@@ -723,7 +722,7 @@ calcSteel_Projections <- function(subtype = 'production',
       mutate(value = .data$value * .data$population) %>%
       select('region', 'iso3c', 'year', 'variable', 'value')
   ) %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   ## calculate secondary steel max share ----
   secondary.steel.max.switches <- calcOutput(
@@ -796,7 +795,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'region'
       ) %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
   )
 
   ## calculate primary and secondary production ----
@@ -815,7 +814,7 @@ calcSteel_Projections <- function(subtype = 'production',
     inner_join(steel_trade_share_2015 %>% select(-'region'), 'iso3c') %>%
     left_join(lifetime_projections, c('scenario', 'region', 'year')) %>%
     select(-'steel.stock.per.capita', -'population') %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     pivot_longer(c(-'scenario', -'iso3c', -'region', -'year')) %>%
     interpolate_missing_periods_(
       periods = list('year' = seq_range(range(.$year)))) %>%
@@ -899,7 +898,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
       'variable'
     ) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     # t/year * 1e-6 Gt/t = Gt/year
     mutate(value = .data$value * 1e-9) %>%
     select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -958,7 +957,7 @@ calcSteel_Projections <- function(subtype = 'production',
       mutate(value = .data$value * .data$factor) %>%
       ungroup() %>%
       select(-'historic', -'factor') %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     ## make zero values explicit ----
     tmp <- tmp %>%
@@ -967,7 +966,7 @@ calcSteel_Projections <- function(subtype = 'production',
                nesting(!!sym('region'), !!sym('iso3c')),
                year   = unique(!!sym('year')),
                fill = list(value = 0)) %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     ## update max secondary steel shares ----
     update.secondary.steel.max.share <- function(production,
@@ -987,7 +986,7 @@ calcSteel_Projections <- function(subtype = 'production',
       ) %>%
         mutate(share = pmax(.data$share, .data$max.share, na.rm = TRUE)) %>%
         select(all_of(colnames(secondary.steel.max.share))) %>%
-        assert(not_na, everything())
+        assertr::assert(assertr::not_na, everything())
     }
 
     secondary.steel.max.share <- update.secondary.steel.max.share(
@@ -1005,7 +1004,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'variable'
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       # t/year * 1e-9 Gt/t = Gt/year
       mutate(value = .data$value * 1e-9) %>%
       select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -1047,7 +1046,7 @@ calcSteel_Projections <- function(subtype = 'production',
       left_join(tmp, c('scenario', 'iso3c', 'year')) %>%
       mutate(value = .data$value * .data$factor) %>%
       select(-'factor') %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     ## construct output ----
     x <- tmp %>%
@@ -1061,7 +1060,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'variable'
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       # t/year * 1e-9 Gt/t = Gt/year
       mutate(value = .data$value * 1e-9) %>%
       select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -1119,9 +1118,9 @@ calcSteel_Projections <- function(subtype = 'production',
                  ETP = .data$ETP - .data$total.production) %>%
           select(-'total.production')
       ) %>%
-        verify(expr = .data$ETP > 0,
-               description = paste('exogenous Chinese production does not exceed',
-                                   'IEA ETP Non-OECD production'))
+        assertr::verify(expr = .data$ETP > 0,
+                        description = paste('exogenous Chinese production does not exceed',
+                                            'IEA ETP Non-OECD production'))
     }
 
     scaling_factor <- inner_join(
@@ -1164,7 +1163,7 @@ calcSteel_Projections <- function(subtype = 'production',
                                        yleft = first(na.omit(.data$factor)),
                                        yright = last(na.omit(.data$factor)))) %>%
       ungroup() %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     if (!is.data.frame(China_Production)) {
       IEA_ETP_matched <- tmp %>%
@@ -1211,7 +1210,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'variable'
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       # t/year * 1e-9 Gt/t = Gt/year
       mutate(value = .data$value * 1e-9) %>%
       select('scenario', 'iso3c', 'pf', 'year', 'value') %>%

@@ -6,7 +6,6 @@
 #'   to `FALSE`.)
 #' @param last_empirical_year Last year for which empirical data is available.
 #'   Defaults to 2020.
-#' @importFrom assertr assert not_na verify
 #' @importFrom dplyr anti_join arrange as_tibble between bind_rows case_when
 #'   distinct filter first full_join group_by inner_join left_join
 #'   matches mutate n rename right_join select semi_join summarise ungroup
@@ -30,6 +29,10 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   }
   if ("SSP2IndiaDEAs" %in% scenario) {
     scenario <- c(scenario[!grepl("SSP2IndiaDEAs", scenario)], c("SSP2IndiaMedium", "SSP2IndiaHigh"))
+  }
+  ## SSP2 scenario always required
+  if (!"SSP2" %in% scenario) {
+    scenario <- c("SSP2", scenario)
   }
 
 
@@ -137,7 +140,6 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
                        sets = getSets(data))
 
   for (v in unique(mapping$REMINDitems_out)) {
-
     w <- mapping %>%
       filter(.data$REMINDitems_out == v) %>%
       select(-"REMINDitems_out") %>%
@@ -151,6 +153,11 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     remind[, , getNames(tmp)] <- tmp
   }
 
+  remind_scenarios <- c(
+    paste0("SSP", c(1:5, "2_lowEn", "2_highDemDEU", "2IndiaHigh", "2IndiaMedium")),
+    paste0("SDP", c("", "_EI", "_RC", "_MC"))
+  )
+
   remind_years <- seq(1995, 2150, 5)
 
   # ---- Industry subsectors data and FE stubs ----
@@ -161,7 +168,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   fixing_year <- calcOutput(
     type = 'industry_subsectors_specific',
     subtype = 'fixing_year',
-    scenarios = scenario,
+    scenarios = remind_scenarios,
     regions = unique(region_mapping_21$region),
     aggregate = FALSE
   ) %>%
@@ -181,8 +188,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
       aggregate = FALSE,
       years = sort(union(remind_years, last_empirical_year:max(fixing_year$fixing_year))),
       warnNA = FALSE
-    ) %>%
-      mselect(scenario = scenario),
+    ),
     calcOutput(
       type = "Steel_Projections",
       subtype = "production",
@@ -194,12 +200,13 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         madrat_mule(),
       aggregate = FALSE,
       years = sort(union(remind_years, last_empirical_year:max(fixing_year$fixing_year)))
-    ) %>%
-      mselect(scenario = scenario)
+    )
   )
 
   ## re-curve specific industry activity per unit GDP ----
-  gdpScen <- scenario[scenario %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario]
+  gdpScen <- remind_scenarios[
+    remind_scenarios %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario
+  ]
   GDP <- calcOutput("GDP",
                     scenario = gdpScen,
                     average2020 = FALSE,
@@ -219,8 +226,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
       # first projection below
       filter(!(  0 == .data$value
                & .data$year <= max(fixing_year$fixing_year))) %>%
-      verify(expr = .data$value != 0,
-             description = 'No zero subsector activity after fixing_year'),
+      assertr::verify(expr = .data$value != 0,
+                      description = 'No zero subsector activity after fixing_year'),
     GDP,
     by = c("iso3c", "year", "scenario")
   ) %>%
@@ -243,10 +250,10 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   industry_subsectors_material_alpha <- calcOutput(
     type = "industry_subsectors_specific",
     subtype = "material_alpha",
-    scenarios = scenario,
+    scenarios = c(getNames(x = industry_subsectors_ue, dim = 1), "SSP2_lowEn"),
     regions = unique(region_mapping_21$region),
     aggregate = FALSE
-  ) %>%
+  )  %>%
     as.data.frame() %>%
     as_tibble() %>%
     select(scenario = "Data1", region = "Data2", subsector = "Data3",
@@ -258,7 +265,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   industry_subsectors_material_relative <- calcOutput(
     type = "industry_subsectors_specific",
     subtype = "material_relative",
-    scenarios = scenario,
+    scenarios = c(getNames(x = industry_subsectors_ue, dim = 1), "SSP2_lowEn", "SSP2_highDemDEU"),
     regions = unique(region_mapping_21$region),
     aggregate = FALSE
   ) %>%
@@ -279,7 +286,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   industry_subsectors_material_relative_change <- calcOutput(
     type = "industry_subsectors_specific",
     subtype = "material_relative_change",
-    scenarios = scenario,
+    scenarios = c(getNames(x = industry_subsectors_ue, dim = 1), "SSP2_lowEn"),
     regions = unique(region_mapping_21$region),
     aggregate = FALSE
   ) %>%
@@ -313,17 +320,16 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     industry_subsectors_material_relative %>% select("scenario", "region", "subsector"),
     industry_subsectors_material_relative_change %>% select("scenario", "region", "subsector")
   ) %>%
-    group_by(!!!syms(c("scenario", "region", "subsector"))) %>%
-    summarise(count = n(), .groups = "drop") %>%
-    verify(expr = 1 == .data$count,
-           error_fun = function(errors, data) {
-             stop("Industry specific material is over-specified for:\n",
-                  paste(
-                    format(data[errors[[1]]$error_df$index, ],
-                           width = 80,
-                           n = errors[[1]]$num.violations),
-                    collapse = "\n"))
-           }) %>%
+    summarise(count = n(), .by = c("scenario", "region", "subsector")) %>%
+    assertr::verify(expr = 1 == .data$count,
+                    error_fun = function(errors, data) {
+                      stop("Industry specific material is over-specified for:\n",
+                           paste(
+                             format(data[errors[[1]]$error_df$index, ],
+                                    width = 80,
+                                    n = errors[[1]]$num.violations),
+                             collapse = "\n"))
+                    }) %>%
     invisible()
 
   foo2 <- bind_rows(
@@ -372,7 +378,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         relationship = "many-to-many"
       ) %>%
       left_join(fixing_year, by = c('scenario', 'region')) %>%
-      assert(not_na, 'fixing_year', description = 'missing fixing_year for scenario in material_alpha') %>%
+      assertr::assert(assertr::not_na, 'fixing_year', description = 'missing fixing_year for scenario in material_alpha') %>%
       group_by(!!!syms(c("scenario", "subsector", "iso3c"))) %>%
       mutate(
         # alpha factors converge linearly towards zero over the convergence
@@ -410,7 +416,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
       ) %>%
       mutate(value = .data$specific.production * .data$GDP) %>%
       select(all_of(colnames(foo))) %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
   )
 
   foo3 <- bind_rows(
@@ -441,9 +447,9 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
         c("scenario", "subsector", "iso3c", "year")
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       left_join(fixing_year, by = c('scenario', 'region')) %>%
-      assert(not_na, 'fixing_year',
+      assertr::assert(assertr::not_na, 'fixing_year',
              description = paste('missing fixing_year for scenario in',
                                  'material_relative')) %>%
       # scale factor in over 15 years
@@ -494,7 +500,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         c("scenario", "iso3c", "subsector", "year")
       ) %>%
       left_join(fixing_year, by = c('scenario', 'region')) %>%
-      assert(not_na, 'fixing_year',
+      assertr::assert(assertr::not_na, 'fixing_year',
              description = paste('missing fixing_year for scenario in',
                                  'material_relative_change')) %>%
       group_by(!!!syms(c("scenario", "iso3c", "subsector"))) %>%
@@ -781,7 +787,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   IEA_ETP_Ind_FE_shares_delta %>%
     group_by(.data$region, .data$subsector) %>%
     summarise(share.delta.sum = sum(.data$share.delta), .groups = 'drop') %>%
-    verify(0 == .data$share.delta.sum) %>%
+    assertr::verify(0 == .data$share.delta.sum) %>%
     invisible()
 
   IEA_ETP_Ind_FE_shares <- IEA_ETP_Ind_FE_shares %>%
@@ -908,9 +914,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     mutate(share = case_when(
       0 == sum(.data$share) ~ 1 / n(),
       TRUE                  ~ .data$share / sum(.data$share))) %>%
-    verify(expr = is.finite(.data$share),
-           description = paste("Finite IEA ETP industry FE shares after",
-                               "time horizon extension.")) %>%
+    assertr::verify(expr = is.finite(.data$share),
+                    description = paste("Finite IEA ETP industry FE shares after time horizon extension.")) %>%
     ungroup()
 
   ### combine historic and future industry FE shares ----
@@ -947,9 +952,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
            + .data$share.future * .data$foo,
            subsector = ifelse("steel" == .data$subsector,
                               "steel_primary", .data$subsector)) %>%
-    verify(expr = is.finite(.data$share),
-           description = paste("Finite industry FE shares after combining",
-                               "historic and future values")) %>%
+    assertr::verify(expr = is.finite(.data$share),
+                    description = paste("Finite industry FE shares after combining historic and future values")) %>%
     select(-"foo", -"share.hist", -"share.future")
 
   failed_share_sum <- industry_subsectors_en_shares %>%
@@ -990,7 +994,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         ),
 
         'region') %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       mutate(
         feh2 = pmin(.data$feh2_share_in_fega,
                     pmax(0.01,
@@ -1061,7 +1065,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   industry_subsectors_specific_FE <- calcOutput(
     type = "industry_subsectors_specific",
     subtype = "FE",
-    scenarios = scenario,
+    scenarios = c(getNames(x = industry_subsectors_ue, dim = 1), "SSP2_lowEn"),
     regions = unique(region_mapping_21$region),
     aggregate = FALSE
   ) %>%
@@ -1134,8 +1138,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         c("scenario", "year", "subsector")
       )
     ) %>%
-    verify(expr = 0 < .data$specific.energy,
-           description = "All specific energy factors above 0")
+    assertr::verify(expr = 0 < .data$specific.energy, description = "All specific energy factors above 0")
 
   # replace absurdly high specific energy (e.g. primary steel NEN after IEA
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
@@ -1204,7 +1207,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
           c("scenario", "subsector", "year")
         ) %>%
-        assert(not_na, everything())
+        assertr::assert(assertr::not_na, everything())
     )
   }
 
@@ -1241,7 +1244,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
             )
           + (.data$specific.energy * .data$limit),
         TRUE ~ NA)) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     ungroup() %>%
     # extend to non-standard scenarios
     select(-'fixing_year', -'alpha', -'scenario') %>%
@@ -1275,7 +1278,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
           )
         + (.data$specific.energy * .data$limit),
         TRUE ~ NA)) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     ungroup() %>%
     select('scenario', 'region', 'year', 'subsector', 'specific.energy')
 
@@ -1312,7 +1315,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     c("scenario", "year", "subsector", "pf")
   ) %>%
     left_join(fixing_year, by = c('scenario', 'region')) %>%
-    assert(not_na, 'fixing_year',
+    assertr::assert(assertr::not_na, 'fixing_year',
            description = paste('missing fixing_year for scenario in industry',
                                'FE convergence')) %>%
     mutate(
@@ -1374,7 +1377,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     ungroup() %>%
     mutate(value = .data$value * .data$share) %>%
     select("scenario", region = "iso3c", "year", item = "pf", "value") %>%
-    verify(expr = is.finite(.data$value), description = "Finite industry_subsectors_en values") %>%
+    assertr::verify(expr = is.finite(.data$value), description = "Finite industry_subsectors_en values") %>%
     as.magpie(spatial = 2, temporal = 3, datacol = 5)
 
 
@@ -1383,17 +1386,11 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
                   industry_subsectors_ue[, remind_years, ])
 
   # ---- _ prepare output ----
-
-  return(list(
-    x = remind,
-    weight = NULL,
-    unit = paste0(
-      "EJ, except ue_cement (Gt), ue_primary_steel and ",
-      "ue_secondary_steel (Gt) and ue_chemicals and ",
-      "ue_otherInd ($tn)"
-    ),
-    description = "demand pathways for final energy demand in industry",
-    structure.data = "^(SSP[1-5].*|SDP.*)\\.(fe|ue)"
-  ))
-
+  list(x = remind,
+       weight = NULL,
+       unit = paste0("EJ, except ue_cement (Gt), ue_primary_steel and ",
+                     "ue_secondary_steel (Gt) and ue_chemicals and ",
+                     "ue_otherInd ($tn)"),
+       description = "demand pathways for final energy demand in industry",
+       structure.data = "^(SSP[1-5].*|SDP.*)\\.(fe|ue)")
 }

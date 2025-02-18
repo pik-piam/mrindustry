@@ -154,7 +154,7 @@ readUSGS <- function(subtype = 'cement') {
                 'XX' == .data$value ~ '0',
                 TRUE ~ .data$value)) %>%
             left_join(country.name_iso3c, 'country.name') %>%
-            assert(not_na, 'iso3c',
+            assertr::assert(assertr::not_na, 'iso3c',
                    error_fun = function(errors, data, warn) {
                      error_df <- data[errors[[1]]$error_df$index,]
 

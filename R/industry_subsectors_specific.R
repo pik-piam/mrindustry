@@ -53,9 +53,10 @@
 #' @importFrom madrat toolGetMapping
 #' @importFrom quitte madrat_mule
 #' @importFrom tidyr complete nesting
-
+#'
 #' @export
 #' @rdname industry_subsector_specific
+#'
 readindustry_subsectors_specific <- function(subtype = NULL) {
 
   .clean <- function(d) {
@@ -89,8 +90,7 @@ readindustry_subsectors_specific <- function(subtype = NULL) {
     'material_relative' = function() {
       # alpha-parameter of the "fixed ratio method" detailed in Pehl et al.
       # (2024) [https://doi.org/10.5194/gmd-17-2015-2024], section 3.7
-      toolGetMapping(name = 'specific_material_relative.csv',
-                     where = 'mrindustry') %>%
+      toolGetMapping(name = 'specific_material_relative.csv', where = 'mrindustry') %>%
         as_tibble() %>%
         .clean() %>%
         madrat_mule()

@@ -72,7 +72,6 @@
 #'
 #' @seealso [`readSource()`], [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na verify
 #' @importFrom dplyr anti_join between bind_rows filter group_by inner_join
 #'     left_join mutate n select summarise ungroup
 #' @importFrom GDPuc convertGDP
@@ -84,7 +83,7 @@
 #' @importFrom rlang !!! .data is_empty syms
 #' @importFrom tibble tibble tribble
 #' @importFrom tidyr drop_na expand_grid unite
-
+#'
 #' @rdname UNIDO
 #' @export
 readUNIDO <- function(subtype = 'INDSTAT3')
@@ -260,7 +259,7 @@ convertUNIDO <- function(x, subtype = 'INDSTAT3', exclude = TRUE)
                 c('country' = 'un')
             ) %>%
             select(-'country') %>%
-            assert(not_na, everything())
+          assertr::assert(assertr::not_na, everything())
 
     }
 
