@@ -30,11 +30,11 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   if ("SSP2IndiaDEAs" %in% scenario) {
     scenario <- c(scenario[!grepl("SSP2IndiaDEAs", scenario)], c("SSP2IndiaMedium", "SSP2IndiaHigh"))
   }
-  ## SSP2 scenario always required
-  if (!"SSP2" %in% scenario) {
-    scenario <- c("SSP2", scenario)
-  }
 
+  remind_scenarios <- c(
+    paste0("SSP", c(1:5, "2_lowEn", "2_highDemDEU", "2IndiaHigh", "2IndiaMedium")),
+    paste0("SDP", c("", "_EI", "_RC", "_MC"))
+  )
 
   # ---- Industry subsectors data and FE stubs ----
   stationary <- readSource("Stationary", subset = scenario)[, , c("feindheat", "feh2i")]
@@ -152,11 +152,6 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
     remind[, , getNames(tmp)] <- tmp
   }
-
-  remind_scenarios <- c(
-    paste0("SSP", c(1:5, "2_lowEn", "2_highDemDEU", "2IndiaHigh", "2IndiaMedium")),
-    paste0("SDP", c("", "_EI", "_RC", "_MC"))
-  )
 
   remind_years <- seq(1995, 2150, 5)
 
@@ -1383,7 +1378,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
   remind <- mbind(remind,
                   industry_subsectors_en[, remind_years, ],
-                  industry_subsectors_ue[, remind_years, ])
+                  industry_subsectors_ue[, remind_years, ]) %>%
+    mselect(scenario = scenario)
 
   # ---- _ prepare output ----
   list(x = remind,
