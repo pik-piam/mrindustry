@@ -533,8 +533,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
   ### per-capita projections ----
   . <- NULL
-  popScen <- scenario[
-    scenario %in% mrdrivers::toolGetScenarioDefinition(driver = "Population", aslist = TRUE)$scenario
+  popScen <- remind_scenarios[
+    remind_scenarios %in% mrdrivers::toolGetScenarioDefinition(driver = "Population", aslist = TRUE)$scenario
   ]
 
   if (use_ODYM_RECC) {
