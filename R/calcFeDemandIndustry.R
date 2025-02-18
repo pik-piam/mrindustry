@@ -37,7 +37,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   )
 
   # ---- Industry subsectors data and FE stubs ----
-  stationary <- readSource("Stationary", subset = scenario)[, , c("feindheat", "feh2i")]
+  stationary <- readSource("Stationary", subset = remind_scenarios)[, , c("feindheat", "feh2i")]
 
   # aggregate to 5-year averages to suppress volatility
   stationary <- mrremind::toolAggregateTimeSteps(stationary)
