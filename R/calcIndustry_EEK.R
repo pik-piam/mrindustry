@@ -27,6 +27,7 @@ calcIndustry_EEK <- function(kap) {
   industry_VA <- calcOutput(
     type = 'Industry_Value_Added',
     subtype = 'economic',
+    scenario = "SSP2",
     match.steel.historic.values = TRUE,
     match.steel.estimates = 'IEA_ETP',
     China_Production = readSource(type = 'ExpertGuess',
@@ -38,7 +39,6 @@ calcIndustry_EEK <- function(kap) {
     supplementary = FALSE,
     warnNA = FALSE
   ) %>%
-    `[`(,,'SSP2') %>%
     quitte::magclass_to_tibble() %>%
     select('iso3c', subsector = 'name', VA = 'value') %>%
     mutate(subsector = sub('_VA$', '', .data$subsector))

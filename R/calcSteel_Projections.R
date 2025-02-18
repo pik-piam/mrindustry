@@ -44,6 +44,7 @@
 #' @importFrom magclass setNames
 #' @export
 calcSteel_Projections <- function(subtype = 'production',
+                                  scenario = "SSP2",
                                   match.steel.historic.values = TRUE,
                                   match.steel.estimates = 'none',
                                   save.plots = NULL,
@@ -222,31 +223,21 @@ calcSteel_Projections <- function(subtype = 'production',
            # million people * 1e6/million = people
            population = .data$population * 1e6)
 
-  ## GDP projections ----
-  GDP <- calcOutput("GDP",
-                    scenario = c("SSPs", "SDPs"),
-                    average2020 = FALSE,
-                    naming = "scenario",
-                    aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
-           GDP = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # $m * 1e6 $/$m = $
-           GDP = .data$GDP * 1e6)
+  ## population data ----
+  population <- calcOutput("Population", scenario = scenario, aggregate = FALSE) %>%
+    tibble::as_tibble() %>%
+    dplyr::select("scenario" = "variable", "iso3c", "year", "population" = "value") %>%
+    quitte::character.data.frame() %>%
+    # million people * 1e6/million = people
+    dplyr::mutate(population = .data$population * 1e6)
 
-  ## population ----
-  population <- calcOutput("Population", scenario = c("SSPs", "SDPs"), naming = "scenario", aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
-           population = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # million people * 1e6/million = people
-           population = .data$population * 1e6)
+  ## GDP data ----
+  GDP <- calcOutput(type = "GDP", scenario = scenario, average2020 = FALSE, aggregate = FALSE) %>%
+    tibble::as_tibble() %>%
+    dplyr::select("scenario" = "variable", "iso3c", "year", "GDP" = "value") %>%
+    quitte::character.data.frame() %>%
+    # $m * 1e6 $/$m = $
+    dplyr::mutate(GDP = .data$GDP * 1e6)
 
   # estimate steel stock distribution ----
   regression_data <- steel_stock_per_capita %>%

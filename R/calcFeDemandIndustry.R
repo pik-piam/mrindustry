@@ -35,6 +35,9 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     paste0("SSP", c(1:5, "2_lowEn", "2_highDemDEU", "2IndiaHigh", "2IndiaMedium")),
     paste0("SDP", c("", "_EI", "_RC", "_MC"))
   )
+  gdpPopScen <- remind_scenarios[
+    remind_scenarios %in% mrdrivers::toolGetScenarioDefinition(driver = "GDPpc", aslist = TRUE)$scenario
+  ]
 
   # ---- Industry subsectors data and FE stubs ----
   stationary <- readSource("Stationary", subset = remind_scenarios)[, , c("feindheat", "feh2i")]
@@ -174,6 +177,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   industry_subsectors_ue <- mbind(
     calcOutput(
       type = "Industry_Value_Added",
+      scenario = gdpPopScen,
       match.steel.historic.values = TRUE,
       match.steel.estimates = "IEA_ETP",
       China_Production = readSource(type = "ExpertGuess",
@@ -187,6 +191,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     calcOutput(
       type = "Steel_Projections",
       subtype = "production",
+      scenario = gdpPopScen,
       match.steel.historic.values = TRUE,
       match.steel.estimates = "IEA_ETP",
       China_Production = readSource(type = "ExpertGuess",
@@ -199,11 +204,8 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   )
 
   ## re-curve specific industry activity per unit GDP ----
-  gdpScen <- remind_scenarios[
-    remind_scenarios %in% mrdrivers::toolGetScenarioDefinition(driver = "GDP", aslist = TRUE)$scenario
-  ]
   GDP <- calcOutput("GDP",
-                    scenario = gdpScen,
+                    scenario = gdpPopScen,
                     average2020 = FALSE,
                     years = sort(union(remind_years, last_empirical_year:max(fixing_year$fixing_year))),
                     aggregate = FALSE) %>%
@@ -533,9 +535,6 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
 
   ### per-capita projections ----
   . <- NULL
-  popScen <- remind_scenarios[
-    remind_scenarios %in% mrdrivers::toolGetScenarioDefinition(driver = "Population", aslist = TRUE)$scenario
-  ]
 
   if (use_ODYM_RECC) {
     foo4 <- bind_rows(
@@ -559,7 +558,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
         ) %>%
         select(-"scenario", -"GDP", -"year") %>%
         inner_join(
-          calcOutput("Population", scenario = popScen, aggregate = FALSE, years = remind_years) %>%
+          calcOutput("Population", scenario = gdpPopScen, aggregate = FALSE, years = remind_years) %>%
             magclass_to_tibble() %>%
             select("iso3c", "scenario" = "variable", "year", "population" = "value") %>%
             filter(
@@ -682,15 +681,13 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   }
 
   ### future subsector FE shares from IEA ETP 2017 ----
-  IEA_ETP_Ind_FE_shares <- readSource("IEA_ETP", "industry",
-                                      convert = FALSE) %>%
+  IEA_ETP_Ind_FE_shares <- readSource("IEA_ETP", "industry", convert = FALSE) %>%
     # filter for OECD and Non-OECD regions and RTS scenario
     `[`(c("OECD", "Non-OECD"), , "RTS", pmatch = "left") %>%
     # convert to data frame
     as.data.frame() %>%
     as_tibble() %>%
-    select(region = "Region", year = "Year", variable = "Data2",
-           value = "Value") %>%
+    select(region = "Region", year = "Year", variable = "Data2", value = "Value") %>%
     character.data.frame() %>%
     mutate(year = as.integer(as.character(.data$year))) %>%
     # filter for future data
