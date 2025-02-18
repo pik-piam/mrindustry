@@ -6,6 +6,7 @@
 #'     production.
 #'   - `secondary.steel.max.share` Returns the maximum share of secondary steel
 #'     in total steel production.
+#' @param scenario string or vector of strings, designating the scenarios to be returned.
 #' @param match.steel.historic.values Should steel production trajectories match
 #'   historic values?
 #' @param match.steel.estimates Should steel production trajectories match
@@ -27,7 +28,7 @@
 #' @seealso [`calcOutput()`]
 #'
 #' @importFrom dplyr case_when bind_rows between distinct first last n
-#'   mutate pull right_join select semi_join vars
+#'   mutate pull right_join select semi_join vars bind_cols
 #' @importFrom ggplot2 aes coord_cartesian expand_limits facet_wrap geom_area
 #'   geom_line geom_path geom_point ggplot ggsave guide_legend labs
 #'   scale_colour_manual scale_fill_discrete scale_fill_manual
@@ -35,12 +36,10 @@
 #' @importFrom quitte character.data.frame df_populate_range duplicate
 #'   list_to_data_frame madrat_mule magclass_to_tibble order.levels
 #'   seq_range sum_total_
-#' @importFrom readr write_rds
 #' @importFrom stats nls SSlogis sd lm
 #' @importFrom tibble as_tibble tibble tribble
 #' @importFrom tidyr expand_grid pivot_longer pivot_wider replace_na
 #' @importFrom utils head
-#' @importFrom dplyr bind_cols
 #' @importFrom magclass setNames
 #' @export
 calcSteel_Projections <- function(subtype = 'production',
@@ -75,7 +74,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      'med',
       'SSP3',      'med',
       'SSP4',      'med',
-      'SSP5',      'high') %>%
+      'SSP5',      'high',
+      'SSP2IndiaHigh',   'med',
+      'SSP2IndiaMedium', 'med') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     tribble(
@@ -99,7 +100,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      'SSP2',
       'SSP3',      'SSP2',
       'SSP4',      'SSP4',
-      'SSP5',      'SSP2') %>%
+      'SSP5',      'SSP2',
+      'SSP2IndiaHigh',   'SSP2',
+      'SSP2IndiaMedium', 'SSP2') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     tribble(
@@ -112,7 +115,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      '2100',
       'SSP3',      '2100',
       'SSP4',      '2010',
-      'SSP5',      '2100') %>%
+      'SSP5',      '2100',
+      'SSP2IndiaHigh',   '2100',
+      'SSP2IndiaMedium', '2100') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     tribble(
@@ -125,7 +130,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      '1',
       'SSP3',      '1',
       'SSP4',      '1',
-      'SSP5',      '0.75') %>%
+      'SSP5',      '0.75',
+      'SSP2IndiaHigh',   '1',
+      'SSP2IndiaMedium', '1') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     NULL) %>%
@@ -1262,7 +1269,7 @@ calcSteel_Projections <- function(subtype = 'production',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p, file = file.path(save.plots, '6_Steel_production.rds'))
+    readr::write_rds(x = p, file = file.path(save.plots, '6_Steel_production.rds'))
   }
 
   list(x = x,

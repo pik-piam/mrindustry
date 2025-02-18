@@ -1,7 +1,7 @@
 #' Calculates FE demand in industry as REMIND variables
 #'
 #' @md
-#' @param scenario string or vector of strings, e.g. c("SSPs").
+#' @param scenario string or vector of strings, designating the scenarios to be returned.
 #' @param use_ODYM_RECC per-capita pathways for `SDP_xx` scenarios?  (Defaults
 #'   to `FALSE`.)
 #' @param last_empirical_year Last year for which empirical data is available.

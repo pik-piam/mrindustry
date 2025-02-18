@@ -4,6 +4,7 @@
 #' @param subtype One of
 #'   - `physical` Returns physical production trajectories for cement.
 #'   - `economic` Returns value added trajectories for all subsectors.
+#' @param scenario string or vector of strings, designating the scenarios to be returned.
 #' @param match.steel.historic.values Should steel production trajectories match
 #'   historic values?
 #' @param match.steel.estimates Should steel production trajectories match
@@ -34,7 +35,6 @@
 #' @importFrom quitte character.data.frame df_populate_range duplicate
 #'   list_to_data_frame madrat_mule magclass_to_tibble order.levels
 #'   seq_range sum_total_
-#' @importFrom readr write_rds
 #' @importFrom stats lm nls nls.control SSlogis sd
 #' @importFrom tibble as_tibble tibble tribble
 #' @importFrom tidyr expand_grid pivot_longer pivot_wider replace_na
@@ -437,9 +437,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '04_Steel_VA_regressions_projections.rds'))
+    readr::write_rds(x = p, file = file.path(save.plots, '04_Steel_VA_regressions_projections.rds'))
   }
 
   # ========================================================================== =
@@ -827,9 +825,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '01_Cement_regression_projection.rds'))
+    readr::write_rds(x = p, file = file.path(save.plots, '01_Cement_regression_projection.rds'))
   }
 
   # ========================================================================== =
@@ -904,9 +900,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '05_Cement_VA_regressions_projections.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '05_Cement_VA_regressions_projections.rds'))
   }
 
   # ========================================================================== =
@@ -1097,9 +1093,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '02_Chemicals_regression_projection.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '02_Chemicals_regression_projection.rds'))
   }
 
   # ======================================================================== ===
@@ -1186,9 +1182,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '03_Industry_regression_projection.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '03_Industry_regression_projection.rds'))
   }
 
   # calculate other Industries Value Added projections ----
@@ -1327,9 +1323,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '05_Value_Added_projection.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '05_Value_Added_projection.rds'))
   }
 
   # ========================================================================== =

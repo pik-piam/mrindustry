@@ -6,6 +6,7 @@
 \usage{
 calcIndustry_Value_Added(
   subtype = "physical",
+  scenario = "SSP2",
   match.steel.historic.values = TRUE,
   match.steel.estimates = "none",
   save.plots = NULL,
@@ -19,6 +20,8 @@ calcIndustry_Value_Added(
 \item \code{physical} Returns physical production trajectories for cement.
 \item \code{economic} Returns value added trajectories for all subsectors.
 }}
+
+\item{scenario}{string or vector of strings, designating the scenarios to be returned.}
 
 \item{match.steel.historic.values}{Should steel production trajectories match
 historic values?}
