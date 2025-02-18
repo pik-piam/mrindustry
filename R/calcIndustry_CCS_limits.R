@@ -87,7 +87,7 @@ calcIndustry_CCS_limits <- function(
   remind_timesteps <- unique(quitte::remind_timesteps$period)
 
   ## read SSP2 industry activity ----
-  ind_activity <- calcOutput('FEdemand', aggregate = FALSE, years = remind_timesteps) %>%
+  ind_activity <- calcOutput("FEdemand", scenario = "SSP2", aggregate = FALSE, years = remind_timesteps) %>%
     `[`(,,paste0('SSP2.', c('ue_cement', 'ue_chemicals', 'ue_steel_primary'))) %>%
     magclass_to_tibble() %>%
     mutate(subsector = sub('ue_([^_]+).*', '\\1', .data$item), .keep = 'unused') %>%

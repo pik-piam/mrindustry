@@ -4,6 +4,7 @@
 #' @param subtype One of
 #'   - `physical` Returns physical production trajectories for cement.
 #'   - `economic` Returns value added trajectories for all subsectors.
+#' @param scenario string or vector of strings, designating the scenarios to be returned.
 #' @param match.steel.historic.values Should steel production trajectories match
 #'   historic values?
 #' @param match.steel.estimates Should steel production trajectories match
@@ -25,7 +26,6 @@
 #'
 #' @seealso [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na verify within_bounds
 #' @importFrom dplyr case_when bind_rows between distinct first last n
 #'   mutate pull right_join select semi_join vars
 #' @importFrom ggplot2 aes coord_cartesian expand_limits facet_wrap geom_area
@@ -35,7 +35,6 @@
 #' @importFrom quitte character.data.frame df_populate_range duplicate
 #'   list_to_data_frame madrat_mule magclass_to_tibble order.levels
 #'   seq_range sum_total_
-#' @importFrom readr write_rds
 #' @importFrom stats lm nls nls.control SSlogis sd
 #' @importFrom tibble as_tibble tibble tribble
 #' @importFrom tidyr expand_grid pivot_longer pivot_wider replace_na
@@ -45,6 +44,7 @@
 #' @export
 #'
 calcIndustry_Value_Added <- function(subtype = 'physical',
+                                     scenario = "SSP2",
                                      match.steel.historic.values = TRUE,
                                      match.steel.estimates = 'none',
                                      save.plots = NULL,
@@ -79,30 +79,20 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
 
 
   ## population data ----
-  population <- calcOutput("Population", scenario = c("SSPs", "SDPs"), naming = "scenario", aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
-           population = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # million people * 1e6/million = people
-           population = .data$population * 1e6)
+  population <- calcOutput("Population", scenario = scenario, aggregate = FALSE) %>%
+    tibble::as_tibble() %>%
+    dplyr::select("scenario" = "variable", "iso3c", "year", "population" = "value") %>%
+    quitte::character.data.frame() %>%
+    # million people * 1e6/million = people
+    dplyr::mutate(population = .data$population * 1e6)
 
   ## GDP data ----
-  GDP <- calcOutput(type = "GDP",
-                    scenario = c("SSPs", "SDPs"),
-                    average2020 = FALSE,
-                    naming = "scenario",
-                    aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
-           GDP = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # $m * 1e6 $/$m = $
-           GDP = .data$GDP * 1e6)
+  GDP <- calcOutput(type = "GDP", scenario = scenario, average2020 = FALSE, aggregate = FALSE) %>%
+    tibble::as_tibble() %>%
+    dplyr::select("scenario" = "variable", "iso3c", "year", "GDP" = "value") %>%
+    quitte::character.data.frame() %>%
+    # $m * 1e6 $/$m = $
+    dplyr::mutate(GDP = .data$GDP * 1e6)
 
   ## ---- load cement production data ----
   data_cement_production <- calcOutput('Cement', aggregate = FALSE,
@@ -326,6 +316,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
              'GDPpC', 'steel.VApt'),
 
     calcOutput(type = 'Steel_Projections',
+               scenario = scenario,
                match.steel.historic.values = match.steel.historic.values,
                match.steel.estimates = match.steel.estimates,
                China_Production = China_Production,
@@ -342,7 +333,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
                             '\\1.production', .data$variable)) %>%
       filter(between(.data$year, 2000, 2100)) %>%
       full_join(region_mapping, 'iso3c') %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       group_by(!!!syms(c('scenario', 'region', 'iso3c', 'year'))) %>%
       summarise(steel.production = sum(.data$value), .groups = 'drop'),
 
@@ -446,9 +437,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '04_Steel_VA_regressions_projections.rds'))
+    readr::write_rds(x = p, file = file.path(save.plots, '04_Steel_VA_regressions_projections.rds'))
   }
 
   # ========================================================================== =
@@ -836,9 +825,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '01_Cement_regression_projection.rds'))
+    readr::write_rds(x = p, file = file.path(save.plots, '01_Cement_regression_projection.rds'))
   }
 
   # ========================================================================== =
@@ -913,9 +900,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '05_Cement_VA_regressions_projections.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '05_Cement_VA_regressions_projections.rds'))
   }
 
   # ========================================================================== =
@@ -1106,9 +1093,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '02_Chemicals_regression_projection.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '02_Chemicals_regression_projection.rds'))
   }
 
   # ======================================================================== ===
@@ -1195,9 +1182,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '03_Industry_regression_projection.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '03_Industry_regression_projection.rds'))
   }
 
   # calculate other Industries Value Added projections ----
@@ -1256,7 +1243,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
       c('scenario', 'iso3c', 'year')
     ) %>%
     pivot_longer(matches('VA$')) %>%
-    assert(within_bounds(0, Inf), .data$value) %>%
+    assertr::assert(assertr::within_bounds(0, Inf), .data$value) %>%
     group_by(!!!syms(c('scenario', 'region', 'year', 'name'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop') %>%
     pivot_wider() %>%
@@ -1336,9 +1323,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '05_Value_Added_projection.rds'))
+    readr::write_rds(x = p,
+                     file = file.path(save.plots,
+                                      '05_Value_Added_projection.rds'))
   }
 
   # ========================================================================== =
@@ -1352,7 +1339,7 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
       select('scenario', 'iso3c', 'year', ue_cement = 'cement.production',
              ue_chemicals = 'chemicals.VA', ue_otherInd = 'otherInd.VA') %>%
       pivot_longer(matches('^ue_'), names_to = 'pf') %>%
-      verify(!(is.na(.data$value) & between(.data$year, 2000, 2100))) %>%
+      assertr::verify(!(is.na(.data$value) & between(.data$year, 2000, 2100))) %>%
       # t/year * 1e-9 Gt/t = Gt/year      | cement
       # $/year * 1e-12 $tn/$ = $tn/year   | chemicals and other industry
       mutate(
@@ -1379,10 +1366,9 @@ calcIndustry_Value_Added <- function(subtype = 'physical',
   }
 
   # return statement ----
-  return(list(x = x %>%
-                as.magpie(spatial = 2, temporal = 4, data = 5),
-              weight = NULL,
-              unit = 'trillion US$2017/year',
-              description = 'chemicals and other industry value added'))
+  list(x = as.magpie(x, spatial = 2, temporal = 4, data = 5),
+       weight = NULL,
+       unit = 'trillion US$2017/year',
+       description = 'chemicals and other industry value added')
 
 }

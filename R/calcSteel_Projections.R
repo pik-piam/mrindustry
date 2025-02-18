@@ -6,6 +6,7 @@
 #'     production.
 #'   - `secondary.steel.max.share` Returns the maximum share of secondary steel
 #'     in total steel production.
+#' @param scenario string or vector of strings, designating the scenarios to be returned.
 #' @param match.steel.historic.values Should steel production trajectories match
 #'   historic values?
 #' @param match.steel.estimates Should steel production trajectories match
@@ -26,9 +27,8 @@
 #'
 #' @seealso [`calcOutput()`]
 #'
-#' @importFrom assertr assert not_na verify within_bounds
 #' @importFrom dplyr case_when bind_rows between distinct first last n
-#'   mutate pull right_join select semi_join vars
+#'   mutate pull right_join select semi_join vars bind_cols
 #' @importFrom ggplot2 aes coord_cartesian expand_limits facet_wrap geom_area
 #'   geom_line geom_path geom_point ggplot ggsave guide_legend labs
 #'   scale_colour_manual scale_fill_discrete scale_fill_manual
@@ -36,15 +36,14 @@
 #' @importFrom quitte character.data.frame df_populate_range duplicate
 #'   list_to_data_frame madrat_mule magclass_to_tibble order.levels
 #'   seq_range sum_total_
-#' @importFrom readr write_rds
 #' @importFrom stats nls SSlogis sd lm
 #' @importFrom tibble as_tibble tibble tribble
 #' @importFrom tidyr expand_grid pivot_longer pivot_wider replace_na
 #' @importFrom utils head
-#' @importFrom dplyr bind_cols
 #' @importFrom magclass setNames
 #' @export
 calcSteel_Projections <- function(subtype = 'production',
+                                  scenario = "SSP2",
                                   match.steel.historic.values = TRUE,
                                   match.steel.estimates = 'none',
                                   save.plots = NULL,
@@ -75,7 +74,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      'med',
       'SSP3',      'med',
       'SSP4',      'med',
-      'SSP5',      'high') %>%
+      'SSP5',      'high',
+      'SSP2IndiaHigh',   'med',
+      'SSP2IndiaMedium', 'med') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     tribble(
@@ -99,7 +100,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      'SSP2',
       'SSP3',      'SSP2',
       'SSP4',      'SSP4',
-      'SSP5',      'SSP2') %>%
+      'SSP5',      'SSP2',
+      'SSP2IndiaHigh',   'SSP2',
+      'SSP2IndiaMedium', 'SSP2') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     tribble(
@@ -112,7 +115,9 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      '2100',
       'SSP3',      '2100',
       'SSP4',      '2010',
-      'SSP5',      '2100') %>%
+      'SSP5',      '2100',
+      'SSP2IndiaHigh',   '2100',
+      'SSP2IndiaMedium', '2100') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     tribble(
@@ -125,11 +130,14 @@ calcSteel_Projections <- function(subtype = 'production',
       'SSP2',      '1',
       'SSP3',      '1',
       'SSP4',      '1',
-      'SSP5',      '0.75') %>%
+      'SSP5',      '0.75',
+      'SSP2IndiaHigh',   '1',
+      'SSP2IndiaMedium', '1') %>%
       pivot_longer(-'scenario', names_to = 'switch'),
 
     NULL) %>%
-    pivot_wider(names_from = 'switch')
+    pivot_wider(names_from = 'switch') %>%
+    dplyr::filter(.data$scenario %in% .env$scenario)
 
   `EDGE-Industry_scenario_switches` <- EDGE_scenario_switches %>%
       select(
@@ -158,7 +166,7 @@ calcSteel_Projections <- function(subtype = 'production',
   region_mapping__Belgium_Luxembourg <- region_mapping %>%
     filter(.data$iso3c %in% c('BEL', 'LUX')) %>%
     distinct(.data$region) %>%
-    verify(1 == length(.data$region)) %>%
+    assertr::verify(1 == length(.data$region)) %>%
     mutate(iso3c = 'blx')
 
   ## country mapping for Müller data ----
@@ -194,60 +202,45 @@ calcSteel_Projections <- function(subtype = 'production',
 
 
   ## historic per-capita steel stock estimates ----
-  steel_stock_per_capita <- readSource(type = 'Mueller', subtype = 'stocks',
-                                       convert = FALSE) %>%
+  steel_stock_per_capita <- readSource(type = 'Mueller', subtype = 'stocks', convert = FALSE) %>%
     madrat_mule() %>%
     # remove Netherlands Antilles, only use Bonaire, Sint Eustatius and Saba;
     # Curaçao; and Sint Maarten (Dutch part)
     filter('ANT' != .data$iso3c)
 
   ## historic per-capita GDP ----
-  GDPpC_history <- readSource(type = 'James', subtype = 'IHME_USD05_PPP_pc',
-                              convert = FALSE) %>%
+  GDPpC_history <- readSource(type = 'James', subtype = 'IHME_USD05_PPP_pc', convert = FALSE) %>%
     as_tibble() %>%
     select('iso3c' = 'ISO3', 'year' = 'Year', 'value') %>%
     GDPuc::toolConvertGDP(unit_in = 'constant 2005 US$MER',
-               unit_out = mrdrivers::toolGetUnitDollar(),
-               replace_NAs = 'with_USA') %>%
+                          unit_out = mrdrivers::toolGetUnitDollar(),
+                          replace_NAs = 'with_USA') %>%
     rename(GDPpC = 'value') %>%
     character.data.frame()
 
   ## historic population ----
   population_history <- calcOutput("PopulationPast", pastData = "UN_PopDiv", aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(iso3c = .data$Region, year = .data$Year,
-           population = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # million people * 1e6/million = people
-           population = .data$population * 1e6)
+    tibble::as_tibble() %>%
+    dplyr::select("iso3c", "year", "population" = "value") %>%
+    quitte::character.data.frame() %>%
+    # million people * 1e6/million = people
+    dplyr::mutate(population = .data$population * 1e6)
 
-  ## GDP projections ----
-  GDP <- calcOutput("GDP",
-                    scenario = c("SSPs", "SDPs"),
-                    average2020 = FALSE,
-                    naming = "scenario",
-                    aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
-           GDP = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # $m * 1e6 $/$m = $
-           GDP = .data$GDP * 1e6)
+  ## population data ----
+  population <- calcOutput("Population", scenario = scenario, aggregate = FALSE) %>%
+    tibble::as_tibble() %>%
+    dplyr::select("scenario" = "variable", "iso3c", "year", "population" = "value") %>%
+    quitte::character.data.frame() %>%
+    # million people * 1e6/million = people
+    dplyr::mutate(population = .data$population * 1e6)
 
-  ## population ----
-  population <- calcOutput("Population", scenario = c("SSPs", "SDPs"), naming = "scenario", aggregate = FALSE) %>%
-    as.data.frame() %>%
-    as_tibble() %>%
-    select(scenario = .data$Data1, iso3c = .data$Region, year = .data$Year,
-           population = .data$Value) %>%
-    character.data.frame() %>%
-    mutate(year = as.integer(.data$year),
-           # million people * 1e6/million = people
-           population = .data$population * 1e6)
+  ## GDP data ----
+  GDP <- calcOutput(type = "GDP", scenario = scenario, average2020 = FALSE, aggregate = FALSE) %>%
+    tibble::as_tibble() %>%
+    dplyr::select("scenario" = "variable", "iso3c", "year", "GDP" = "value") %>%
+    quitte::character.data.frame() %>%
+    # $m * 1e6 $/$m = $
+    dplyr::mutate(GDP = .data$GDP * 1e6)
 
   # estimate steel stock distribution ----
   regression_data <- steel_stock_per_capita %>%
@@ -273,7 +266,7 @@ calcSteel_Projections <- function(subtype = 'production',
         filter(.estimate == .data$estimate,
                between(.data$steel.stock.per.capita, 0, Asym)) %>%
         mutate(x = .data$steel.stock.per.capita  / Asym) %>%
-        select(.data$x, y = .data$GDPpC)
+        select("x", "y" = "GDPpC")
     ) %>%
       getElement('coefficients') %>%
       setNames(NULL)
@@ -303,17 +296,18 @@ calcSteel_Projections <- function(subtype = 'production',
   steel_stock_estimates <- full_join(
     # GDP, population to calculate per-capita GDP
     full_join(GDP, population, c('scenario', 'iso3c', 'year')) %>%
-      assert(not_na, everything()),
+      assertr::assert(assertr::not_na, everything()),
 
     # regression parameters mapped to GDP and population scenarios
     full_join(
       regression_parameters,
 
       `EDGE-Industry_scenario_switches` %>%
-        select('scenario', estimate = 'steel.stock.estimate'),
+        dplyr::select("scenario", "estimate" = "steel.stock.estimate"),
 
       'estimate'
-    ),
+    ) %>%
+      dplyr::filter(!is.na(scenario)),
 
     'scenario'
   ) %>%
@@ -336,26 +330,25 @@ calcSteel_Projections <- function(subtype = 'production',
                       Asym = .data$Asym, xmid = .data$xmid, scal = .data$scal),
       source = 'computation') %>%
     select('scenario', 'iso3c', 'year', 'value', 'source') %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   steel_stock_estimates <- bind_rows(
     steel_stock_estimates,
 
     steel_stock_per_capita %>%
       filter(.data$year >= min(steel_stock_estimates$year)) %>%
-      full_join(
+      inner_join(
         `EDGE-Industry_scenario_switches` %>%
           select('scenario', estimate = 'steel.stock.estimate'),
 
         'estimate'
       ) %>%
-      select(.data$scenario, .data$iso3c, .data$year,
-             value = .data$steel.stock.per.capita) %>%
+      select("scenario", "iso3c", "year", "value" = "steel.stock.per.capita") %>%
       mutate(source = 'Pauliuk')
   ) %>%
     full_join(region_mapping, 'iso3c') %>%
     pivot_wider(names_from = 'source') %>%
-    assert(not_na, .data$computation,
+    assertr::assert(assertr::not_na, .data$computation,
            error_fun = function(errors, data) {
              rows <- lapply(errors, function(x) { x$error_df$index }) %>%
                unlist() %>%
@@ -383,77 +376,77 @@ calcSteel_Projections <- function(subtype = 'production',
       steel.stock.per.capita = ifelse(is.na(.data$mix),
                                       .data$computation, .data$mix)) %>%
     select('scenario', 'iso3c', 'region', 'year', 'steel.stock.per.capita') %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   rm(list = c('fade_start', 'fade_end'))
 
   ## update SSP4 ----
-  # SSP4 uses SSP2 estimates for OECD countries and SSP1 estimates for non-OECD
-  # countries
-  steel_stock_estimates <- bind_rows(
-    # non-masked scenarios
-    steel_stock_estimates %>%
-      anti_join(
+  # SSP4 uses SSP2 estimates for OECD countries and SSP1 estimates for non-OECD countries
+  if ("SSP4" %in% scenario) {
+    steel_stock_estimates <- bind_rows(
+      # non-masked scenarios
+      steel_stock_estimates %>%
+        anti_join(
+          `EDGE-Industry_scenario_switches` %>%
+            select(.data$scenario,
+                   .data$scenario.mask.OECD, .data$`scenario.mask.non-OECD`) %>%
+            filter(  !is.na(.data$scenario.mask.OECD)
+                     & !is.na(.data$`scenario.mask.non-OECD`)) %>%
+            select(.data$scenario),
+
+          'scenario'
+        ) %>%
+        assertr::assert(assertr::not_na, everything()),
+
+      # masked scenarios, OECD countries
+      left_join(
         `EDGE-Industry_scenario_switches` %>%
-          select(.data$scenario,
-                 .data$scenario.mask.OECD, .data$`scenario.mask.non-OECD`) %>%
-          filter(  !is.na(.data$scenario.mask.OECD)
-                 & !is.na(.data$`scenario.mask.non-OECD`)) %>%
-          select(.data$scenario),
+          select('scenario', 'scenario.mask.OECD') %>%
+          filter(!is.na(.data$scenario.mask.OECD)) %>%
+          rename(scenario.mask = 'scenario',
+                 scenario = 'scenario.mask.OECD'),
+
+        steel_stock_estimates %>%
+          filter(.data$iso3c %in% OECD_iso3c),
 
         'scenario'
       ) %>%
-      assert(not_na, everything()),
+        select(-'scenario', 'scenario' = 'scenario.mask') %>%
+        assertr::assert(assertr::not_na, everything()),
 
-    # masked scenarios, OECD countries
-    left_join(
-      `EDGE-Industry_scenario_switches` %>%
-        select('scenario', 'scenario.mask.OECD') %>%
-        filter(!is.na(.data$scenario.mask.OECD)) %>%
-        rename(scenario.mask = 'scenario',
-               scenario = 'scenario.mask.OECD'),
+      # masked scenarios, non-OECD countries
+      left_join(
+        `EDGE-Industry_scenario_switches` %>%
+          select('scenario', 'scenario.mask.non-OECD') %>%
+          filter(!is.na(.data$`scenario.mask.non-OECD`)) %>%
+          rename(scenario.mask = 'scenario',
+                 scenario = 'scenario.mask.non-OECD'),
 
-      steel_stock_estimates %>%
-        filter(.data$iso3c %in% OECD_iso3c),
+        steel_stock_estimates %>%
+          filter(!.data$iso3c %in% OECD_iso3c),
 
-      'scenario'
+        'scenario'
+      ) %>%
+        select(-'scenario', 'scenario' = 'scenario.mask') %>%
+        assertr::assert(assertr::not_na, everything())
     ) %>%
-      select(-'scenario', 'scenario' = 'scenario.mask') %>%
-      assert(not_na, everything()),
+      assertr::assert(assertr::not_na, everything())
+  }
 
-    # masked scenarios, non-OECD countries
-    left_join(
-      `EDGE-Industry_scenario_switches` %>%
-        select('scenario', 'scenario.mask.non-OECD') %>%
-        filter(!is.na(.data$`scenario.mask.non-OECD`)) %>%
-        rename(scenario.mask = 'scenario',
-               scenario = 'scenario.mask.non-OECD'),
-
-      steel_stock_estimates %>%
-        filter(!.data$iso3c %in% OECD_iso3c),
-
-      'scenario'
-    ) %>%
-      select(-'scenario', 'scenario' = 'scenario.mask') %>%
-      assert(not_na, everything())
-  ) %>%
-    assert(not_na, everything())
 
   ## calculate regional and global totals, as well as absolute stocks ----
   steel_stock_estimates <- steel_stock_estimates %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     full_join(population, c('scenario', 'iso3c', 'year')) %>%
     group_by(.data$scenario, .data$year, .data$region) %>%
-    sum_total_(group = 'iso3c', value = 'steel.stock.per.capita',
-               weight = 'population') %>%
+    sum_total_(group = 'iso3c', value = 'steel.stock.per.capita', weight = 'population') %>%
     ungroup(.data$region) %>%
-    sum_total_(group = 'iso3c', value = 'steel.stock.per.capita',
-               weight = 'population') %>%
+    sum_total_(group = 'iso3c', value = 'steel.stock.per.capita', weight = 'population') %>%
     ungroup() %>%
     filter(!(.data$region == 'World' & .data$iso3c != 'Total')) %>%
     # absolute stocks
     mutate(steel.stock = .data$steel.stock.per.capita * .data$population) %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   if ('steel_stock_estimates' == subtype) {
     return(list(
@@ -467,7 +460,7 @@ calcSteel_Projections <- function(subtype = 'production',
   # steel stock lifetimes are projected to converge from regional averages in
   # 2010 towards the global average in 2100
   lifetime_regions <- lifetime %>%
-    select(.data$iso3c, .data$lifetime) %>%
+    select("iso3c", "lifetime") %>%
     full_join(filter(GDP, 2010 == .data$year), 'iso3c') %>%
     inner_join(region_mapping, 'iso3c') %>%
     filter(!is.na(.data$lifetime)) %>%
@@ -498,7 +491,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
     c('scenario', 'region')
   ) %>%
-    pivot_longer(c(.data$`2010`, .data$`2100`),
+    pivot_longer(c("2010", "2100"),
                  names_to = 'year', names_transform = list(year = as.integer),
                  values_to = 'lifetime',
                  values_transform = list(lifetime = as.numeric))
@@ -513,10 +506,10 @@ calcSteel_Projections <- function(subtype = 'production',
     inner_join(
       `EDGE-Industry_scenario_switches` %>%
         select(
-          .data$scenario,
-          base.scenario      = .data$steel.stock.lifetime.base.scenario,
-          convergence.year   = .data$steel.stock.lifetime.convergence.year,
-          convergence.factor = .data$steel.stock.lifetime.convergence.factor
+          "scenario",
+          "base.scenario"      = "steel.stock.lifetime.base.scenario",
+          "convergence.year"   = "steel.stock.lifetime.convergence.year",
+          "convergence.factor" = "steel.stock.lifetime.convergence.factor"
         ) %>%
         mutate(convergence.factor = as.numeric(.data$convergence.factor),
                convergence.year   = as.integer(.data$convergence.year)),
@@ -643,13 +636,11 @@ calcSteel_Projections <- function(subtype = 'production',
       trade.share  = ifelse(!is.na(.data$use),
                             .data$trade / .data$use,
                             .data$import.share + .data$export.share)) %>%
-    select('iso3c', 'region', 'year', 'import.share', 'export.share',
-           'trade.share')
+    select('iso3c', 'region', 'year', 'import.share', 'export.share', 'trade.share')
 
   # calculate steel production ----
   steel_trade_share_2015 <- steel_trade_shares %>%
-    filter('Total' != .data$iso3c,
-           2015 == .data$year) %>%
+    filter('Total' != .data$iso3c, 2015 == .data$year) %>%
     select('region', 'iso3c', 'trade.share')
 
   # duplicate Belgium and Luxembourg from Belgium-Luxembourg
@@ -661,7 +652,7 @@ calcSteel_Projections <- function(subtype = 'production',
       filter('blx' == .data$iso3c) %>%
       pivot_wider(names_from = 'iso3c', values_from = 'trade.share') %>%
       mutate(LUX = .data$blx) %>%
-      rename(BEL = .data$blx) %>%
+      rename("BEL" = "blx") %>%
       pivot_longer(-'region', names_to = 'iso3c', values_to = 'trade.share')
   )
 
@@ -723,18 +714,18 @@ calcSteel_Projections <- function(subtype = 'production',
       mutate(value = .data$value * .data$population) %>%
       select('region', 'iso3c', 'year', 'variable', 'value')
   ) %>%
-    assert(not_na, everything())
+    assertr::assert(assertr::not_na, everything())
 
   ## calculate secondary steel max share ----
   secondary.steel.max.switches <- calcOutput(
     type = 'industry_max_secondary_steel_share',
-    scenarios = unique(population$scenario),
+    scenarios = scenario,
     regions = unique(region_mapping$region),
-    aggregate = FALSE) %>%
+    aggregate = FALSE
+  ) %>%
     as.data.frame() %>%
     as_tibble() %>%
-    select(scenario = 'Data1', region = 'Data2', name = 'Data3',
-           value = 'Value') %>%
+    select(scenario = 'Data1', region = 'Data2', name = 'Data3', value = 'Value') %>%
     mutate(name = paste0('secondary.steel.max.share.', .data$name)) %>%
     pivot_wider() %>%
     character.data.frame()
@@ -796,7 +787,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'region'
       ) %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
   )
 
   ## calculate primary and secondary production ----
@@ -815,7 +806,7 @@ calcSteel_Projections <- function(subtype = 'production',
     inner_join(steel_trade_share_2015 %>% select(-'region'), 'iso3c') %>%
     left_join(lifetime_projections, c('scenario', 'region', 'year')) %>%
     select(-'steel.stock.per.capita', -'population') %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     pivot_longer(c(-'scenario', -'iso3c', -'region', -'year')) %>%
     interpolate_missing_periods_(
       periods = list('year' = seq_range(range(.$year)))) %>%
@@ -899,7 +890,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
       'variable'
     ) %>%
-    assert(not_na, everything()) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
     # t/year * 1e-6 Gt/t = Gt/year
     mutate(value = .data$value * 1e-9) %>%
     select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -958,7 +949,7 @@ calcSteel_Projections <- function(subtype = 'production',
       mutate(value = .data$value * .data$factor) %>%
       ungroup() %>%
       select(-'historic', -'factor') %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     ## make zero values explicit ----
     tmp <- tmp %>%
@@ -967,7 +958,7 @@ calcSteel_Projections <- function(subtype = 'production',
                nesting(!!sym('region'), !!sym('iso3c')),
                year   = unique(!!sym('year')),
                fill = list(value = 0)) %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     ## update max secondary steel shares ----
     update.secondary.steel.max.share <- function(production,
@@ -987,7 +978,7 @@ calcSteel_Projections <- function(subtype = 'production',
       ) %>%
         mutate(share = pmax(.data$share, .data$max.share, na.rm = TRUE)) %>%
         select(all_of(colnames(secondary.steel.max.share))) %>%
-        assert(not_na, everything())
+        assertr::assert(assertr::not_na, everything())
     }
 
     secondary.steel.max.share <- update.secondary.steel.max.share(
@@ -1005,7 +996,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'variable'
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       # t/year * 1e-9 Gt/t = Gt/year
       mutate(value = .data$value * 1e-9) %>%
       select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -1047,7 +1038,7 @@ calcSteel_Projections <- function(subtype = 'production',
       left_join(tmp, c('scenario', 'iso3c', 'year')) %>%
       mutate(value = .data$value * .data$factor) %>%
       select(-'factor') %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     ## construct output ----
     x <- tmp %>%
@@ -1061,7 +1052,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'variable'
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       # t/year * 1e-9 Gt/t = Gt/year
       mutate(value = .data$value * 1e-9) %>%
       select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -1119,9 +1110,9 @@ calcSteel_Projections <- function(subtype = 'production',
                  ETP = .data$ETP - .data$total.production) %>%
           select(-'total.production')
       ) %>%
-        verify(expr = .data$ETP > 0,
-               description = paste('exogenous Chinese production does not exceed',
-                                   'IEA ETP Non-OECD production'))
+        assertr::verify(expr = .data$ETP > 0,
+                        description = paste('exogenous Chinese production does not exceed',
+                                            'IEA ETP Non-OECD production'))
     }
 
     scaling_factor <- inner_join(
@@ -1164,7 +1155,7 @@ calcSteel_Projections <- function(subtype = 'production',
                                        yleft = first(na.omit(.data$factor)),
                                        yright = last(na.omit(.data$factor)))) %>%
       ungroup() %>%
-      assert(not_na, everything())
+      assertr::assert(assertr::not_na, everything())
 
     if (!is.data.frame(China_Production)) {
       IEA_ETP_matched <- tmp %>%
@@ -1211,7 +1202,7 @@ calcSteel_Projections <- function(subtype = 'production',
 
         'variable'
       ) %>%
-      assert(not_na, everything()) %>%
+      assertr::assert(assertr::not_na, everything()) %>%
       # t/year * 1e-9 Gt/t = Gt/year
       mutate(value = .data$value * 1e-9) %>%
       select('scenario', 'iso3c', 'pf', 'year', 'value') %>%
@@ -1243,7 +1234,6 @@ calcSteel_Projections <- function(subtype = 'production',
   }
 
   if (!is.null(save.plots)) {
-
     p <- ggplot() +
       geom_area(
         data = x %>%
@@ -1279,14 +1269,11 @@ calcSteel_Projections <- function(subtype = 'production',
            device = 'png', path = save.plots, bg = 'white',
            width = 18, height = 14, units = 'cm', scale = 1.73)
 
-    write_rds(x = p,
-              file = file.path(save.plots,
-                               '6_Steel_production.rds'))
+    readr::write_rds(x = p, file = file.path(save.plots, '6_Steel_production.rds'))
   }
 
-  # return statement ----
-  return(list(x = x,
-              weight = NULL,
-              unit = 'Gt steel/year',
-              description = 'primary and secondary steel production'))
+  list(x = x,
+       weight = NULL,
+       unit = 'Gt steel/year',
+       description = 'primary and secondary steel production')
 }
