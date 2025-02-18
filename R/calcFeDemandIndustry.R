@@ -416,122 +416,120 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
       assertr::assert(assertr::not_na, everything())
   )
 
-  foo3 <- bind_rows(
-    foo2,
+  ### specific production relative baseline ----
+  helper1 <- industry_subsectors_material_relative %>%
+    left_join(
+      foo2 %>%
+        mutate(specific.production = .data$value / .data$GDP) %>%
+        select(base.scenario = "scenario", "subsector", "iso3c", "year",
+               "specific.production") %>%
+        full_join(region_mapping_21, "iso3c"),
 
-    ### specific production relative baseline ----
-    industry_subsectors_material_relative %>%
-      left_join(
-        foo2 %>%
-          mutate(specific.production = .data$value / .data$GDP) %>%
-          select(base.scenario = "scenario", "subsector", "iso3c", "year",
-                 "specific.production") %>%
-          full_join(region_mapping_21, "iso3c"),
+      by = c("base.scenario", "region", "subsector"),
+      relationship = "many-to-many"
+    ) %>%
+    left_join(
+      bind_rows(
+        foo,
 
-        by = c("base.scenario", "region", "subsector"),
-        relationship = "many-to-many"
+        foo %>%
+          filter("SSP2" == .data$scenario) %>%
+          mutate(scenario = "SSP2_highDemDEU")
+
+      )  %>%
+        select("scenario", "subsector", "iso3c", "year", "GDP", "value"),
+
+      c("scenario", "subsector", "iso3c", "year")
+    ) %>%
+    assertr::assert(assertr::not_na, everything()) %>%
+    left_join(fixing_year, by = c('scenario', 'region')) %>%
+    assertr::assert(assertr::not_na, 'fixing_year',
+                    description = paste('missing fixing_year for scenario in',
+                                        'material_relative')) %>%
+    # scale factor in over 15 years
+    mutate(l = pmin(1, pmax(0, (.data$year - .data$fixing_year) / 15)),
+           value = .data$specific.production
+           * .data$GDP
+           * (.data$factor * .data$l + 1 * (1 - .data$l))) %>%
+    select(all_of(colnames(foo)))
+
+  ### specific production change relative baseline ----
+  helper2 <- full_join(
+    # base scenario data
+    foo %>%
+      rename(base.scenario = "scenario") %>%
+      semi_join(
+        industry_subsectors_material_relative_change,
+
+        c("base.scenario", "subsector")
       ) %>%
-      left_join(
-        bind_rows(
-          foo,
+      pivot_longer(c('GDP', 'value')) %>%
+      interpolate_missing_periods_(
+        periods = list(
+          'year' = sort(union(
+            unique(foo$year),
+            seq.int(last_empirical_year, max(fixing_year$fixing_year)))))) %>%
+      pivot_wider() %>%
+      full_join(region_mapping_21, "iso3c"),
 
-          foo %>%
-            filter("SSP2" == .data$scenario) %>%
-            mutate(scenario = "SSP2_highDemDEU")
+    # change parameters
+    industry_subsectors_material_relative_change,
 
-        )  %>%
-          select("scenario", "subsector", "iso3c", "year", "GDP", "value"),
-
-        c("scenario", "subsector", "iso3c", "year")
-      ) %>%
-      assertr::assert(assertr::not_na, everything()) %>%
-      left_join(fixing_year, by = c('scenario', 'region')) %>%
-      assertr::assert(assertr::not_na, 'fixing_year',
-             description = paste('missing fixing_year for scenario in',
-                                 'material_relative')) %>%
-      # scale factor in over 15 years
-      mutate(l = pmin(1, pmax(0, (.data$year - .data$fixing_year) / 15)),
-             value = .data$specific.production
-                   * .data$GDP
-                   * (.data$factor * .data$l + 1 * (1 - .data$l))) %>%
-      select(all_of(colnames(foo))),
-
-    ### specific production change relative baseline ----
-    full_join(
-      # base scenario data
+    c("base.scenario", "region", "subsector")
+  ) %>%
+    select("scenario", "iso3c", "region", "subsector", "year",
+           base.value = "value", base.GDP = "GDP", "factor") %>%
+    # GDP trajectories of target scenarios
+    left_join(
       foo %>%
-        rename(base.scenario = "scenario") %>%
-        semi_join(
-          industry_subsectors_material_relative_change,
-
-          c("base.scenario", "subsector")
-        ) %>%
-        pivot_longer(c('GDP', 'value')) %>%
+        select("scenario", "iso3c", "subsector", "year", "GDP") %>%
         interpolate_missing_periods_(
           periods = list(
             'year' = sort(union(
               unique(foo$year),
-              seq.int(last_empirical_year, max(fixing_year$fixing_year)))))) %>%
-        pivot_wider() %>%
-        full_join(region_mapping_21, "iso3c"),
+              seq.int(last_empirical_year,
+                      max(fixing_year$fixing_year))))),
+          value = 'GDP'),
 
-      # change parameters
-      industry_subsectors_material_relative_change,
-
-      c("base.scenario", "region", "subsector")
+      c("scenario", "iso3c", "subsector", "year")
     ) %>%
-      select("scenario", "iso3c", "region", "subsector", "year",
-             base.value = "value", base.GDP = "GDP", "factor") %>%
-      # GDP trajectories of target scenarios
-      left_join(
-        foo %>%
-          select("scenario", "iso3c", "subsector", "year", "GDP") %>%
-            interpolate_missing_periods_(
-                periods = list(
-                    'year' = sort(union(
-                      unique(foo$year),
-                      seq.int(last_empirical_year,
-                              max(fixing_year$fixing_year))))),
-                value = 'GDP'),
-
-        c("scenario", "iso3c", "subsector", "year")
-      ) %>%
-      left_join(fixing_year, by = c('scenario', 'region')) %>%
-      assertr::assert(assertr::not_na, 'fixing_year',
-             description = paste('missing fixing_year for scenario in',
-                                 'material_relative_change')) %>%
-      group_by(!!!syms(c("scenario", "iso3c", "subsector"))) %>%
-      mutate(
-        # specific production of base scenarios
-        base.specific.production = .data$base.value / .data$base.GDP,
-        # change in specific production of base scenarios relative to 2020
-        base.change = ( .data$base.specific.production
+    left_join(fixing_year, by = c('scenario', 'region')) %>%
+    assertr::assert(assertr::not_na, 'fixing_year',
+                    description = paste('missing fixing_year for scenario in',
+                                        'material_relative_change')) %>%
+    group_by(!!!syms(c("scenario", "iso3c", "subsector"))) %>%
+    mutate(
+      # specific production of base scenarios
+      base.specific.production = .data$base.value / .data$base.GDP,
+      # change in specific production of base scenarios relative to 2020
+      base.change = ( .data$base.specific.production
                       / .data$base.specific.production[   .data$fixing_year
-                                                       == .data$year]),
-        # modified change of target scenarios
-        # If base change is below (above) 1, i.e. material efficiency is
-        # improving (deteriorating), efficiency gains (losses) are halved
-        # (doubled).  Changes of historic values (i.e. before 2015) are
-        # identical to base scenario.  Not finite changes (e.g. division by
-        # zero) lead to constant values.
-        change = case_when(
-          !is.finite(.data$base.change) ~ 1,
-          .data$year <= .data$fixing_year        ~ .data$base.change,
-          TRUE ~  ( ( (.data$base.change - 1)
+                                                          == .data$year]),
+      # modified change of target scenarios
+      # If base change is below (above) 1, i.e. material efficiency is
+      # improving (deteriorating), efficiency gains (losses) are halved
+      # (doubled).  Changes of historic values (i.e. before 2015) are
+      # identical to base scenario.  Not finite changes (e.g. division by
+      # zero) lead to constant values.
+      change = case_when(
+        !is.finite(.data$base.change) ~ 1,
+        .data$year <= .data$fixing_year        ~ .data$base.change,
+        TRUE ~  ( ( (.data$base.change - 1)
                     * .data$factor ^ sign(1 - .data$base.change)
-                    )
-                  + 1)),
-        specific.production =
-          ( .data$base.specific.production[.data$fixing_year == .data$year]
+        )
+        + 1)),
+      specific.production =
+        ( .data$base.specific.production[.data$fixing_year == .data$year]
           * .data$change
-          ),
-        value = ifelse(  !is.finite(.data$base.change)
+        ),
+      value = ifelse(  !is.finite(.data$base.change)
                        | .data$year <= .data$fixing_year,
                        .data$base.value,
                        .data$specific.production * .data$GDP)) %>%
-      ungroup() %>%
-      select("scenario", "iso3c", "subsector", "year", "value", "GDP")
-  )
+    ungroup() %>%
+    select("scenario", "iso3c", "subsector", "year", "value", "GDP")
+
+  foo3 <- bind_rows(foo2, helper1, helper2)
 
   ### per-capita projections ----
   . <- NULL
@@ -681,6 +679,42 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   }
 
   ### future subsector FE shares from IEA ETP 2017 ----
+  helper3 <- tribble(
+    ~subsector,    ~fety,    ~variable,
+    "cement",      "feso",   "Industry|Cement - final energy consumption|Coal",
+    "cement",      "feso",   "Industry|Cement - final energy consumption|Biomass",
+    "cement",      "feso",   "Industry|Cement - final energy consumption|Waste",
+    "cement",      "feso",   "Industry|Cement - final energy consumption|Other renewables",
+    "cement",      "feli",   "Industry|Cement - final energy consumption|Oil",
+    "cement",      "fega",   "Industry|Cement - final energy consumption|Natural gas",
+    "cement",      "feel",   "Industry|Cement - final energy consumption|Electricity",
+
+    "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Coal",
+    "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Biomass",
+    "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Waste",
+    "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Other renewables",
+    "chemicals",   "feli",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Oil",
+    "chemicals",   "fega",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Natural gas",
+    "chemicals",   "feel",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Electricity",
+
+    "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Coal",
+    "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Biomass",
+    "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Waste",
+    "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Other renewables",
+    "steel",       "feli",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Oil",
+    "steel",       "fega",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Natural gas",
+    "steel",       "feel",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Electricity",
+
+    "total",       "feso",   "Industry|Total industry final energy consumption|Coal",
+    "total",       "feso",   "Industry|Total industry final energy consumption|Biomass",
+    "total",       "feso",   "Industry|Total industry final energy consumption|Waste",
+    "total",       "feso",   "Industry|Total industry final energy consumption|Other renewables",
+    "total",       "feli",   "Industry|Total industry final energy consumption|Oil",
+    "total",       "fega",   "Industry|Total industry final energy consumption|Natural gas",
+    "total",       "fehe",   "Industry|Total industry final energy consumption|Heat",
+    "total",       "feel",   "Industry|Total industry final energy consumption|Electricity"
+  )
+
   IEA_ETP_Ind_FE_shares <- readSource("IEA_ETP", "industry", convert = FALSE) %>%
     # filter for OECD and Non-OECD regions and RTS scenario
     `[`(c("OECD", "Non-OECD"), , "RTS", pmatch = "left") %>%
@@ -693,44 +727,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
     # filter for future data
     filter(max(industry_subsectors_en$year) < .data$year) %>%
     # rename variables
-    right_join(
-      tribble(
-        ~subsector,    ~fety,    ~variable,
-        "cement",      "feso",   "Industry|Cement - final energy consumption|Coal",
-        "cement",      "feso",   "Industry|Cement - final energy consumption|Biomass",
-        "cement",      "feso",   "Industry|Cement - final energy consumption|Waste",
-        "cement",      "feso",   "Industry|Cement - final energy consumption|Other renewables",
-        "cement",      "feli",   "Industry|Cement - final energy consumption|Oil",
-        "cement",      "fega",   "Industry|Cement - final energy consumption|Natural gas",
-        "cement",      "feel",   "Industry|Cement - final energy consumption|Electricity",
-
-        "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Coal",
-        "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Biomass",
-        "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Waste",
-        "chemicals",   "feso",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Other renewables",
-        "chemicals",   "feli",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Oil",
-        "chemicals",   "fega",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Natural gas",
-        "chemicals",   "feel",   "Industry|Chemicals and petrochemicals - final energy consumption and chemical feedstock|Electricity",
-
-        "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Coal",
-        "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Biomass",
-        "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Waste",
-        "steel",       "feso",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Other renewables",
-        "steel",       "feli",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Oil",
-        "steel",       "fega",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Natural gas",
-        "steel",       "feel",   "Industry|Iron and steel - final energy consumption incl_ blast furnaces and coke ovens|Electricity",
-
-        "total",       "feso",   "Industry|Total industry final energy consumption|Coal",
-        "total",       "feso",   "Industry|Total industry final energy consumption|Biomass",
-        "total",       "feso",   "Industry|Total industry final energy consumption|Waste",
-        "total",       "feso",   "Industry|Total industry final energy consumption|Other renewables",
-        "total",       "feli",   "Industry|Total industry final energy consumption|Oil",
-        "total",       "fega",   "Industry|Total industry final energy consumption|Natural gas",
-        "total",       "fehe",   "Industry|Total industry final energy consumption|Heat",
-        "total",       "feel",   "Industry|Total industry final energy consumption|Electricity"),
-
-      "variable"
-    ) %>%
+    right_join(helper3, "variable") %>%
     # drop faulty data
     # - 2055/OECD/Chemicals (all zero)
     anti_join(
@@ -815,15 +812,13 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
       semi_join(
         industry_subsectors_en %>%
           distinct(.data$pf) %>%
-          separate("pf", c("fety", "subsector"), sep = "_",
-                   extra = "merge"),
-
-        c("fety", "subsector")
+          separate("pf", c("fety", "subsector"), sep = "_", extra = "merge"),
+        by = c("fety", "subsector")
       ) %>%
       unite("pf", c("fety", "subsector"), sep = "_") %>%
       # extend to SSP scenarios
       mutate(scenario = "SSP1") %>%
-      complete(nesting(.data$year, .data$region, .data$pf, !!sym("share")),
+      complete(nesting(!!sym("year"), !!sym("region"), !!sym("pf"), !!sym("share")),
                scenario = unique(sub("\\..*$", "", getNames(industry_subsectors_ue)))),
 
     # split feel_steel into primary and secondary steel
@@ -1356,7 +1351,7 @@ calcFeDemandIndustry <- function(scenario, use_ODYM_RECC = FALSE, last_empirical
   ) %>%
     mutate(value = .data$level * .data$specific.energy) %>%
     select("scenario", "iso3c", "year", "subsector", "value") %>%
-    assert(is.finite, "value") %>%
+    assertr::assert(is.finite, "value") %>%
     inner_join(
       industry_subsectors_en_shares %>%
         full_join(region_mapping_21, "region") %>%
