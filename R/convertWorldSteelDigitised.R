@@ -1,117 +1,59 @@
 #' Convert data World Steel Association digitised 1978-2022 yearbooks.
 #' @author Merlin Jo Hosak
 #' @param x Magpie object
-convertWorldSteelDigitised <- function(x, subtype="world_production") {
-  # ---- Functions ----
-  production_decade_convert <- function(x, withSCG=FALSE, modern=FALSE) {
-    x <- x * 1e3  # convert from kt to t
-    ignore <- c("Total Central America", "Total Industrial Cta_", "Total Mlddle East", "Total Western Europe without EU", "Total Western World","E_C_ Total", "Other Central America", "Other Middle East", "SubTotal", "Total Africa", "Total Asia", "Total Eastern Europe", "Total Latin America", "Total Middle East", "Total North America", "Total Oceania", "Total Western Europe")
-    countries <- getItems(x,dim=1)
-    
-    map <- c("F_R_ of Germany"="DEU",
-             "F_R_ Germany"="DEU",
-             "F_ R_ Germany"="DEU",
-             "German Democratic Republic" = "DDR",
-             "German Dem_ Rep_" = "DDR",
-             "Slovak  Republic"="SVK",
-             "Byelorussia"="BLR",
-             "Dem_ Rep_ Of Korea" = "PRK",
-             "D_P_R_ Korea" = "PRK",
-             "R_o_Korea"="KOR",
-             "Luxemburg" = "LUX",
-             "Phillipines" = "PHL",
-             "Rhodesia" = "ZWE",
-             "Yugoslavla" = "YUG",
-             "F_R_ Yugoslavia" = "SCG",
-             "Mainland China"="CHN",
-             "Taiwan (R_O_C_)"="TWN",
-             "Taiwan, China"="TWN",
-             "former U_S_S_R_"="SUN",
-             "Viet  Nam"="VNM",
-             "Zaire"="COD",
-             "U_S_S_R_"="SUN")
-    
-    getItems(x, dim=1) <- toolCountry2isocode(countries,ignoreCountries=ignore,mapping=map)
-    # remove rows with NA in country_name column
-    x <- x[!is.na(getItems(x, dim=1)), ]
-    
-    # remove other Asia and Africa (magpie maps them automatically to 
-    # IAS and IAF, can not be ignored)
-    x <- x[getItems(x, dim=1) != 'IAS',]
-    x <- x[getItems(x, dim=1) != 'IAF',]
-    
-    
-    # add two Germanies (West/East, FRG/DDR)
-    x['DEU',] <- x['DEU',] + x['DDR',]
-    x <- x[getItems(x, dim=1) != 'DDR', ]
-    
-    # split historical regions currently not possible due to wrong split year
-    # y <- madrat::toolISOhistorical(x)
-    
-    # TODO: only interim solution -> e.g. Soviet Union should not just be 
-    # mapped onto Russia, but split into its successor states, not possible 
-    # for now because of historicla mapping. Also problematic because in 90s
-    # potentially there is actually some data for Russia
-    
-    if (modern) {
-      x <- toolCountryFill(x, verbosity=2)
-      return(x)
-    }
-    
-    soviet_union <- x['SUN',]
-    czechoslobakia <- x['CSK',]
-    yugoslavia <- x['YUG',]
-    if (withSCG) {
-      serbia_montenegro <- x['SCG',]
-    }
-    
-    x <- x[getItems(x, dim=1) != 'SUN', ]
-    x <- x[getItems(x, dim=1) != 'CSK', ]
-    x <- x[getItems(x, dim=1) != 'YUG', ]
-    x <- x[getItems(x, dim=1) != 'SCG', ]
-    
-    x <- toolCountryFill(x, verbosity=2)
-    
-    x['RUS',] <- soviet_union
-    x['CZE',] <- czechoslobakia
-    x['SRB',] <- yugoslavia
-    
-    if (withSCG) {
-      x['SRB',] <- x['SRB',] + serbia_montenegro
-    }
-    
-    # fill countries without data
-    # z <- toolCountryFill(x, fill = NA, verbosity = 2)
-    
-    return(x)
-  }
-  
+convertWorldSteelDigitised <- function(x, subtype="production_1969-2009") {
   # ---- list all available subtypes with functions doing all the work ----
   
   switchboard <- list(
-    'world_production' = function(x) {
-      x <- x * 1e6  # convert from Mt to t
-      return(x)
-    },
+    'production_1969-2009' = function(x) {
+      x <- x * 1e3  # convert from kt to t
+      
+      # Add soviet union countries that are not part of the dataset yet and fill
+      # them with 0, as they are needed to split soviet union data into current
+      # countries.
+      
+      missing_countries <- new.magpie(
+        cells_and_regions = c('KGZ', 'TJK', 'TKM'),
+        years = getItems(x, dim=2),
+        names = "value",
+        fill = 0,
+        sets = names(dimnames(x))
+      )
+      
+      x <- mbind(x, missing_countries)
+      
+      # TODO rewrite?:
+      #
+      # Add two Germanies (West/East, FRG/DDR). Another option would be to label 
+      # the West German data before 1990 as 'BRG' instead of 'DEU' and then
+      # toolISOhistorical would add it automatically, but this would add way more 
+      # lines of code then necessary. This would also entail mapping GDR data to
+      # 'GDR' instead of 'DDR' which is its (former) official ISO code.
+      # The other option is to change the mapping 'ISOhistorical.csv'
+      # for that function to automatically perform this operation, but this will
+      # likely create problems with other files that have DEU (West Germany) data 
+      # but no DDR data. Lastly, one could add an additional mapping in the 
+      # function call like this:
+      # y<-toolISOhistorical(x,mapping=list(c('DDR','DEU','y1990'),c('DEU','DEU','y1990')),overwrite=T)
+      # but when tried it does not work because the function still expects GDR/BRG
+      # data. Hence the easiest option here:
+      
+      
+      
     
-    'production_1969-1979' = function(x) {
-      x <- production_decade_convert(x)
-      return(x)
-    },
-    
-    'production_1980-1989' = function(x) {
-      x <- production_decade_convert(x)
-      return(x)
-    },
-    
-    'production_1990-1999' = function(x) {
-      x <- production_decade_convert(x)
-      return(x)
-    },
-    
-    'production_2000-2009' = function(x) {
-      x <- production_decade_convert(x)
-      return(x)
+      
+      # countries are split by share in the first year where new countries were 
+      # formed, thereby getting rid of Yugoslavia (YUG), Czechoslovakia (CSK),
+      # Soviet Union (SUN) and F.R. Yugoslavia / Serbia & Montenegro (SCG)
+      # warnings suppressed as in some of these countries (e.g. Estonia 1992 no 
+      # data was available and hence there it's replaced with 0)
+      y <- suppressWarnings(toolISOhistorical(x, overwrite=TRUE))
+      
+      # Fill missing countries with NA values, will be changed in calc file.
+      # Verbosity is 2 so that no warning shows up about these added countries.
+      z <- toolCountryFill(y, verbosity=2) 
+      
+      return(z)
     },
     
     NULL)
