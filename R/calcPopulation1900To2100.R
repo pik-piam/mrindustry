@@ -13,11 +13,11 @@
 #' @return List with Magpie object of population and metadata in calcOutput 
 #' format.
 #' @export
-calcPopulation200 <- function(scenario='SSP2') {
-  pop <- getPopulation200Data(scenario=scenario)
+calcPopulation1900To2100 <- function(scenario='SSP2') {
+  pop <- getPopulation1900To2100Data(scenario=scenario)
   
   # get yearly resolution for future
-  pop$future <- time_interpolate(pop$current,2030:2100)
+  pop$future <- time_interpolate(pop$current,2030:2150)
   pop$current <- mbind(pop$current[,1960:2029],pop$future)
 
   # extrapolate with Gapminder dataset as reference data for countries where such data exists
@@ -42,7 +42,7 @@ calcPopulation200 <- function(scenario='SSP2') {
 }
 
 
-getPopulation200Data <- function(scenario) {
+getPopulation1900To2100Data <- function(scenario) {
   # Load datasets, convert to inhabitants, get one year resolution 
   # via linear interpolation
   
@@ -56,7 +56,7 @@ getPopulation200Data <- function(scenario) {
   # therefore interpolated to 1 year resolution. It is used to extrapolate 
   # 20th century data for the remaining regions.
   pop_world_hist <- readSource('UN_PopDiv', subtype='pop', subset='1900-2150', convert=F)
-  pop_world_hist <- time_interpolate(pop_world_hist,1900:2100)
+  pop_world_hist <- time_interpolate(pop_world_hist,1900:2150)
   
   # The mrdrivers calcPopulation function provides population data from 1960 on
   pop_current <- calcOutput('Population', scenario=scenario, aggregate=F)

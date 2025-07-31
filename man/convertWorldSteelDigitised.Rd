@@ -4,7 +4,7 @@
 \alias{convertWorldSteelDigitised}
 \title{Convert data World Steel Association digitised 1978-2022 yearbooks.}
 \usage{
-convertWorldSteelDigitised(x, subtype = "production_1969-2009")
+convertWorldSteelDigitised(x, subtype = "production")
 }
 \arguments{
 \item{x}{Magpie object}

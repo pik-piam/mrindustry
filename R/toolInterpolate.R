@@ -97,7 +97,7 @@ extrapolate2D <- function(x, regions, extrapolate_method='constant', ref=NA) {
     if (all(regions %in% ref_regions)) {
       all_regions_in_ref <- TRUE
     } else if ('GLO' %in% ref_regions) {
-      ref_row <- ref['GLO']
+      ref_row <- ref['GLO',]
     } else {
       stop("For extrapolation by reference, all regions in x must be present 
       in the reference data or a global region 'GLO' must be present.")
@@ -116,6 +116,7 @@ extrapolate2D <- function(x, regions, extrapolate_method='constant', ref=NA) {
                                         ref=ref_row)
     
   }
+  return(x)
 } 
 
 extendXWithRef <- function(x, ref) {
@@ -166,6 +167,8 @@ toolExtrapolateRegion <- function(row,
   if (!is.magpie(row)) {
     stop("Input must be a magpie object.")
   }
+  
+  getItems(ref_row, dim=1) <- getItems(row, dim=1)  # ensure that ref_row has the same regions as row if row
   
   # Get the years and values
   years <- colnames(row)

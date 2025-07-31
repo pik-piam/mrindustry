@@ -38,7 +38,7 @@ calcSteelProduction <- function() {
 getSteelProductionData <- function() {
   # load data
   prod_hist <- readSource('WorldSteelDigitised', subtype='world_production',convert=F)
-  prod_recent <- readSource('WorldSteelDigitised', subtype='production_1969-2009')
+  prod_recent <- readSource('WorldSteelDigitised', subtype='production')
   prod_current <- readSource('WorldSteelDatabase', subtype='production')
   
   return(list(hist=prod_hist, 

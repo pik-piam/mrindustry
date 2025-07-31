@@ -1,19 +1,21 @@
 #' Convert data World Steel Association digitised 1978-2022 yearbooks.
 #' @author Merlin Jo Hosak
 #' @param x Magpie object
-convertWorldSteelDigitised <- function(x, subtype="production_1969-2009") {
+convertWorldSteelDigitised <- function(x, subtype="production") {
   # ---- list all available subtypes with functions doing all the work ----
-  
-  switchboard <- list(
-    'production_1969-2009' = function(x) {
-      x <- x * 1e3  # convert from kt to t
-      
-      # Add soviet union countries that are not part of the dataset yet and fill
-      # them with 0, as they are needed to split soviet union data into current
-      # countries.
-      
+  normalWSDigitisedConvert <- function(x) {
+    x <- x * 1e3  # convert from kt to t
+    
+    # get new countries that will be added to the dataset 
+    countries <- getItems(x, dim=1)
+    new_countries <- read.csv2(system.file("extdata", "ISOhistorical.csv", package = "madrat"))
+    new_countries <- new_countries[new_countries$fromISO %in% countries, "toISO"]
+    missing_countries <- setdiff(new_countries, countries)
+    
+    # if missing ocountry list is not empty extend x 
+    if (length(missing_countries) > 0) {
       missing_countries <- new.magpie(
-        cells_and_regions = c('KGZ', 'TJK', 'TKM'),
+        cells_and_regions = missing_countries,
         years = getItems(x, dim=2),
         names = "value",
         fill = 0,
@@ -21,38 +23,61 @@ convertWorldSteelDigitised <- function(x, subtype="production_1969-2009") {
       )
       
       x <- mbind(x, missing_countries)
-      
-      # TODO rewrite?:
-      #
-      # Add two Germanies (West/East, FRG/DDR). Another option would be to label 
-      # the West German data before 1990 as 'BRG' instead of 'DEU' and then
-      # toolISOhistorical would add it automatically, but this would add way more 
-      # lines of code then necessary. This would also entail mapping GDR data to
-      # 'GDR' instead of 'DDR' which is its (former) official ISO code.
-      # The other option is to change the mapping 'ISOhistorical.csv'
-      # for that function to automatically perform this operation, but this will
-      # likely create problems with other files that have DEU (West Germany) data 
-      # but no DDR data. Lastly, one could add an additional mapping in the 
-      # function call like this:
-      # y<-toolISOhistorical(x,mapping=list(c('DDR','DEU','y1990'),c('DEU','DEU','y1990')),overwrite=T)
-      # but when tried it does not work because the function still expects GDR/BRG
-      # data. Hence the easiest option here:
-      
-      
-      
+    }
     
-      
-      # countries are split by share in the first year where new countries were 
-      # formed, thereby getting rid of Yugoslavia (YUG), Czechoslovakia (CSK),
-      # Soviet Union (SUN) and F.R. Yugoslavia / Serbia & Montenegro (SCG)
-      # warnings suppressed as in some of these countries (e.g. Estonia 1992 no 
-      # data was available and hence there it's replaced with 0)
-      y <- suppressWarnings(toolISOhistorical(x, overwrite=TRUE))
-      
+    # if HGK is in data, add it to China as for REMIND it does not make a difference
+    if ('HGK' %in% countries) {
+      x['CHN', ] <- x['CHN', ] + x['HGK', ]
+      x <- x[!rownames(x) %in% 'HGK', ]
+    }
+    
+    y <- toolISOhistorical(x, overwrite=TRUE) %>% suppressWarnings()
+    # Fill missing countries with NA values, will be changed in calc file.
+    # Verbosity is 2 so that no warning shows up about these added countries.
+    z <- toolCountryFill(y, verbosity=2) 
+    
+    return(z)
+  }
+  
+  switchboard <- list(
+    'production' = function(x) {
+      x <- normalWSDigitisedConvert(x)
+      return(x)
+    },
+    
+    'imports' = function(x) {
+      x <- normalWSDigitisedConvert(x)
+      return(x)
+    },
+    
+    'exports' = function(x) {
+      x <- normalWSDigitisedConvert(x)
+      return(x)
+    },
+    
+    'scrap_imports' = function(x) {
+      x <- normalWSDigitisedConvert(x)
+      return(x)
+    },
+    
+    'scrap_exports' = function(x) {
+      x <- normalWSDigitisedConvert(x)
+      return(x)
+    },
+    
+    'indirect_imports' = function(x) {
+      x <- toolISOhistorical(x, overwrite=TRUE) %>% suppressWarnings()
       # Fill missing countries with NA values, will be changed in calc file.
       # Verbosity is 2 so that no warning shows up about these added countries.
-      z <- toolCountryFill(y, verbosity=2) 
-      
+      z <- toolCountryFill(x, verbosity=2) 
+      return(z)
+    },
+    
+    'indirect_exports' = function(x) {
+      x <- toolISOhistorical(x, overwrite=TRUE) %>% suppressWarnings()
+      # Fill missing countries with NA values, will be changed in calc file.
+      # Verbosity is 2 so that no warning shows up about these added countries.
+      z <- toolCountryFill(x, verbosity=2) 
       return(z)
     },
     
