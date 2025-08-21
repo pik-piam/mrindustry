@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticIncinRate <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions

@@ -1,11 +1,10 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcAllChemicalMat2Ue <- function() {
 
   # ---------------------------------------------------------------------------
-  # 1. Define Material-to-UE Conversion Factors
+  # Define Material-to-UE Conversion Factors
   #    - p37_mat2ue: Conversion factors (mat2ue) for selected products.
   #      The conversion factors are expressed in 2017$/kg or 2017$/kgN.
   # ---------------------------------------------------------------------------

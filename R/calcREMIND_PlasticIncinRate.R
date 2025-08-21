@@ -1,7 +1,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcREMIND_PlasticIncinRate <- function() {
   REMIND_PlasticIncinRate <- calcOutput("OECD_PlasticIncinRate") %>%
     as.data.frame() %>%

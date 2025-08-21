@@ -19,7 +19,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcIFA_ChemAppend <- function(subtype, unitNitrogen = FALSE) {
   x <- readSource("IFA_ChemAppend", subtype = subtype)
   

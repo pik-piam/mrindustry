@@ -6,7 +6,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcAllChemicalFlow2005_2020 <- function() {
   
   # ---------------------------------------------------------------------------

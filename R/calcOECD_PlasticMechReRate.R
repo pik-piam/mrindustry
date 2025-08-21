@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticMechReRate <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions

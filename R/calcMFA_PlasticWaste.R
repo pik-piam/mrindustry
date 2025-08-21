@@ -6,7 +6,7 @@
 #'                  \item export
 #'                  \item import
 #'                }
-#' @export
+#'
 calcMFA_PlasticWaste<- function() {
   
   PlasticWaste <- read.csv("C:/Users/MiniTOP/Flodym/simson/recycling_by_region_year.csv", header = TRUE, sep = ",") %>%

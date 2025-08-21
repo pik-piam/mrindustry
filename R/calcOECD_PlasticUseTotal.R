@@ -5,7 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #' @importFrom dplyr if_else
-#' @export
 calcOECD_PlasticUseTotal <- function() {
   # ---------------------------------------------------------------------------
   # Load & clean regional use data (1990–2019)

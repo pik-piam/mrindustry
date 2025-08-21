@@ -5,7 +5,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 #' @param CCS boolean parameter whether CCS technologies are considered as such in 2020 or assumed to be technologies without CCS
 #' 
 calcAllChemicalSpecFeDemand <- function(CCS=FALSE) {

@@ -25,7 +25,6 @@
 #' @return MagPIE object of the IEA Petrochem data.
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcIEA_Petrochem <- function(subtype) {
   x <- readSource("IEA_Petrochem", subtype = subtype)
   return(list(

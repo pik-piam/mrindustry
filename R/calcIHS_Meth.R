@@ -18,7 +18,6 @@
 #' @return Magpie object of the IHS_Meth data.
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcIHS_Meth <- function(subtype) {
   x <- readSource("IHS_Meth", subtype = subtype)
   return(list(

@@ -27,21 +27,6 @@ convertIFA_ChemAppend <- function(x) {
     # ------------------------------
     # Capacities Subtype Processing
     # ------------------------------
-    # Define "Others" regions to aggregate
-    others <- c(
-      "West Europe", "Central Europe", "East Europe & Central Asia",
-      "North America", "Latin America", "Africa", "West Asia", "South Asia",
-      "East Asia", "Oceania"
-    )
-    
-    # Extract aggregated regional data (xReg) and individual country data (xCtry)
-    xReg <- x[others, , ]
-    xCtry <- x[others, , invert = TRUE]
-    
-    # Convert individual country names to ISO codes (with special mapping)
-    getItems(xCtry, dim = 1) <- toolCountry2isocode(getItems(xCtry, dim = 1), 
-                                                    mapping = c("Taiwan, China" = "TWN"))
-    
     # Read the regional mapping file for capacities
     map <- toolGetMapping("regionmappingIFA_Chem_othersC.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
@@ -50,10 +35,10 @@ convertIFA_ChemAppend <- function(x) {
     urea <- calcOutput("IFA_Chem", subtype = "urea_capacities_capacities", aggregate = FALSE)
     
     # Determine available years from both datasets
-    xReg_years <- as.numeric(sub("y", "", colnames(xReg)[grepl("^y\\d{4}$", colnames(xReg))]))
+    x_years <- as.numeric(sub("y", "", colnames(x)[grepl("^y\\d{4}$", colnames(x))]))
     urea_years <- as.numeric(sub("y", "", colnames(urea)[grepl("^y\\d{4}$", colnames(urea))]))
-    start_year <- min(xReg_years, na.rm = TRUE)
-    end_year   <- max(xReg_years, na.rm = TRUE)
+    start_year <- min(x_years, na.rm = TRUE)
+    end_year   <- max(x_years, na.rm = TRUE)
     last_available_year <- max(urea_years, na.rm = TRUE)
     
     # Loop over each year and perform aggregation using appropriate weights
@@ -63,7 +48,7 @@ convertIFA_ChemAppend <- function(x) {
       
       if (weight_col %in% colnames(urea)) {
         aggregated_result <- toolAggregate(
-          xReg[, year_col, drop = FALSE],
+          x[, year_col, drop = FALSE],
           rel = map,
           from = "IFAReg",
           to = "CountryCode",
@@ -78,29 +63,10 @@ convertIFA_ChemAppend <- function(x) {
         warning(paste("Weight column", weight_col, "is missing in urea data. Skipping aggregation for year", year, "."))
       }
     }
-    
-    # Combine aggregated "others" regions with individual country data
-    x <- mbind(xNew, xCtry)
-    
   } else if (subtype[2] == "statistics") {
     # ------------------------------
     # Statistics Subtype Processing
     # ------------------------------
-    # Define "Others" regions for statistics
-    others <- c(
-      "Total West Europe", "Total Central Europe", "Total E_ Europe & C_ Asia",
-      "Total North America", "Total Latin America", "Total Africa", 
-      "Total West Asia", "Total South Asia", "Total East Asia", "Total Oceania", "Total Various"
-    )
-    
-    # Extract aggregated regional data (xReg) and individual country data (xCtry)
-    xReg <- x[others, , ]
-    xCtry <- x[others, , invert = TRUE]
-    
-    # Convert individual country names to ISO codes
-    getItems(xCtry, dim = 1) <- toolCountry2isocode(getItems(xCtry, dim = 1),
-                                                    mapping = c("Taiwan, China" = "TWN"))
-    
     # Read the regional mapping file for statistics
     map <- toolGetMapping("regionmappingIFA_Chem_othersP.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
@@ -109,10 +75,10 @@ convertIFA_ChemAppend <- function(x) {
     urea <- calcOutput("IFA_Chem", subtype = paste0("urea_statistics_", subtype[3]), aggregate = FALSE)
     
     # Determine available years from both datasets
-    xReg_years <- as.numeric(sub("y", "", colnames(xReg)[grepl("^y\\d{4}$", colnames(xReg))]))
+    x_years <- as.numeric(sub("y", "", colnames(x)[grepl("^y\\d{4}$", colnames(x))]))
     urea_years <- as.numeric(sub("y", "", colnames(urea)[grepl("^y\\d{4}$", colnames(urea))]))
-    start_year <- min(xReg_years, na.rm = TRUE)
-    end_year   <- max(xReg_years, na.rm = TRUE)
+    start_year <- min(x_years, na.rm = TRUE)
+    end_year   <- max(x_years, na.rm = TRUE)
     last_available_year <- max(urea_years, na.rm = TRUE)
     
     # Loop over each year and perform aggregation using appropriate weights
@@ -122,7 +88,7 @@ convertIFA_ChemAppend <- function(x) {
       
       if (weight_col %in% colnames(urea)) {
         aggregated_result <- toolAggregate(
-          xReg[, year_col, drop = FALSE],
+          x[, year_col, drop = FALSE],
           rel = map,
           from = "IFAReg",
           to = "CountryCode",
@@ -139,9 +105,6 @@ convertIFA_ChemAppend <- function(x) {
       }
     }
     
-    # Combine aggregated "others" regions with individual country data
-    x <- mbind(xNew, xCtry)
-    
   } else {
     stop("Invalid subtype combination")
   }
@@ -149,7 +112,7 @@ convertIFA_ChemAppend <- function(x) {
   # ---------------------------------------------------------------------------
   # Finalize Output: Fill Missing Country Data with 0
   # ---------------------------------------------------------------------------
-  x <- toolCountryFill(x, fill = 0)
+  x <- toolCountryFill(xNew, fill = 0)
   
   # Return the processed MagPIE object
   return(x)

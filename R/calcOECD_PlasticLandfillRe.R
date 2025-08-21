@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticLandfillRe <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions

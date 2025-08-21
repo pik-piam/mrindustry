@@ -5,11 +5,10 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcAllChemicalRoute <- function() {
   
   # ---------------------------------------------------------------------------
-  # 1. Load Route Data for Individual Chemicals
+  # Load Route Data for Individual Chemicals
   #    - Retrieve ammonia, methanol, hvcs, and overall fertilizer data.
   # ---------------------------------------------------------------------------
   ammonia_route <- calcOutput("AmmoniaRoute", aggregate = TRUE) %>%
@@ -29,20 +28,20 @@ calcAllChemicalRoute <- function() {
     select(-Cell)
   
   # ---------------------------------------------------------------------------
-  # 2. Split fertilizer Data into Production and Conversion Ratio
+  # Split fertilizer Data into Production and Conversion Ratio
   # ---------------------------------------------------------------------------
-  # 2.1 fertilizer Production Data: rename 'NFert_production' to 'fertProd'
+  # fertilizer Production Data: rename 'NFert_production' to 'fertProd'
   nfert_route <- nfert_all %>% 
     filter(Data1 == "NFert_production") %>%  
     mutate(Data1 = "fertProd")
   
-  # 2.2 fertilizer Conversion Ratio Data
+  # fertilizer Conversion Ratio Data
   nfert_ratio <- nfert_all %>%
     filter(Data1 == "NFert_ratio")
   
   
   # ---------------------------------------------------------------------------
-  # 3. Process Ammonia Route Data
+  # Process Ammonia Route Data
   #    - Sum ammonia production by Region and Year.
   #    - Combine with fertilizer conversion ratio to compute the final ammonia flow
   # ---------------------------------------------------------------------------
@@ -60,7 +59,7 @@ calcAllChemicalRoute <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # 4. Process Methanol Route Data
+  # Process Methanol Route Data
   #    - Sum methanol production by Region and Year.
   #    - Calculate the final methanol flow by subtracting the methanol flow that is used to produce HVC via mtoMta
   #       mtoMta flow is in MtHVC and has to be converted to MtCH3OH
@@ -82,7 +81,7 @@ calcAllChemicalRoute <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # 5. Combine All Chemical Routes
+  # Combine All Chemical Routes
   #    - Combine original route data with the adjusted ammonia and methanol outputs.
   # ---------------------------------------------------------------------------
   AllChemical_all <- rbind(ammonia_route, methanol_route, hvc_route, nfert_route, ammonia_tofinal, methanol_tofinal)
@@ -94,14 +93,14 @@ calcAllChemicalRoute <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # 6. Load Total Chemical Production Data for Weighting
+  # Load Total Chemical Production Data for Weighting
   # ---------------------------------------------------------------------------
   Chemcial_Total <- calcOutput("ChemicalTotal", aggregate = FALSE) %>%
     .[, "y2020", ]
   
   
   # ---------------------------------------------------------------------------
-  # 7. Convert Data to a Magpie Object and Aggregate to Country Level
+  # Convert Data to a Magpie Object and Aggregate to Country Level
   #    - Convert the combined data to a magpie object.
   #    - Collapse dimensions, select the year 2020, and aggregate using regional mapping.
   # ---------------------------------------------------------------------------
@@ -125,7 +124,7 @@ calcAllChemicalRoute <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # 8. Return Final Object with Metadata
+  # Return Final Object with Metadata
   # ---------------------------------------------------------------------------
   return(list(
     x = x,

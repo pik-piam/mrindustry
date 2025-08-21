@@ -3,7 +3,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 #' @importFrom zoo na.approx
 calcHVCRoute <- function() {
   

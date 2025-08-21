@@ -11,7 +11,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcOECD_Plastic <- function(subtype) {
   # ---------------------------------------------------------------------------
   # Read source data

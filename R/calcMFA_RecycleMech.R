@@ -6,7 +6,7 @@
 #'                  \item export
 #'                  \item import
 #'                }
-#' @export
+#'
 calcMFA_RecycleMech<- function() {
   
   # 先把plastic_materials_para准备好

@@ -5,7 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcOECD_PlasticUse <- function() {
   # ---------------------------------------------------------------------------
   # Load and clean sectoral share data

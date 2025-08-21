@@ -4,7 +4,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcFertilizerRoute <- function() {
   
   # ---------------------------------------------------------------------------

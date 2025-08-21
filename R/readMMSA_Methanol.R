@@ -2,6 +2,7 @@
 #'
 #' Read-in MMSA Global Methanol Outlook 2023 Growth and Decarbonization.xlsx sheets as a magclass object.
 #' Data contains regional methanol capacities and demands. The data is merged from different figures covering different regions.
+#' @author Qianzhi Zhang
 readMMSA_Methanol <- function() {
   # ---------------------------------------------------------------------------
   # Read Regional Demand, Production and Production Capacity Data for Europe, Asia(Less China), North America and Middle East
