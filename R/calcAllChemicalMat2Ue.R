@@ -99,25 +99,12 @@ calcAllChemicalMat2Ue <- function() {
     mutate(Data1 = "hvc") %>%
     filter(!Year %in% 2017)
   
-  MagPie_Fert <- readRDS("C:/Users/leoniesc/madrat/sources/MagPie_Result/v39kHRc1000_FSDP_reg.rds")%>% # "C:/Data/madrat/sources/MagPie_Result/v39kHRc1000_FSDP_reg.rds"
-    select(-model)%>%
-    select(-version)%>%
-    select(-scenset)%>%
-    filter(!region %in% "GLO")%>%
-    filter(period %in% c(2020,2025,2030,2035,2040,2045,2050)) %>%
-    filter(scenario %in% "Bioplastics")%>%
-    filter(variable %in% "Resources|Nitrogen|Cropland Budget|Inputs|+|Fertilizer")%>%
-    select(-scenario)
-  
-  mapFSEC <- toolGetMapping("regionmappingFSEC.csv", type = "regional", where = "mrindustry")
-  mapH12 <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
-  
-  x <- as.magpie(MagPie_Fert, spatial = 1, temporal = 4)
-  MagPie_Fert_249 <- toolAggregate(x, rel = mapFSEC, dim = 1, from = "RegionCode", to = "CountryCode")
-  MagPie_Fert_249 <- toolAggregate(MagPie_Fert_249, rel = mapH12, dim = 1, from = "CountryCode", to = "RegionCode") %>%
-    as.data.frame() %>%
-    select(-Cell,-Data2)%>%
+  MagPie_Fert <- readSource("MagpieFertilizer")%>%
+    as.data.frame()%>%
+    select(-Cell)%>%
+    filter(!Region %in% "GLO")%>%
     mutate(Year = as.numeric(as.character(Year))) %>%
+    filter(Year %in% c(2020,2025,2030,2035,2040,2045,2050))%>%
     group_by(Region) %>%
     mutate(Ratio = Value / Value[Year == 2020]) %>%
     ungroup()
@@ -125,13 +112,13 @@ calcAllChemicalMat2Ue <- function() {
   # ---------------------------------------------------------------------------
   # Compute future mat2ue by dividing the baseline by the relative change in UE chemicals demand of the respective chemical
   # ---------------------------------------------------------------------------
-  merged_data <- rbind(IEA_Petrochem_methanol, IEA_Petrochem_ammonia, IEA_Petrochem_hvc, MagPie_Fert_249) %>%
+  merged_data <- rbind(IEA_Petrochem_methanol, IEA_Petrochem_ammonia, IEA_Petrochem_hvc, MagPie_Fert) %>%
     dplyr::left_join(feIndustry, by = c("Region", "Year"), suffix = c("", ".fe")) %>%
     dplyr::mutate(fe_change = ifelse(is.nan(Ratio / Ratio.fe), 1, Ratio / Ratio.fe)) %>%
     mutate(Data1 = case_when(
       Data1 == "ammonia" ~ "ammoFinal",
       Data1 == "methanol" ~ "methFinal",
-      Data1 == "Resources|Nitrogen|Cropland Budget|Inputs|+|Fertilizer" ~ "fertilizer",
+      Data1 == "Fertilizer Input (Mt Nr/yr)" ~ "fertilizer",
       TRUE ~ Data1
     ))%>%
     dplyr::left_join(p37_mat2ue, by = c("Data1" = "Product")) %>%
@@ -145,7 +132,8 @@ calcAllChemicalMat2Ue <- function() {
   
 
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
-  x <- toolAggregate(x, rel = mapH12, dim = 1, from = "RegionCode", to = "CountryCode")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
   
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
