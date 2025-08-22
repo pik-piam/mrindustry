@@ -14,25 +14,25 @@
 #' format.
 #' @export
 calcPopulation1900To2150 <- function(scenario='SSP2') {
-  pop <- getPopulation1900To2150Data(scenario=scenario)
+  pop_data <- getPopulation1900To2150Data(scenario=scenario)
   
   # get yearly resolution for future
-  pop$future <- time_interpolate(pop$current,2030:2150)
-  pop$current <- mbind(pop$current[,1960:2029],pop$future)
+  future <- time_interpolate(pop_data$current,2030:2150)
+  pop_data$current <- mbind(pop_data$current[,1960:2029],future)
 
   # extrapolate with Gapminder dataset as reference data for countries where such data exists
-  pop$final <- toolExtrapolate(x=pop$current, ref=pop$hist, extrapolate_method = 'ref')
+  pop <- toolBackcastByReference2D(x=pop_data$current, ref=pop_data$hist)
   
   # extrapolate with world average as reference data for other countries
-  pop$final <- toolExtrapolate(x=pop$final, ref=pop$world_hist, extrapolate_method = 'ref')
+  pop <- toolBackcastByReference2D(x=pop, ref=pop_data$world_hist)
   
   
   # check if there are any NA left in pop
-  if (any(is.na(pop$final))) {
+  if (any(is.na(pop))) {
     warning("There are still NA values in the population data after extrapolation.")
   }
   
-  result <- list(x = pop$final, 
+  result <- list(x = pop, 
                  weight = NULL,
                  unit='inhabitants',
                  description='Population from 1900-2100 yearly for the SIMSON format')

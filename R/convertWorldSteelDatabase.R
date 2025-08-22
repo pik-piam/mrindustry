@@ -15,7 +15,7 @@ convertWorldSteelDatabase <- function(x, subtype="production") {
   # for the years 2002-2005 for Yugoslavia. Same for Belgium and Luxembourg.
   
   # TODO create toolISOHistoricalSpecific function that takes madrat mapping and changes values
-  historical_mapping <- list(fromISO = c(rep('YUG', 6), rep('BLX',2)),
+  historical_mapping <- list(fromISO = c(rep('YUG', 6), rep('BLX',2)), 
                              toISO = c('SRB', 'MNE', 'SVN', 'HRV', 'MKD', 'BIH', 'BEL', 'LUX'),
                              lastYear = c(rep('y2005', 6), rep('y2003', 2))) %>% as.data.frame()
   

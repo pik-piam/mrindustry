@@ -11,85 +11,81 @@
 #' list of metadata (in calcOutput format).
 #' @export
 calcSteelTrade <- function(subtype = 'imports') {
-  if (subtype %in% c('indirect_imports', 'indirect_exports')) {
-    return(calcSteelIndirectTrade(subtype))
-  }
+  indirect <- subtype %in% c('indirect_imports', 'indirect_exports')
+  trade_data <- getSteelTradeData(subtype, indirect=indirect)
   
-  data <- getSteelTradeData(subtype)
+  # Interpolate and Extrapolate
+  trade_data$database <- toolInterpolate2D(trade_data$database)
   
-  # Interpolate
-  data$digitised <- toolInterpolate(data$digitised)
-  data$database <- toolInterpolate(data$database)
+  if (indirect) {
+    trade <- trade_data$database
+  } else {
+    trade <- extendTradeWithDigitisedWSData(trade_data)
+  } 
   
-  data$digitised[data$digitised<1] = NA # if values are too small, they are not fit for extrapolation by reference (potentially creating infinite/unrealistic values)
-  
-  # Extrapolate
-  result <- toolExtrapolate(data$database, ref=data$digitised, 
+  trade <- toolExtrapolate(trade, ref=trade_data$production, 
                             extrapolate_method = 'ref')
-  result <- toolExtrapolate(result, ref=data$production, 
-                            extrapolate_method = 'ref')
+  
+  # use constant (last observation carried forward) interpolation for 
+  # remaining NaN values in the future
+  trade <- toolInterpolate2D(trade, method='constant')
   
   # Finalize for calcOutput
-  result[is.na(result)] <- 0 ## fill remaining NA with zero
+  trade[is.na(trade)] <- 0 ## fill remaining NA with zero
   
-  result <- list(x = result, 
+  if (indirect) {
+    # Split indirect trade into direct trade
+    shares <- data$digitised
+    trade <- splitIndirectTrade(trade, shares)
+  }
+  
+  trade <- list(x = trade, 
                  weight = NULL,
                  unit='Tonnes',
                  description=paste0('Steel trade:', subtype, 
                                     'from 1900-2021 yearly for the SIMSON format.'))
   
-  return(result)
+  return(trade)
 }
 
-calcSteelIndirectTrade <- function(subtype) {
-  data <- getSteelTradeData(subtype, by_category_2013=TRUE)
-  
-  # Interpolate
-  data$database <- toolInterpolate(data$database)
-  
-  # Extrapolate
-  result <- toolExtrapolate(data$database, ref=data$production, 
-                            extrapolate_method = 'ref')
-  
-  # Fill gaps
-  result[is.na(result)] <- 0 ## fill remaining NA with zero
-  
+
+extendTradeWithDigitisedWSData <- function(trade_data) {
+  trade_data$digitised <- toolInterpolate2D(trade_data$digitised)
+  trade_data$digitised[trade_data$digitised<1] = NA # if values are too small, they are not fit for extrapolation by reference (potentially creating infinite/unrealistic values)
+  trade <- toolExtrapolate(trade_data$database, 
+                           ref=trade_data$digitised, 
+                           extrapolate_method = 'ref')
+  return(trade)
+}
+
+
+splitIndirectTrade <- function(trade, shares) {
   # Multiply by shares
   
   shares <- data$digitised
   
-  intersecting_countries <- intersect(getItems(result, 1), getItems(shares, 1))
-  result <- result[intersecting_countries, ]
+  intersecting_countries <- intersect(getItems(trade, 1), getItems(shares, 1))
+  trade <- trade[intersecting_countries, ]
   shares <- shares[intersecting_countries, ]
   
-  result <- result * shares
+  trade <- trade * shares
   
-  result <- toolCountryFill(result, verbosity=2, fill=0) # Fill missing countries with zeroes
+  trade <- toolCountryFill(trade, verbosity=2, fill=0) # Fill missing countries with zeroes
   
-  result[is.na(result)] <- 0 ## fill remaining NA with zero
-  
-  
-  # Finalize for calcOutput
-  result <- list(x = result, 
-                 weight = NULL,
-                 unit='Tonnes',
-                 description=paste0('Steel trade:', subtype, 
-                                    'from 1900-2021 yearly for the SIMSON format.'))
-  
-  return(result)
+  return(trade)
   
 }
 
-getSteelTradeData <- function(subtype='imports', by_category_2013=FALSE) {
+getSteelTradeData <- function(subtype='imports', indirect=FALSE) {
   # load data
   production <- calcOutput('SteelProduction', aggregate=FALSE)
   database <- readSource('WorldSteelDatabase', subtype=subtype)
   
-  if (by_category_2013) {
+  if (indirect) {
     subtype = paste0(subtype, '_by_category_2013')
   }
   
-  digitised <- readSource('WorldSteelDigitised', subtype=subtype, convert=!by_category_2013)
+  digitised <- readSource('WorldSteelDigitised', subtype=subtype, convert=!indirect)
   
   return(list(production=production,
               database=database,

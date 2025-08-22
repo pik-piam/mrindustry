@@ -66,6 +66,7 @@ convertWorldSteelDigitised <- function(x, subtype="production") {
     },
     
     'indirect_imports' = function(x) {
+      x <- x * 1e3
       x <- toolISOhistorical(x, overwrite=TRUE) %>% suppressWarnings()
       # Fill missing countries with NA values, will be changed in calc file.
       # Verbosity is 2 so that no warning shows up about these added countries.
@@ -74,6 +75,7 @@ convertWorldSteelDigitised <- function(x, subtype="production") {
     },
     
     'indirect_exports' = function(x) {
+      x <- x * 1e3
       x <- toolISOhistorical(x, overwrite=TRUE) %>% suppressWarnings()
       # Fill missing countries with NA values, will be changed in calc file.
       # Verbosity is 2 so that no warning shows up about these added countries.

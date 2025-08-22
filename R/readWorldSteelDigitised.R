@@ -105,10 +105,8 @@ readWorldSteelDigitised <- function(subtype = 'world_production') {
 
 toolLoadWorldSteelDigitised <- function(filenames,type,version='1.0') {
   paths <- paste0('v', version, '/', type, '/', filenames)
-  decades <- comprehenr::to_list(for(path in paths) toolDecadeRead(path))
-  x <- toolMerge(decades)
-  # convert to tonnes TODO check if this is done in convert instead
-  x <- x * 1e3
+  decades <- comprehenr::to_list(for(path in paths) toolWSDecadeRead(path))
+  x <- toolWSDecadeMerge(decades)
   return(x)
 }
 
@@ -148,7 +146,7 @@ toolLoadIndirectTrade2013 <- function(subtype) {
   return(x)
 }
 
-toolDecadeRead <- function(name) {
+toolWSDecadeRead <- function(name) {
   x <- readxl::read_excel(path = name)
   
   # delete unnecessary rows (total or other in the name or NA)
@@ -172,7 +170,7 @@ toolDecadeRead <- function(name) {
   return(x)
 }
 
-toolMerge <- function(magpies) {
+toolWSDecadeMerge <- function(magpies) {
   # get merged countries & years
   countries <- character(0)
   years <- character(0)

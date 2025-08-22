@@ -2,18 +2,18 @@
 % Please edit documentation in R/fullMFA.R
 \name{fullMFA}
 \alias{fullMFA}
-\title{Load all SIMSON data}
+\title{Load all MFA data}
 \usage{
 fullMFA(scenario = "SSP2", gdp_per_capita = FALSE)
 }
 \description{
 Function that produces the complete regional data sets required for the 
-SIMSON model.
+MFA model.
 }
 \examples{
 \dontrun{
-retrieveData('SIMSON')
-fullSIMSON()
+retrieveData('MFA')
+fullMFA()
 }
 
 }
