@@ -6,7 +6,7 @@ readGapminder <- function(subtype = 'population') {
   # ---- list all available subtypes with functions doing all the work ----
   switchboard <- list(
     'population' = function() {
-      x <- readxl::read_excel(path = './v7.0/GM-Population - Dataset - v8.xlsx',
+      x <- readxl::read_excel(path = './v1.0/GM-Population - Dataset - v8.xlsx',
                               sheet = 'Unpivot-countries-year')
       
       # delete irrelevant columns
