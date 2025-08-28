@@ -19,5 +19,5 @@ The energy demand for OtherChem is calculated as the remaining share of total ch
 Results are aggregated to the country level.
 }
 \author{
-Qianzhi Zhang
+Qianzhi Zhang, Leonie Schweiger
 }
