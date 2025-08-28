@@ -98,14 +98,14 @@ calcAllChemicalMat2Ue <- function() {
     mutate(Data1 = "hvc") %>%
     filter(!Year %in% 2017)
   
-  MagPie_Fert <- readSource("MagpieFertilizer")%>%
+  MagPie_Fert <- calcOutput("MAgPIEReport", subtype="fertilizer")[,,"SSP2.rcp45"]%>%
     as.data.frame()%>%
-    select(-Cell)%>%
-    filter(!Region %in% "GLO")%>%
+    select(-Cell, -Data1, -Data2)%>%
     mutate(Year = as.numeric(as.character(Year))) %>%
     group_by(Region) %>%
     mutate(Ratio = Value / Value[Year == 2020]) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(Data1 = "fertilizer")
   
   # ---------------------------------------------------------------------------
   # Compute future mat2ue by dividing the baseline by the relative change in UE chemicals demand of the respective chemical
@@ -116,7 +116,6 @@ calcAllChemicalMat2Ue <- function() {
     mutate(Data1 = case_when(
       Data1 == "ammonia" ~ "ammoFinal",
       Data1 == "methanol" ~ "methFinal",
-      Data1 == "Fertilizer Input (Mt Nr/yr)" ~ "fertilizer",
       TRUE ~ Data1
     ))%>%
     dplyr::left_join(p37_mat2ue, by = c("Data1" = "Product")) %>%
