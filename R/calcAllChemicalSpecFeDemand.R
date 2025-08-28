@@ -3,7 +3,7 @@
 #' The energy demand for OtherChem is calculated as the remaining share of total chemical industry energy demand. 
 #' Results are aggregated to the country level.
 #' 
-#' @author Qianzhi Zhang
+#' @author Qianzhi Zhang, Leonie Schweiger
 #'
 #' @param CCS boolean parameter whether CCS technologies are considered as such in 2020 or assumed to be technologies without CCS
 #' 
@@ -139,8 +139,10 @@ calcAllChemicalSpecFeDemand <- function(CCS=FALSE) {
     select(c(Region, Data1, demFeRatio))%>%
     mutate(demFeRatio = case_when(demFeRatio<1 ~ 1, TRUE ~ demFeRatio)) # regional energy intensity cannot be lower than the target (possibly coal-based methanol in IND and OAS in AllChemicalRoute higher than the one assumed by IEA_PetrochemEI)
   
+  Regions <- AllChemicalRoute2005_2020 %>% select(Region) %>% distinct()
   specFeDem_byRoute <- specFeDemTarget %>%  
-    merge(demFeRatio, by=c("Data1")) %>%
+    crossing(Regions) %>%
+    left_join(demFeRatio, by=c("Data1", "Region")) %>%
     mutate(specFeDem = case_when(entyFe != "feels" & !is.na(demFeRatio) ~ value*demFeRatio, # regional energy intensities only refer to fuel&steam, electricity demand is assumed to be the same globally
                                  # for the following electricity demands, assume other (higher) demands than target
                                  entyFe == "feels" & tePrc == "stCrLiq" ~ 1.0, # GJ/t Source: Spallina17 Table 5
