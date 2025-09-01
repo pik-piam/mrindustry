@@ -154,7 +154,7 @@ calcAllChemicalSpecFeDemand <- function(CCS=FALSE) {
   # Compute Energy Demand from Chemical Routes and SpecFeDemand and summarize to total energy demand per region, year and FE type
   # ---------------------------------------------------------------------------
   feChemical <- specFeDem_byRoute %>%
-    left_join(AllChemicalRoute2005_2020, by = c("Region", "tePrc"), relationship="many-to-many") %>%
+    left_join(AllChemicalRoute2005_2020, by = c("Region", "tePrc", "opmoPrc"), relationship="many-to-many") %>%
     mutate(Energy_demand = ChemFlow * specFeDem) %>%
     group_by(Region, Year, entyFe) %>%
     summarise(Total_Energy_Demand = sum(Energy_demand, na.rm = TRUE), .groups = "drop") 
