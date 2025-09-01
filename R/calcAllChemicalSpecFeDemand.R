@@ -38,7 +38,7 @@ calcAllChemicalSpecFeDemand <- function(CCS=FALSE) {
     mutate(Value_min = min(Value[Value>0])) %>%
     ungroup() %>% 
     mutate(Value_new =
-             case_when(Data1=="Steam cracking, fuel & steam" & Value>0 ~ Value+(66-Value_min),    # Source: Spallina17 Table 5; Value for naptha steam cracking, as the region with the lowest energy intensity JPN has 96% naphta steam crackers (Saygın et al. 2009. Chemical and Petrochemical Sector.Table 11)
+             case_when(Data1=="Steam cracking, fuel & steam" & Value>0 ~ Value+(58-Value_min),    # Source: rough average of 66 GJ/t of Spallina17 Table 5, 53 GJ/t Yang17 Table 1 and 53 GJ/t Layritz21 Table A2; Value for naptha steam cracking, as the region with the lowest energy intensity JPN has 96% naphtha steam crackers (Saygın et al. 2009. Chemical and Petrochemical Sector.Table 11)
                        Data1=="Methanol, fuel & steam"  & Value>0 ~ Value+(33.9-Value_min),        # Source: IEA, The Future of Hydrogen19 PAGE | 5; Value the natural gas based route as this route is employed in regions with lowest energy intensity
                        TRUE ~ Value))       
   
