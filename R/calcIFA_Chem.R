@@ -16,7 +16,6 @@
 #' @return magpie object of the IFA data
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcIFA_Chem <- function(subtype, unitNitrogen = FALSE) {
   x <- readSource("IFA_Chem", subtype = subtype)
   

@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticMechReYield <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions

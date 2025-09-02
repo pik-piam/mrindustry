@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticChemRe <- function(target = NULL) {
   # ---------------------------------------------------------------------------
   # Define sectors and regions

@@ -5,7 +5,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcAllChemicalUe <- function() {
   
   # ---------------------------------------------------------------------------

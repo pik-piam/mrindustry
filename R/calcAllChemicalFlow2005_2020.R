@@ -6,7 +6,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcAllChemicalFlow2005_2020 <- function() {
   
   # ---------------------------------------------------------------------------
@@ -75,7 +74,7 @@ calcAllChemicalFlow2005_2020 <- function() {
   #    - From AllChemicalRoute, filter rows for "meToFinal" and "mtoMta".
   #    - Pivot these values wider to have separate columns for meToFinal and mtoMta.
   #    - Calculate MeFinalratio as:
-  #         if meToFinal is 0 then 1(to avoid dividing by 0 later), else meToFinal / (mtoMta * 2.624 + meToFinal)
+  #         if meToFinal is 0 then 1(to avoid dividing by 0 later), else meToFinal / (mtoMta * 2.62 + meToFinal)
   # ---------------------------------------------------------------------------
   AllChemicalRoute <- calcOutput("AllChemicalRoute", aggregate = TRUE)[, "y2020", ] %>% 
     as.data.frame() %>%
@@ -85,7 +84,7 @@ calcAllChemicalFlow2005_2020 <- function() {
     filter(Data1 %in% c("meToFinal", "mtoMta")) %>%
     pivot_wider(names_from = Data1, values_from = Value) %>%
     mutate(
-      MeFinalratio = ifelse(meToFinal == 0, 1, meToFinal / (mtoMta * 2.624 + meToFinal))
+      MeFinalratio = ifelse(meToFinal == 0, 1, meToFinal / (mtoMta * 2.62 + meToFinal))
     ) %>%
     select(Region, MeFinalratio)
   

@@ -18,7 +18,6 @@
 #'   }
 #'
 #' @author Qianzhi Zhang
-#' @export
 calcUNCTAD_PlasticTrade <- function(subtype) {
   # ---------------------------------------------------------------------------
   # Setup: file paths, mappings, and weights

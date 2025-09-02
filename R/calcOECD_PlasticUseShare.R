@@ -5,7 +5,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcOECD_PlasticUseShare <- function() {
   # ---------------------------------------------------------------------------
   # Calculate share of plastic use by sector (plastics application) from OECD data

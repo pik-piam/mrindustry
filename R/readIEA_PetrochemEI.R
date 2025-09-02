@@ -3,7 +3,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 readIEA_PetrochemEI <- function() {
   # ---------------------------------------------------------------------------
   # Read Data from Excel

@@ -10,7 +10,6 @@
 #'   }
 #' 
 #' @author Qianzhi Zhang
-#' @export
 calcUNCTAD_PlasticWaste <- function(subtype) {
   # ---------------------------------------------------------------------------
   # Load regional plastic waste trade data

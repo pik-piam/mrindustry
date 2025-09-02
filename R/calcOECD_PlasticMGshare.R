@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticMGshare <- function() {
   # ---------------------------------------------------------------------------
   # Load and filter regional use data (2019)

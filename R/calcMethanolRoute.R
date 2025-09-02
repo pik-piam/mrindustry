@@ -5,7 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcMethanolRoute <- function() {
   
   # ---------------------------------------------------------------------------
@@ -88,7 +87,7 @@ calcMethanolRoute <- function() {
   
   # Join share data with production data to calculate the actual production values
   methanol_route_value <- methanol_share_all %>%
-    left_join(methanol_production, by = "Region") %>% 
+    left_join(methanol_production, by = "Region", relationship="many-to-many") %>% 
     mutate(actual_value = normalized_value * Value / 100) %>%
     select(-Value, -Cell, -Data1, -normalized_value)
   
@@ -111,7 +110,8 @@ calcMethanolRoute <- function() {
     dim = 1,
     from = "RegionCode",
     to = "CountryCode",
-    weight = methanol_production_all[unique(map$CountryCode), , ]
+    weight = methanol_production_all[unique(map$CountryCode), , ],
+    zeroWeight="allow" # methanol production in JPN is 0
   )
   x[is.na(x)] <- 0  # Replace any NA values with 0
   

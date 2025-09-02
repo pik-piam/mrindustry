@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticEoL <- function() {
   # ---------------------------------------------------------------------------
   # Load and clean regional EoL data (1990–2019)

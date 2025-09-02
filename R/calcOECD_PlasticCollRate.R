@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticCollRate <- function() {
   # ---------------------------------------------------------------------------
   # Load and clean regional EoL data

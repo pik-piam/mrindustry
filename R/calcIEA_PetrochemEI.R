@@ -3,7 +3,6 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcIEA_PetrochemEI <- function() {
   
   x <- readSource("IEA_PetrochemEI")

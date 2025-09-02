@@ -4,8 +4,6 @@
 #' and aggregate from regions to countries for 1990–2100.
 #' 
 #' @author Qianzhi Zhang
-#'
-#' @export
 #' 
 calcOECD_PlasticBioRate <- function() {
   # ---------------------------------------------------------------------------

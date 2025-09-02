@@ -16,7 +16,6 @@
 #'     \item "Imports" - Imports
 #'   }
 #' @author Qianzhi Zhang
-#' @export
 calcUNCTAD_PlasticOutput <- function(
     category = c("final", "primary", "intermediate", "manufactured"),
     flow     = c("Exports", "Imports")

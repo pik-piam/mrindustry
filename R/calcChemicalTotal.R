@@ -2,7 +2,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 #' @importFrom dplyr inner_join
 #'
 calcChemicalTotal <- function() {

@@ -5,7 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcAmmoniaRoute <- function() {
   # ============================================================================
   # Get IFA ammonia production volumes in Kt, convert to Mt and select the years 2015-2020.

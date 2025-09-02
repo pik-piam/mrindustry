@@ -5,8 +5,6 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @export
-#' 
 calcOECD_PlasticDACRate <- function() {
   # ---------------------------------------------------------------------------
   # Load sectoral mapping and define sectors

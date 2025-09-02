@@ -16,7 +16,6 @@
 #'   }
 #' @author Qianzhi Zhang
 #'
-#' @export
 calcRMI_China <- function(subtype) {
   x <- readSource("RMI_China", subtype = subtype)
   return(list(
