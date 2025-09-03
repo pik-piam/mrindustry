@@ -1,16 +1,16 @@
-#' Aggregates chemical flow data in 2020 from calcAllChemicalRoute into broader categories
+#' Aggregates chemical flow data in 2020 from calcAllChemicalRoutes_2020into broader categories
 #' based on their outputs (ammonia, methanol, HVC, fertilizer and final ammonia/methanol).
 #' 
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalFlow <- function() {
+calcChemicalFlows_2020 <- function() {
   
   # ---------------------------------------------------------------------------
   # Load All Chemical Route Data
-  #    - Retrieve the aggregated AllChemicalRoute data.
+  #    - Retrieve the aggregated ChemicalRoutes_2020 data.
   #    - Remove the unwanted columns 'Cell' and 'Data2'.
   # ---------------------------------------------------------------------------
-  AllChemicalRoute <- calcOutput("AllChemicalRoute", aggregate = TRUE) %>%
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE) %>%
     as.data.frame() %>%
     select(-Cell, -Data2)
   
@@ -26,7 +26,7 @@ calcAllChemicalFlow <- function() {
   #    - Group the data by Region, Year, and the new Data1 category,
   #      then sum the Value for each group.
   # ---------------------------------------------------------------------------
-  AllChemicalRoute_summarized <- AllChemicalRoute %>%
+  ChemicalRoute_summarized <- ChemicalRoutes_2020 %>%
     mutate(Data1 = case_when(
       Data1 %in% c("amSyCoal", "amSyNG", "amSyLiq", "amSyCoal_cc", "amSyNG_cc", "amSyH2") ~ "ammonia",
       Data1 %in% c("meSySol", "meSyNg", "meSyLiq", "meSyH2", "meSySol_cc", "meSyNg_cc") ~ "methanol",
@@ -53,7 +53,7 @@ calcAllChemicalFlow <- function() {
   #    - Aggregate the regional data to the country level using the mapping and weights.
   # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
-  x <- as.magpie(AllChemicalRoute_summarized, spatial = 1, temporal = 2)
+  x <- as.magpie(ChemicalRoute_summarized, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 
                      weight = Chemical_Total[unique(map$CountryCode), , ])
   x[is.na(x)] <- 0  # Replace any missing values with 0

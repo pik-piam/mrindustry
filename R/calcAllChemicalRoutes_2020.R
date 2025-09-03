@@ -1,13 +1,13 @@
-#' Filters chemical route flows from calcAllChemicalRoute2005_2020 for the year 2020
-#' can be removed if calcAllChemicalRoute2005_2020 is read into REMIND
+#' Filters chemical route flows from calcAllChemicalRoutes_2005to2020 for the year 2020
+#' can be removed if calcAllChemicalRoutes_2005to2020 is read into REMIND
 #' 
 #' @author Qianzhi Zhang
 #'
 #' @param CCS boolean parameter whether CCS technologies are considered as such in 2020 or assumed to be technologies without CCS
 #' 
-calcAllChemicalRoute2020 <- function(CCS=FALSE) {
+calcAllChemicalRoutes_2020 <- function(CCS=FALSE) {
   
-  AllChemicalRoute2020<- calcOutput("AllChemicalRoute2005_2020",CCS=CCS,warnNA = FALSE, aggregate = TRUE)[,"y2020",]%>% 
+  AllChemicalRoutes_2020<- calcOutput("AllChemicalRoutes_2005to2020",CCS=CCS,warnNA = FALSE, aggregate = TRUE)[,"y2020",]%>% 
     as.data.frame() %>%
     select(-Cell)
   
@@ -16,7 +16,7 @@ calcAllChemicalRoute2020 <- function(CCS=FALSE) {
   
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry") 
   
-  x <- as.magpie(AllChemicalRoute2020, spatial = 1, temporal = 2)
+  x <- as.magpie(AllChemicalRoutes_2020, spatial = 1, temporal = 2)
   # Aggregate the regional data (xReg) to the country level using the mapping
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", weight = Chemical_Total[unique(map$CountryCode), , ])
   x[is.na(x)] <- 0

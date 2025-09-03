@@ -1,19 +1,19 @@
-#'
+#' Calculates shares of ammoFinal, methFinal, HVC, fertilizer and OtherChem
+#' of total chemical UE for 2020-2150 based on the UE shares in 2020 and the 
+#' projected relative increases in production (IEA The Future of Petrochemicals) and 
+#' total chemical UE (FeDemandIndustry)
+#' 
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalMat2Ue <- function() {
+calcAllChemicalUeShares_2020to2150 <- function() {
 
   # ---------------------------------------------------------------------------
-  # Define Material-to-UE Conversion Factors
-  #    - p37_mat2ue: Conversion factors (mat2ue) for selected products.
-  #      The conversion factors are expressed in 2017$/kg or 2017$/kgN.
+  # Retrieve baseline ue shares for 2020
   # ---------------------------------------------------------------------------
   
-  p37_mat2ue <- data.frame(
-    Product = c("hvc", "fertilizer", "methFinal", "ammoFinal"),
-    mat2ue = c(0.66, 0.73, 0.37, 0.69),  # Conversion factors
-    Unit = c("2017$/kg", "2017$/kgN", "2017$/kg", "2017$/kg")
-  )
+  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", aggregate = TRUE)[, "y2020", ] %>%
+    as.data.frame() %>%
+    select(-Cell,-Year)
   
   # ---------------------------------------------------------------------------
   # Retrieve Chemical production projections for 2020-2050 (extrapolate between 2017 and 2025 if 2020 is missing)
@@ -108,7 +108,8 @@ calcAllChemicalMat2Ue <- function() {
     mutate(Data1 = "fertilizer")
   
   # ---------------------------------------------------------------------------
-  # Compute future mat2ue by dividing the baseline by the relative change in UE chemicals demand of the respective chemical
+  # Compute future ue shares by dividing the baseline share with the relative change 
+  # in chemical production respective to the relative change in UE chemicals demand
   # ---------------------------------------------------------------------------
   merged_data <- rbind(IEA_Petrochem_methanol, IEA_Petrochem_ammonia, IEA_Petrochem_hvc, MagPie_Fert) %>%
     dplyr::left_join(feIndustry, by = c("Region", "Year"), suffix = c("", ".fe")) %>%
@@ -118,19 +119,36 @@ calcAllChemicalMat2Ue <- function() {
       Data1 == "methanol" ~ "methFinal",
       TRUE ~ Data1
     ))%>%
-    dplyr::left_join(p37_mat2ue, by = c("Data1" = "Product")) %>%
-    dplyr::mutate(new_mat2ue = mat2ue / fe_change)
+    dplyr::left_join(AllChemicalUeShares_2020, by = c("Region","Data1", "Data2"), suffix=c("",".ue")) %>%
+    dplyr::mutate(ue_share = Value.ue / fe_change)%>%
+    select(Region,Year,Data1,Data2,ue_share)
   
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
   years <- merged_data %>% select(Year) %>% distinct() %>% filter(Year>2050)
-  extended_years <- merged_data %>% filter(Year==2050, Data1 %in% c("ammoFinal","methFinal")) %>%
+  extended_years <- merged_data %>% filter(Year==2050, Data1 %in% c("ammoFinal","methFinal","hvc")) %>%
     select(-Year) %>% crossing(years)
-  final_data <- merged_data %>% 
+  extended_data <- merged_data %>% 
     rbind(extended_years) %>%
-    filter(Year >= 2020) %>%
-    mutate(all_in = "ue_chemicals"
-    ) %>%
-    select(Region,Year,Data1,all_in,new_mat2ue)
+    filter(Year >= 2020)
+    
+  # ---------------------------------------------------------------------------
+  # Account for Residual ("OtherChem") Share
+  # ---------------------------------------------------------------------------
+  ue_summary <- extended_data %>%
+    group_by(Region, Year, Data2) %>%
+    summarise(
+      ue_sum = sum(ue_share, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  final_data <- extended_data %>%
+    bind_rows(
+      ue_summary %>%
+        mutate(
+          Data1 = "OtherChem",
+          ue_share = 1 - ue_sum
+        )
+    ) %>% select(-ue_sum) 
   
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
@@ -147,8 +165,8 @@ calcAllChemicalMat2Ue <- function() {
   return(list(
     x = x,
     weight = weight,
-    unit = "2017$/kg or 2017$/kgN",  # Specify units based on conversion factors
-    description = "Calculates the material-to-UE conversion factors for 2020-2150 on country level."
+    unit = "share", 
+    description = "Material ue shares for 2020-2150 on country level."
   ))
 }
 

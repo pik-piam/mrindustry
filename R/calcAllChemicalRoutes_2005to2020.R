@@ -6,25 +6,25 @@
 #'
 #' @param CCS boolean parameter whether CCS technologies are considered as such in 2020 or assumed to be technologies without CCS
 #' 
-calcAllChemicalRoute2005_2020 <- function(CCS=FALSE) {
+calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   
   # ---------------------------------------------------------------------------
   # Load and Prepare Chemical Flow Data (2005-2020)
-  #    - Retrieve AllChemicalFlow2005_2020 data, remove unnecessary columns,
+  #    - Retrieve AllChemicalFlows_2005to2020 data, remove unnecessary columns,
   #      and rename "Data1" to "Product" for consistency.
   # ---------------------------------------------------------------------------
-  AllChemicalFlow2005_2020 <- calcOutput("AllChemicalFlow2005_2020", warnNA = FALSE, aggregate = TRUE) %>% 
+  AllChemicalFlows_2005to2020 <- calcOutput("AllChemicalFlows_2005to2020", warnNA = FALSE, aggregate = TRUE) %>% 
     as.data.frame() %>%
     select(-Cell) %>%
     rename(Product = Data1)
   
   # ---------------------------------------------------------------------------
   # Load and Recategorize Chemical Route Data for 2020
-  #    - Retrieve AllChemicalRoute data for the year 2020.
+  #    - Retrieve ChemicalRoutes_2020 data for the year 2020.
   #    - Remove extra columns and recategorize "Data1" into broader product groups,
   #      creating a new "Product" column.
   # ---------------------------------------------------------------------------
-  AllChemicalRoute <- calcOutput("AllChemicalRoute", aggregate = TRUE)[, "y2020", ] %>% 
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE)[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-Cell, -Data2, -Year) %>%
     mutate(
@@ -44,7 +44,7 @@ calcAllChemicalRoute2005_2020 <- function(CCS=FALSE) {
   #    - Group the recategorized route data by Region, Product, and original Data1.
   #    - Sum the values and calculate the share of each route within its Product.
   # ---------------------------------------------------------------------------
-  AllChemicalRoute <- AllChemicalRoute %>%
+  ChemicalRoutes_2020 <- ChemicalRoutes_2020 %>%
     group_by(Region, Product, Data1) %>%
     summarise(Value = sum(Value, na.rm = TRUE), .groups = "drop") %>%
     group_by(Region, Product) %>%
@@ -58,8 +58,8 @@ calcAllChemicalRoute2005_2020 <- function(CCS=FALSE) {
   #    - Compute Routes_Flow as the product of the original flow (Value.x) and the share.
   #    - Set processing flag (opmoPrc) based on route type.
   # ---------------------------------------------------------------------------
-  AllChemicalRoutes2005_2020 <- AllChemicalFlow2005_2020 %>%
-    left_join(AllChemicalRoute, by = c("Region", "Product")) %>%
+  AllChemicalRoutes_2005to2020 <- AllChemicalFlows_2005to2020 %>%
+    left_join(ChemicalRoutes_2020, by = c("Region", "Product")) %>%
     mutate(
       Routes_Flow = Value.x * Share,
       opmoPrc = "standard"
@@ -71,20 +71,20 @@ calcAllChemicalRoute2005_2020 <- function(CCS=FALSE) {
   # Retrieve "OtherChem" Data
   # ---------------------------------------------------------------------------
   
-  OtherChem <- AllChemicalFlow2005_2020 %>% filter(Product=="OtherChem") %>%
+  OtherChem <- AllChemicalFlows_2005to2020 %>% filter(Product=="OtherChem") %>%
     rename(Data1=Product, Routes_Flow=Value)%>%
     mutate(opmoPrc = "standard", Data1="chemOld")
   
   # ---------------------------------------------------------------------------
   # Combine Route Data with "OtherChem"
   # ---------------------------------------------------------------------------
-  AllChemicalRoutes2005_2020 <- bind_rows(AllChemicalRoutes2005_2020, OtherChem)
+  AllChemicalRoutes_2005to2020 <- bind_rows(AllChemicalRoutes_2005to2020, OtherChem)
   
   # ---------------------------------------------------------------------------
   # If no CCS technologies are considered, assign the CCS technology to the respective non-CCS technology
   # ---------------------------------------------------------------------------
   if(CCS==FALSE){
-    AllChemicalRoutes2005_2020 <- AllChemicalRoutes2005_2020 %>%
+    AllChemicalRoutes_2005to2020 <- AllChemicalRoutes_2005to2020 %>%
       group_by(Region, Year) %>%
       mutate(
         Routes_Flow = ifelse(Data1 == "amSyNG",
@@ -106,7 +106,7 @@ calcAllChemicalRoute2005_2020 <- function(CCS=FALSE) {
   
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
   
-  x <- as.magpie(AllChemicalRoutes2005_2020, spatial = 1, temporal = 2)
+  x <- as.magpie(AllChemicalRoutes_2005to2020, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 
                      weight = Chemical_Total[unique(map$CountryCode), , ])
   x[is.na(x)] <- 0

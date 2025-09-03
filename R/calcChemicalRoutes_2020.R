@@ -5,7 +5,7 @@
 #'
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalRoute <- function() {
+calcChemicalRoutes_2020<- function() {
   
   # ---------------------------------------------------------------------------
   # Load Route Data for Individual Chemicals
@@ -84,10 +84,10 @@ calcAllChemicalRoute <- function() {
   # Combine All Chemical Routes
   #    - Combine original route data with the adjusted ammonia and methanol outputs.
   # ---------------------------------------------------------------------------
-  AllChemical_all <- rbind(ammonia_route, methanol_route, hvc_route, nfert_route, ammonia_tofinal, methanol_tofinal)
+  Chemical_all <- rbind(ammonia_route, methanol_route, hvc_route, nfert_route, ammonia_tofinal, methanol_tofinal)
   
   # Add an additional column for processing: set 'opmoPrc' to "standard"
-  AllChemical_all <- AllChemical_all %>%
+  Chemical_all <- Chemical_all %>%
     mutate(opmoPrc = "standard")%>%
     select(Region,Year,Data1,opmoPrc,Value)
   
@@ -105,7 +105,7 @@ calcAllChemicalRoute <- function() {
   #    - Collapse dimensions, select the year 2020, and aggregate using regional mapping.
   # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
-  x <- as.magpie(AllChemical_all, spatial = 1, temporal = 2, data = 5)
+  x <- as.magpie(Chemical_all, spatial = 1, temporal = 2, data = 5)
   
   x <- x[, "y2020", ]
   
