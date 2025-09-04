@@ -5,7 +5,7 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalUe <- function() {
+calcAllChemicalUeShares_2020 <- function() {
   
   # ---------------------------------------------------------------------------
   # Define Material-to-UE Conversion Factors
@@ -28,11 +28,11 @@ calcAllChemicalUe <- function() {
   
   # ---------------------------------------------------------------------------
   # Calculate Chemical Flow UE for 2020
-  #    - Retrieve AllChemicalFlow data for 2020, remove unwanted columns, and filter out 
+  #    - Retrieve ChemicalFlow data for 2020, remove unwanted columns, and filter out 
   #      rows for 'ammonia' and 'methanol' (since these are not processed here).
   #    - Join with the conversion factors and calculate the material-to-UE value.
   # ---------------------------------------------------------------------------
-  AllChemicalFlow <- calcOutput("AllChemicalFlow", aggregate = TRUE)[, "y2020", ] %>%
+  ChemicalFlows_2020 <- calcOutput("ChemicalFlows_2020", aggregate = TRUE)[, "y2020", ] %>%
     as.data.frame() %>%
     select(-Cell) %>%
     filter(!Data1 %in% c("ammonia", "methanol")) %>%
@@ -54,7 +54,7 @@ calcAllChemicalUe <- function() {
   #    - Join the chemical flow data with industry demand data (by Region).
   #    - Compute the share (ue_share) by dividing the ue_material by the corresponding industry demand.
   # ---------------------------------------------------------------------------
-  AllChemicalUE <- AllChemicalFlow %>%
+  AllChemicalUEShares_2020 <- ChemicalFlows_2020 %>%
     left_join(feIndustry, by = "Region") %>%
     mutate(ue_share = ue_material / Value.y) %>%   # 'Value.y' from feIndustry
     select(Region, Year.x, Data1.x, ue_share)
@@ -65,14 +65,14 @@ calcAllChemicalUe <- function() {
   #    - For each region and year, sum the ue_share of existing products.
   #    - Create a new row for "OtherChem" representing the remaining share (1 minus the sum).
   # ---------------------------------------------------------------------------
-  ue_summary <- AllChemicalUE %>%
+  ue_summary <- AllChemicalUEShares_2020 %>%
     group_by(Region, Year.x) %>%
     summarise(
       ue_sum = sum(ue_share, na.rm = TRUE),
       .groups = "drop"
     )
   
-  AllChemicalUE <- AllChemicalUE %>%
+  AllChemicalUEShares_2020 <- AllChemicalUEShares_2020 %>%
     bind_rows(
       ue_summary %>%
         mutate(
@@ -90,7 +90,7 @@ calcAllChemicalUe <- function() {
   #    - Convert the UE data to a magpie object and aggregate from regions to countries.
   # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
-  x <- as.magpie(AllChemicalUE, spatial = 1, temporal = 2)
+  x <- as.magpie(AllChemicalUEShares_2020, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
   
   # ---------------------------------------------------------------------------

@@ -1,13 +1,13 @@
-#' Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoute2005_2020) 
+#' Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020) 
 #' and specific energy consumption for the different routes (retrieved from IEA_PetrochemEI and other literature sources).
 #' The energy demand for OtherChem is calculated as the remaining share of total chemical industry energy demand. 
 #' Results are aggregated to the country level.
 #' 
-#' @author Qianzhi Zhang
+#' @author Qianzhi Zhang, Leonie Schweiger
 #'
 #' @param CCS boolean parameter whether CCS technologies are considered as such in 2020 or assumed to be technologies without CCS
 #' 
-calcAllChemicalEnergy2005_2020 <- function(CCS=FALSE) {
+calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   
   # ---------------------------------------------------------------------------
   # Define Conversion Factor
@@ -21,9 +21,9 @@ calcAllChemicalEnergy2005_2020 <- function(CCS=FALSE) {
   #    b) Load regional historical energy intensity data for overall methanol&ammonia synthesis and steam crakcing (IEA_PetrochemEI)
   #    c) Collect specific BAT energy intensity data (target energy demand)
   # ---------------------------------------------------------------------------
-  AllChemicalRoute2005_2020 <- calcOutput("AllChemicalRoute2005_2020", warnNA = FALSE, aggregate = TRUE, CCS=CCS) %>% 
+  AllChemicalRoutes_2005to2020 <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = TRUE, CCS=CCS) %>% 
     as.data.frame() %>% 
-    select(-Cell)%>%
+    select(-Cell) %>%
     rename(tePrc = Data1, opmoPrc = Data2, ChemFlow = Value)
   
   IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", aggregate = TRUE) %>% 
@@ -116,13 +116,13 @@ calcAllChemicalEnergy2005_2020 <- function(CCS=FALSE) {
   # To get specific energy demands per route, calculate the ratio between total actual and target FE demand for steam cracker, ammonia and methanol synthesis
   # The ratio between actual and target demand for each route is assumed to be the same as for the overall steam cracking/ammonia/methanol synthesis
   # ---------------------------------------------------------------------------
-  demFeTarget <- AllChemicalRoute2005_2020 %>% filter(Year==2020) %>%
+  demFeTarget <- AllChemicalRoutes_2005to2020 %>% filter(Year==2020) %>%
     left_join(specFeDemTarget, by = c("tePrc", "opmoPrc"), relationship="many-to-many") %>%
     mutate(demFeTarget = ChemFlow*value) %>%
     group_by(Region, Year, Data1)%>%
     summarise(demFeTarget_total = sum(demFeTarget), totalFlow = sum(ChemFlow))
   
-  demFeActual <- AllChemicalRoute2005_2020 %>% filter(Year==2020) %>%
+  demFeActual <- AllChemicalRoutes_2005to2020 %>% filter(Year==2020) %>%
     mutate(Data1 =
              case_when(tePrc %in% c("stCrLiq", "stCrNg") & opmoPrc=="standard" ~ "Steam cracking, fuel & steam",
                        tePrc %in% c("amSyCoal", "amSyNG", "amSyLiq") & opmoPrc=="standard" ~ "Ammonia, fuel & steam",
@@ -137,9 +137,9 @@ calcAllChemicalEnergy2005_2020 <- function(CCS=FALSE) {
   demFeRatio <- merge(demFeTarget, demFeActual, by=c("Region","Year", "Data1")) %>%
     mutate(demFeRatio = demFeActual_total/demFeTarget_total) %>% 
     select(c(Region, Data1, demFeRatio))%>%
-    mutate(demFeRatio = case_when(demFeRatio<1 ~ 1, TRUE ~ demFeRatio)) # regional energy intensity cannot be lower than the target (possibly coal-based methanol in IND and OAS in AllChemicalRoute higher than the one assumed by IEA_PetrochemEI)
+    mutate(demFeRatio = case_when(demFeRatio<1 ~ 1, TRUE ~ demFeRatio)) # regional energy intensity cannot be lower than the target (possibly coal-based methanol in IND and OAS in AllChemicalRoutes_2020higher than the one assumed by IEA_PetrochemEI)
   
-  Regions <- AllChemicalRoute2005_2020 %>% select(Region) %>% distinct()
+  Regions <- AllChemicalRoutes_2005to2020 %>% select(Region) %>% distinct()
   specFeDem_byRoute <- specFeDemTarget %>%  
     crossing(Regions) %>%
     left_join(demFeRatio, by=c("Data1", "Region")) %>%
@@ -154,11 +154,8 @@ calcAllChemicalEnergy2005_2020 <- function(CCS=FALSE) {
   # Compute Energy Demand from Chemical Routes and SpecFeDemand and summarize to total energy demand per region, year and FE type
   # ---------------------------------------------------------------------------
   feChemical <- specFeDem_byRoute %>%
-    right_join(AllChemicalRoute2005_2020, by = c("Region", "tePrc", "opmoPrc"), relationship="many-to-many") %>%
+    left_join(AllChemicalRoutes_2005to2020, by = c("Region", "tePrc", "opmoPrc"), relationship="many-to-many") %>%
     mutate(Energy_demand = ChemFlow * specFeDem) %>%
-    select(c(Region, Year, tePrc, opmoPrc, entyFe, Energy_demand))
-  
-  feChemical_summary <- feChemical %>%
     group_by(Region, Year, entyFe) %>%
     summarise(Total_Energy_Demand = sum(Energy_demand, na.rm = TRUE), .groups = "drop") 
   
@@ -190,48 +187,52 @@ calcAllChemicalEnergy2005_2020 <- function(CCS=FALSE) {
   #    - Merge with feIndustry and calculate the difference between feIndustry Value and the total energy demand.
   # ---------------------------------------------------------------------------
   OtherChem_FE <- feIndustry %>%
-    left_join(feChemical_summary, by = c("Region", "Year", "entyFe")) %>%
+    left_join(feChemical, by = c("Region", "Year", "entyFe")) %>%
     mutate(
       Total_Energy_Demand = ifelse(is.na(Total_Energy_Demand), 0, Total_Energy_Demand),
-      Energy_demand = feChemicals - Total_Energy_Demand
+      Total_Difference = feChemicals - Total_Energy_Demand
     ) %>%
-    mutate(tePrc = "chemOld", opmoPrc= "standard") %>%
-    select(c(Region, Year, tePrc, opmoPrc, entyFe, Energy_demand))
+    mutate(tePrc = "chemOld", opmoPrc= "standard")
   
   # ---------------------------------------------------------------------------
-  # Merge Main Energy Result with "OtherChem"
+  # Calculate specific Energy Demand of OtherChem and merge with other specific Energy demands (assumed to be constant from 2005-2020)
   # ---------------------------------------------------------------------------
-  merged_result <- bind_rows(feChemical, OtherChem_FE) 
+  OtherChem_SpecFeDem <- OtherChem_FE %>%
+    left_join(AllChemicalRoutes_2005to2020, by=c("Region","Year","tePrc","opmoPrc")) %>%
+    mutate(specFeDem = Total_Difference/ChemFlow) %>%
+    select(Region, Year, tePrc, opmoPrc, entyFe, specFeDem)
   
+  years <- OtherChem_SpecFeDem %>% select(Year) %>% distinct()
+  
+  AllChem_SpecFeDem <- specFeDem_byRoute %>% crossing(years) %>%
+    rbind(OtherChem_SpecFeDem) %>%
+    select(Region,Year,tePrc, opmoPrc, entyFe, specFeDem)
+    
   # ---------------------------------------------------------------------------
   # Aggregate Data to Country Level
-  #    - Load ChemicalTotal data for weighting.
-  #    - Retrieve regional mapping.
-  #    - Convert merged result to a magpie object and aggregate to country level.
   # ---------------------------------------------------------------------------
-  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE) %>%
-    .[, c("y2005", "y2010", "y2015", "y2020"), ]
-  
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
   
-  x <- as.magpie(merged_result, spatial = 1, temporal = 2)
+  x <- as.magpie(AllChem_SpecFeDem, spatial = 1, temporal = 2)
   x <- toolAggregate(
     x,
     rel = map,
     dim = 1,
     from = "RegionCode",
     to = "CountryCode",
-    weight = Chemical_Total[unique(map$CountryCode), , ]
+    weight = NULL
   )
   x[is.na(x)] <- 0
+  weight <- x # get the same dimensions of the data
+  weight[, , ] <- 1
   
   # ---------------------------------------------------------------------------
   # Return Final Aggregated Object with Metadata
   # ---------------------------------------------------------------------------
   return(list(
     x = x,
-    weight = NULL,
-    unit = "EJ",
-    description = "Chemical energy demand from 2005 to 2020 per process and final energy carrier"
+    weight = weight,
+    unit = "GJ/t-output",
+    description = "Chemicals specific final energy demand per technology, final energy carrier, region and year"
   ))
 }

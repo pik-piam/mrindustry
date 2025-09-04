@@ -1,17 +1,17 @@
 #' Calculates shares of ammoFinal, methFinal, HVC, fertilizer and OtherChem
-#' of total chemical UE for 2020-2050 based on the UE shares in 2020 and the 
+#' of total chemical UE for 2020-2150 based on the UE shares in 2020 and the 
 #' projected relative increases in production (IEA The Future of Petrochemicals) and 
 #' total chemical UE (FeDemandIndustry)
 #' 
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalUeShare <- function() {
+calcAllChemicalUeShares_2020to2150 <- function() {
 
   # ---------------------------------------------------------------------------
   # Retrieve baseline ue shares for 2020
   # ---------------------------------------------------------------------------
   
-  AllChemicalUe <- calcOutput("AllChemicalUe", aggregate = TRUE)[, "y2020", ] %>%
+  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", aggregate = TRUE)[, "y2020", ] %>%
     as.data.frame() %>%
     select(-Cell,-Year)
   
@@ -27,7 +27,6 @@ calcAllChemicalUeShare <- function() {
     as.data.frame() %>%
     select(-Cell) %>%
     mutate(Year = as.numeric(as.character(Year))) %>%   # Convert factor to character then numeric
-    filter(Year %in% c(2020,2025,2030,2035,2040,2045,2050)) %>%
     group_by(Region) %>%
     mutate(Ratio = Value / Value[Year == 2020]) %>%
     ungroup()
@@ -99,15 +98,14 @@ calcAllChemicalUeShare <- function() {
     mutate(Data1 = "hvc") %>%
     filter(!Year %in% 2017)
   
-  MagPie_Fert <- readSource("MagpieFertilizer")%>%
+  MagPie_Fert <- calcOutput("MAgPIEReport", subtype="fertilizer")[,,"SSP2.rcp45"]%>%
     as.data.frame()%>%
-    select(-Cell)%>%
-    filter(!Region %in% "GLO")%>%
+    select(-Cell, -Data1, -Data2)%>%
     mutate(Year = as.numeric(as.character(Year))) %>%
-    filter(Year %in% c(2020,2025,2030,2035,2040,2045,2050))%>%
     group_by(Region) %>%
     mutate(Ratio = Value / Value[Year == 2020]) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(Data1 = "fertilizer")
   
   # ---------------------------------------------------------------------------
   # Compute future ue shares by dividing the baseline share with the relative change 
@@ -119,24 +117,31 @@ calcAllChemicalUeShare <- function() {
     mutate(Data1 = case_when(
       Data1 == "ammonia" ~ "ammoFinal",
       Data1 == "methanol" ~ "methFinal",
-      Data1 == "Fertilizer Input (Mt Nr/yr)" ~ "fertilizer",
       TRUE ~ Data1
     ))%>%
-    dplyr::left_join(AllChemicalUe, by = c("Region","Data1", "Data2"), suffix=c("",".ue")) %>%
-    dplyr::mutate(ue_share = Value.ue / fe_change)%>%
+    dplyr::left_join(AllChemicalUeShares_2020, by = c("Region","Data1", "Data2"), suffix=c("",".ue")) %>%
+    dplyr::mutate(ue_share = Value.ue * fe_change)%>%
     select(Region,Year,Data1,Data2,ue_share)
+  
+  # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
+  years <- merged_data %>% select(Year) %>% distinct() %>% filter(Year>2050)
+  extended_years <- merged_data %>% filter(Year==2050, Data1 %in% c("ammoFinal","methFinal","hvc")) %>%
+    select(-Year) %>% crossing(years)
+  extended_data <- merged_data %>% 
+    rbind(extended_years) %>%
+    filter(Year >= 2020)
     
   # ---------------------------------------------------------------------------
   # Account for Residual ("OtherChem") Share
   # ---------------------------------------------------------------------------
-  ue_summary <- merged_data %>%
+  ue_summary <- extended_data %>%
     group_by(Region, Year, Data2) %>%
     summarise(
       ue_sum = sum(ue_share, na.rm = TRUE),
       .groups = "drop"
     )
   
-  final_data <- merged_data %>%
+  final_data <- extended_data %>%
     bind_rows(
       ue_summary %>%
         mutate(
@@ -161,7 +166,7 @@ calcAllChemicalUeShare <- function() {
     x = x,
     weight = weight,
     unit = "share", 
-    description = "Material ue shares for 2020-2050 on country level."
+    description = "Material ue shares for 2020-2150 on country level."
   ))
 }
 

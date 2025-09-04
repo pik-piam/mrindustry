@@ -6,7 +6,7 @@
 #' 
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalFlow2005_2020 <- function() {
+calcAllChemicalFlows_2005to2020 <- function() {
   
   # ---------------------------------------------------------------------------
   # Define Conversion Factors (p37_mat2ue)
@@ -20,13 +20,13 @@ calcAllChemicalFlow2005_2020 <- function() {
   )
   
   # ---------------------------------------------------------------------------
-  # Retrieve and Combine AllChemicalUe and Industry Demand Data
-  #    - Get AllChemicalUe data (rounded to 8 digits) and remove extra columns.
+  # Retrieve and Combine AllChemicalUeShare_2020 and Industry Demand Data
+  #    - Get AllChemicalUeShare_2020 data (rounded to 8 digits) and remove extra columns.
   #    - Get industry demand (feIndustry) for selected years.
   #    - Join these datasets and calculate Material_Flow as:
-  #         Material_Flow = (Value.x from AllChemicalUe * Value.y from feIndustry) / mat2ue
+  #         Material_Flow = (Value.x from AllChemicalUeShare_2020 * Value.y from feIndustry) / mat2ue
   # ---------------------------------------------------------------------------
-  AllChemicalUe <- calcOutput("AllChemicalUe", round = 8, aggregate = TRUE) %>% 
+  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", round = 8, aggregate = TRUE) %>% 
     as.data.frame() %>%
     select(-Cell, -Year)
   
@@ -34,7 +34,7 @@ calcAllChemicalFlow2005_2020 <- function() {
     as.data.frame() %>%
     select(-Cell)
   
-  AllChemicalFlow <- AllChemicalUe %>%
+  AllChemicalFlow <- AllChemicalUeShares_2020 %>%
     left_join(feIndustry, by = c("Region" = "Region")) %>%
     left_join(p37_mat2ue, by = c("Data1.x" = "Product")) %>%
     mutate(Material_Flow = Value.x * Value.y / mat2ue)
@@ -70,17 +70,17 @@ calcAllChemicalFlow2005_2020 <- function() {
   
   # ---------------------------------------------------------------------------
   # Calculate ratio of methanol (MeFinalratio) that goes to methFinal in order to then calculate methanol flow based on methFinal flow
-  #    - Retrieve AllChemicalRoute data for 2020 and remove extra columns.
-  #    - From AllChemicalRoute, filter rows for "meToFinal" and "mtoMta".
+  #    - Retrieve AllChemicalRoutes_2020 data for 2020 and remove extra columns.
+  #    - From AllChemicalRoutes_2020, filter rows for "meToFinal" and "mtoMta".
   #    - Pivot these values wider to have separate columns for meToFinal and mtoMta.
   #    - Calculate MeFinalratio as:
   #         if meToFinal is 0 then 1(to avoid dividing by 0 later), else meToFinal / (mtoMta * 2.62 + meToFinal)
   # ---------------------------------------------------------------------------
-  AllChemicalRoute <- calcOutput("AllChemicalRoute", aggregate = TRUE)[, "y2020", ] %>% 
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE)[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-Cell, -Data2, -Year)
   
-  MeFinalratio <- AllChemicalRoute %>%
+  MeFinalratio <- ChemicalRoutes_2020 %>%
     filter(Data1 %in% c("meToFinal", "mtoMta")) %>%
     pivot_wider(names_from = Data1, values_from = Value) %>%
     mutate(

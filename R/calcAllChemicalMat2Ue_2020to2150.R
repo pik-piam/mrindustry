@@ -1,7 +1,11 @@
-#'
+#' Calculates mat2ue conversion factors of ammoFinal, methFinal, HVC and fertilizer
+#' for 2020-2150 based on the mat2ue conversion factors in 2020 and the 
+#' projected relative increases in production (IEA The Future of Petrochemicals) and 
+#' total chemical UE (FeDemandIndustry)
+#' 
 #' @author Qianzhi Zhang
 #'
-calcAllChemicalMat2Ue <- function() {
+calcAllChemicalMat2Ue_2020to2150 <- function() {
 
   # ---------------------------------------------------------------------------
   # Define Material-to-UE Conversion Factors
@@ -123,7 +127,7 @@ calcAllChemicalMat2Ue <- function() {
   
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
   years <- merged_data %>% select(Year) %>% distinct() %>% filter(Year>2050)
-  extended_years <- merged_data %>% filter(Year==2050, Data1 %in% c("ammoFinal","methFinal")) %>%
+  extended_years <- merged_data %>% filter(Year==2050, Data1 %in% c("ammoFinal","methFinal","hvc")) %>%
     select(-Year) %>% crossing(years)
   final_data <- merged_data %>% 
     rbind(extended_years) %>%
