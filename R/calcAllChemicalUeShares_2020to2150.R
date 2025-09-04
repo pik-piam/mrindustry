@@ -120,7 +120,7 @@ calcAllChemicalUeShares_2020to2150 <- function() {
       TRUE ~ Data1
     ))%>%
     dplyr::left_join(AllChemicalUeShares_2020, by = c("Region","Data1", "Data2"), suffix=c("",".ue")) %>%
-    dplyr::mutate(ue_share = Value.ue / fe_change)%>%
+    dplyr::mutate(ue_share = Value.ue * fe_change)%>%
     select(Region,Year,Data1,Data2,ue_share)
   
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
