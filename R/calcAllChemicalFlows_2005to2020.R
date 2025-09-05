@@ -28,16 +28,16 @@ calcAllChemicalFlows_2005to2020 <- function() {
   # ---------------------------------------------------------------------------
   AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", round = 8, aggregate = TRUE) %>% 
     as.data.frame() %>%
-    select(-Cell, -Year)
+    select(-"Cell", -"Year")
   
   feIndustry <- calcOutput("FeDemandIndustry", scenarios="SSP2",signif = 4, warnNA = FALSE, aggregate = TRUE)[, c("y2005", "y2010", "y2015", "y2020"), "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
   AllChemicalFlow <- AllChemicalUeShares_2020 %>%
     left_join(feIndustry, by = c("Region" = "Region")) %>%
     left_join(p37_mat2ue, by = c("Data1.x" = "Product")) %>%
-    mutate(Material_Flow = Value.x * Value.y / mat2ue)
+    mutate(Material_Flow = .data$Value.x * .data$Value.y / .data$mat2ue)
   
   # ---------------------------------------------------------------------------
   # Calculate Ammonia Flow Based on fertilizer Conversion Ratio and ammoFinal Flow
@@ -49,24 +49,24 @@ calcAllChemicalFlows_2005to2020 <- function() {
   # ---------------------------------------------------------------------------
   nfert_ratio <- calcOutput("FertilizerRoute", aggregate = TRUE)[, "y2020", ] %>% 
     as.data.frame() %>%
-    select(-Cell, -Year) %>%
-    filter(Data1 == "NFert_ratio")
+    select(-"Cell", -"Year") %>%
+    filter(.data$Data1 == "NFert_ratio")
   
   AllChemicalFlow <- AllChemicalFlow %>%
     left_join(
       nfert_ratio %>% 
-        filter(Data1 == "NFert_ratio") %>%
-        select(Region, NFert_ratio = Value),
+        filter(.data$Data1 == "NFert_ratio") %>%
+        select("Region", "NFert_ratio" = "Value"),
       by = "Region"
     ) %>%
     # Adjust rows for ammoFinal (ammonia)
-    filter(Data1.x == "ammoFinal") %>%
+    filter(.data$Data1.x == "ammoFinal") %>%
     mutate(
       Data1.x = "ammonia",
-      Material_Flow = Material_Flow / (1 - NFert_ratio)
+      Material_Flow = .data$Material_Flow / (1 - .data$NFert_ratio)
     ) %>%
     bind_rows(AllChemicalFlow) %>%   # Bind back the adjusted rows
-    select(-NFert_ratio)
+    select(-"NFert_ratio")
   
   # ---------------------------------------------------------------------------
   # Calculate ratio of methanol (MeFinalratio) that goes to methFinal in order to then calculate methanol flow based on methFinal flow
@@ -78,15 +78,15 @@ calcAllChemicalFlows_2005to2020 <- function() {
   # ---------------------------------------------------------------------------
   ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE)[, "y2020", ] %>% 
     as.data.frame() %>%
-    select(-Cell, -Data2, -Year)
+    select(-"Cell", -"Data2", -"Year")
   
   MeFinalratio <- ChemicalRoutes_2020 %>%
-    filter(Data1 %in% c("meToFinal", "mtoMta")) %>%
-    pivot_wider(names_from = Data1, values_from = Value) %>%
+    filter(.data$Data1 %in% c("meToFinal", "mtoMta")) %>%
+    pivot_wider(names_from = "Data1", values_from = "Value") %>%
     mutate(
-      MeFinalratio = ifelse(meToFinal == 0, 1, meToFinal / (mtoMta * 2.62 + meToFinal))
+      MeFinalratio = ifelse(.data$meToFinal == 0, 1, .data$meToFinal / (.data$mtoMta * 2.62 + .data$meToFinal))
     ) %>%
-    select(Region, MeFinalratio)
+    select("Region", "MeFinalratio")
   
   # ---------------------------------------------------------------------------
   # Calculate methanol flow based on methFinal flow and MeFinalratio
@@ -101,13 +101,13 @@ calcAllChemicalFlows_2005to2020 <- function() {
   AllChemicalFlow<- AllChemicalFlow %>%
     bind_rows(
       AllChemicalFlow %>%
-        filter(Data1.x == "methFinal") %>%
+        filter(.data$Data1.x == "methFinal") %>%
         mutate(
           Data1.x = "methanol",
-          Material_Flow = Material_Flow / MeFinalratio
+          Material_Flow = .data$Material_Flow / .data$MeFinalratio
         )
     ) %>%
-    select(-MeFinalratio)  # Remove temporary MeFinalratio column
+    select(-"MeFinalratio")  # Remove temporary MeFinalratio column
   
   
   # ---------------------------------------------------------------------------
@@ -118,10 +118,9 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #    - Aggregate the regional data to country level using the mapping and ChemicalTotal weights.
   # ---------------------------------------------------------------------------
   FinalOutput <- AllChemicalFlow %>%
-    select(Region, Year, Data1.x, Material_Flow)
+    select("Region", "Year", "Data1.x", "Material_Flow")
   
-  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE) %>%
-    .[, c("y2005", "y2010", "y2015", "y2020"), ]
+  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), ]
   
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
   

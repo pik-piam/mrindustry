@@ -12,7 +12,7 @@ calcChemicalFlows_2020 <- function() {
   # ---------------------------------------------------------------------------
   ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE) %>%
     as.data.frame() %>%
-    select(-Cell, -Data2)
+    select(-"Cell", -"Data2")
   
   # ---------------------------------------------------------------------------
   # Re-categorize and Summarize Data
@@ -28,23 +28,22 @@ calcChemicalFlows_2020 <- function() {
   # ---------------------------------------------------------------------------
   ChemicalRoute_summarized <- ChemicalRoutes_2020 %>%
     mutate(Data1 = case_when(
-      Data1 %in% c("amSyCoal", "amSyNG", "amSyLiq", "amSyCoal_cc", "amSyNG_cc", "amSyH2") ~ "ammonia",
-      Data1 %in% c("meSySol", "meSyNg", "meSyLiq", "meSyH2", "meSySol_cc", "meSyNg_cc") ~ "methanol",
-      Data1 %in% c("mtoMta", "stCrNg", "stCrLiq") ~ "hvc",
-      Data1 == "amToFinal" ~ "ammoFinal",
-      Data1 == "meToFinal" ~ "methFinal",
-      Data1 == "fertProd" ~ "fertilizer",
-      TRUE ~ Data1
+      .data$Data1 %in% c("amSyCoal", "amSyNG", "amSyLiq", "amSyCoal_cc", "amSyNG_cc", "amSyH2") ~ "ammonia",
+      .data$Data1 %in% c("meSySol", "meSyNg", "meSyLiq", "meSyH2", "meSySol_cc", "meSyNg_cc") ~ "methanol",
+      .data$Data1 %in% c("mtoMta", "stCrNg", "stCrLiq") ~ "hvc",
+      .data$Data1 == "amToFinal" ~ "ammoFinal",
+      .data$Data1 == "meToFinal" ~ "methFinal",
+      .data$Data1 == "fertProd" ~ "fertilizer",
+      TRUE ~ .data$Data1
     )) %>%
-    group_by(Region, Year, Data1) %>%
-    summarise(Value = sum(Value, na.rm = TRUE), .groups = "drop")
+    group_by(.data$Region, .data$Year, .data$Data1) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop")
   
   # ---------------------------------------------------------------------------
   # Load Total Chemical Production Data for Weighting
   #    - Retrieve the ChemicalTotal data for 2020 to be used as weights.
   # ---------------------------------------------------------------------------
-  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE) %>%
-    .[, "y2020", ]
+  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, "y2020", ]
   
   # ---------------------------------------------------------------------------
   # Convert Data to Magpie Object and Aggregate to Country Level

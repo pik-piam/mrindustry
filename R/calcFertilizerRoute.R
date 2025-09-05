@@ -13,28 +13,24 @@ calcFertilizerRoute <- function() {
   # ---------------------------------------------------------------------------
   
   # Urea production data from IFA_Chem
-  Urea_IFA <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen=TRUE, aggregate = TRUE) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  Urea_IFA <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
-    mutate(Value = Value / 1000)  # Scale down values
+    mutate(Value = .data$Value / 1000)  # Scale down values
   
   # Ammonium Nitrate (AN) production data from IFA_ChemAppend
-  AN_IFA <- calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen=TRUE, aggregate = TRUE) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  AN_IFA <- calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
-    mutate(Value = Value / 1000)
+    mutate(Value = .data$Value / 1000)
   
   # Calcium Ammonium Nitrate (CAN) production data from IFA_ChemAppend
-  CAN_IFA <- calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen=TRUE, aggregate = TRUE) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  CAN_IFA <- calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
-    mutate(Value = Value / 1000)
+    mutate(Value = .data$Value / 1000)
   
   # Ammonium Sulfate (AS) production data from IFA_ChemAppend
-  AS_IFA <- calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen=TRUE, aggregate = TRUE) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  AS_IFA <- calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
-    mutate(Value = Value / 1000)
+    mutate(Value = .data$Value / 1000)
   
   
   # ---------------------------------------------------------------------------
@@ -43,14 +39,13 @@ calcFertilizerRoute <- function() {
   #    - Convert the production value and change the 'Year' column to numeric.
   # ---------------------------------------------------------------------------
   
-  Ammonia_IFA <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen=TRUE, aggregate = TRUE) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  Ammonia_IFA <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(
-      NAmmonia_production = Value / 1000,             # Scale down ammonia production values
-      Year = as.numeric(gsub("y", "", Year))           # Convert Year string (e.g., "y2015") to numeric
+      NAmmonia_production = .data$Value / 1000,             # Scale down ammonia production values
+      Year = as.numeric(gsub("y", "", .data$Year))           # Convert Year string (e.g., "y2015") to numeric
     ) %>%
-    select(-Value, -Cell, -Data1)  # Remove unnecessary columns
+    select(-"Value", -"Cell", -"Data1")  # Remove unnecessary columns
   
   
   # ---------------------------------------------------------------------------
@@ -66,11 +61,11 @@ calcFertilizerRoute <- function() {
     CAN_IFA %>% mutate(source = "CAN_IFA"),
     AS_IFA %>% mutate(source = "AS_IFA")
   ) %>%
-    mutate(Year = as.numeric(gsub("y", "", Year))) %>%  # Convert Year to numeric
-    select(-Cell, -Data1) %>%
-    group_by(Year, Region) %>%
+    mutate(Year = as.numeric(gsub("y", "", .data$Year))) %>%  # Convert Year to numeric
+    select(-"Cell", -"Data1") %>%
+    group_by(.data$Year, .data$Region) %>%
     summarise(
-      NFert_production = sum(Value, na.rm = TRUE),  # Sum production values per region and year
+      NFert_production = sum(.data$Value, na.rm = TRUE),  # Sum production values per region and year
       .groups = "drop"
     ) %>%
     mutate(source = "Total_NFert")
@@ -85,9 +80,9 @@ calcFertilizerRoute <- function() {
   NFert_output <- Ammonia_IFA %>%
     left_join(NFert_total, by = c("Region", "Year")) %>%
     mutate(
-      NFert_ratio = pmin(NFert_production / NAmmonia_production, 1)  # Cap the ratio at 1
+      NFert_ratio = pmin(.data$NFert_production / .data$NAmmonia_production, 1)  # Cap the ratio at 1
     ) %>%
-    select(-NAmmonia_production, -source)
+    select(-"NAmmonia_production", -"source")
   
   
   # ---------------------------------------------------------------------------
@@ -95,8 +90,7 @@ calcFertilizerRoute <- function() {
   #    - Retrieve non-aggregated Urea production data for the year 2020.
   # ---------------------------------------------------------------------------
   
-  Urea_IFA_all <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen=TRUE, aggregate = FALSE) %>%
-    .[, c("y2020"), ]
+  Urea_IFA_all <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen=TRUE, aggregate = FALSE)[, c("y2020"), ]
   
   
   # ---------------------------------------------------------------------------

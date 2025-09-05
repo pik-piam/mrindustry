@@ -80,7 +80,7 @@ readIHS_Meth <- function(subtype) {
     tidyr::crossing(Year = Total_capacity$Year) %>%
     dplyr::left_join(Total_capacity, by = "Year") %>%
     dplyr::mutate(Adjusted_Value = .data[[subtype[1]]] * .data$Ratio) %>%
-    dplyr::select(Country, Year, Adjusted_Value)
+    dplyr::select("Country", "Year", "Adjusted_Value")
   
   # ---------------------------------------------------------------------------
   # Convert Data to a Magpie Object Based on Temporal Coverage
@@ -91,7 +91,7 @@ readIHS_Meth <- function(subtype) {
     data <- as.magpie(data_2010_2020, spatial = 1, temporal = 2)
   } else if (subtype[2] == "2018") {
     data <- dplyr::mutate(data, Year = "2018") %>%
-      dplyr::relocate(Year, .after = 1)
+      dplyr::relocate(.data$Year, .after = 1)
     data <- as.magpie(data, spatial = 1, temporal = 2)
   }
   

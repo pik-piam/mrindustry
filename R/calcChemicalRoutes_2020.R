@@ -13,31 +13,31 @@ calcChemicalRoutes_2020<- function() {
   # ---------------------------------------------------------------------------
   ammonia_route <- calcOutput("AmmoniaRoute", aggregate = TRUE) %>%
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
   methanol_route <- calcOutput("MethanolRoute", aggregate = TRUE) %>%
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
   hvc_route <- calcOutput("HVCRoute", aggregate = TRUE) %>%
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
   nfert_all <- calcOutput("FertilizerRoute", aggregate = TRUE) %>% 
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
   # ---------------------------------------------------------------------------
   # Split fertilizer Data into Production and Conversion Ratio
   # ---------------------------------------------------------------------------
   # fertilizer Production Data: rename 'NFert_production' to 'fertProd'
   nfert_route <- nfert_all %>% 
-    filter(Data1 == "NFert_production") %>%  
+    filter(.data$Data1 == "NFert_production") %>%  
     mutate(Data1 = "fertProd")
   
   # fertilizer Conversion Ratio Data
   nfert_ratio <- nfert_all %>%
-    filter(Data1 == "NFert_ratio")
+    filter(.data$Data1 == "NFert_ratio")
   
   
   # ---------------------------------------------------------------------------
@@ -46,14 +46,14 @@ calcChemicalRoutes_2020<- function() {
   #    - Combine with fertilizer conversion ratio to compute the final ammonia flow
   # ---------------------------------------------------------------------------
   ammonia_total <- ammonia_route %>%
-    group_by(Region, Year) %>%
-    summarise(Total_Ammonia = sum(Value, na.rm = TRUE), .groups = "drop")
+    group_by(.data$Region, .data$Year) %>%
+    summarise(Total_Ammonia = sum(.data$Value, na.rm = TRUE), .groups = "drop")
   
   ammonia_tofinal <- ammonia_total %>%
     left_join(nfert_ratio, by = c("Region", "Year")) %>%  # Join by Region and Year
-    mutate(amToFinal = Total_Ammonia * (1 - Value)) %>%     # Calculate final ammonia after conversion
-    select(Region, Year, amToFinal) %>%                     # Keep only relevant columns
-    pivot_longer(cols = c(amToFinal), 
+    mutate(amToFinal = .data$Total_Ammonia * (1 - .data$Value)) %>%     # Calculate final ammonia after conversion
+    select(.data$Region, .data$Year, .data$amToFinal) %>%                     # Keep only relevant columns
+    pivot_longer(cols = c("amToFinal"), 
                  names_to = "Data1", 
                  values_to = "Value")
   
@@ -65,17 +65,17 @@ calcChemicalRoutes_2020<- function() {
   #       mtoMta flow is in MtHVC and has to be converted to MtCH3OH
   # ---------------------------------------------------------------------------
   methanol_total <- methanol_route %>%
-    group_by(Region, Year) %>%
-    summarise(Total_Methanol = sum(Value, na.rm = TRUE), .groups = "drop")
+    group_by(.data$Region, .data$Year) %>%
+    summarise(Total_Methanol = sum(.data$Value, na.rm = TRUE), .groups = "drop")
   
   hvc_MTO <- hvc_route %>%
-    filter(Data1 == "mtoMta")
+    filter(.data$Data1 == "mtoMta")
   
   methanol_tofinal <- methanol_total %>%
     left_join(hvc_MTO, by = c("Region", "Year")) %>%   # Join by Region and Year
-    mutate(meToFinal = Total_Methanol - 2.62 * Value) %>%  # Adjust methanol using a fixed conversion factor (2.62) #Dutta2019 Figure 2, Page 196
-    select(Region, Year, meToFinal) %>%                  # Keep only relevant columns
-    pivot_longer(cols = c(meToFinal), 
+    mutate(meToFinal = .data$Total_Methanol - 2.62 * .data$Value) %>%  # Adjust methanol using a fixed conversion factor (2.62) #Dutta2019 Figure 2, Page 196
+    select("Region", "Year", "meToFinal") %>%                  # Keep only relevant columns
+    pivot_longer(cols = c("meToFinal"), 
                  names_to = "Data1", 
                  values_to = "Value")
   
@@ -89,14 +89,13 @@ calcChemicalRoutes_2020<- function() {
   # Add an additional column for processing: set 'opmoPrc' to "standard"
   Chemical_all <- Chemical_all %>%
     mutate(opmoPrc = "standard")%>%
-    select(Region,Year,Data1,opmoPrc,Value)
+    select("Region","Year","Data1","opmoPrc","Value")
   
   
   # ---------------------------------------------------------------------------
   # Load Total Chemical Production Data for Weighting
   # ---------------------------------------------------------------------------
-  Chemcial_Total <- calcOutput("ChemicalTotal", aggregate = FALSE) %>%
-    .[, "y2020", ]
+  Chemcial_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, "y2020", ]
   
   
   # ---------------------------------------------------------------------------

@@ -15,8 +15,8 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   AllChemicalFlows_2005to2020 <- calcOutput("AllChemicalFlows_2005to2020", warnNA = FALSE, aggregate = TRUE) %>% 
     as.data.frame() %>%
-    select(-Cell) %>%
-    rename(Product = Data1)
+    select(-"Cell") %>%
+    rename(Product = .data$Data1)
   
   # ---------------------------------------------------------------------------
   # Load and Recategorize Chemical Route Data for 2020
@@ -26,16 +26,16 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE)[, "y2020", ] %>% 
     as.data.frame() %>%
-    select(-Cell, -Data2, -Year) %>%
+    select(-"Cell", -"Data2", -"Year") %>%
     mutate(
       Product = case_when(
-        Data1 %in% c("amSyCoal", "amSyNG", "amSyLiq", "amSyCoal_cc", "amSyNG_cc", "amSyH2") ~ "ammonia",
-        Data1 %in% c("meSySol", "meSyNg", "meSyLiq", "meSyH2", "meSySol_cc", "meSyNg_cc") ~ "methanol",
-        Data1 %in% c("mtoMta", "stCrNg", "stCrLiq") ~ "hvc",
-        Data1 == "amToFinal" ~ "ammoFinal",
-        Data1 == "meToFinal" ~ "methFinal",
-        Data1 == "fertProd" ~ "fertilizer",
-        TRUE ~ Data1  # Retain other values as is
+        .data$Data1 %in% c("amSyCoal", "amSyNG", "amSyLiq", "amSyCoal_cc", "amSyNG_cc", "amSyH2") ~ "ammonia",
+        .data$Data1 %in% c("meSySol", "meSyNg", "meSyLiq", "meSyH2", "meSySol_cc", "meSyNg_cc") ~ "methanol",
+        .data$Data1 %in% c("mtoMta", "stCrNg", "stCrLiq") ~ "hvc",
+        .data$Data1 == "amToFinal" ~ "ammoFinal",
+        .data$Data1 == "meToFinal" ~ "methFinal",
+        .data$Data1 == "fertProd" ~ "fertilizer",
+        TRUE ~ .data$Data1  # Retain other values as is
       )
     )
   
@@ -45,11 +45,11 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   #    - Sum the values and calculate the share of each route within its Product.
   # ---------------------------------------------------------------------------
   ChemicalRoutes_2020 <- ChemicalRoutes_2020 %>%
-    group_by(Region, Product, Data1) %>%
-    summarise(Value = sum(Value, na.rm = TRUE), .groups = "drop") %>%
-    group_by(Region, Product) %>%
+    group_by(.data$Region, .data$Product, .data$Data1) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
+    group_by(.data$Region, .data$Product) %>%
     mutate(
-      Share = Value / sum(Value)
+      Share = .data$Value / sum(.data$Value)
     )
   
   # ---------------------------------------------------------------------------
@@ -61,18 +61,18 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   AllChemicalRoutes_2005to2020 <- AllChemicalFlows_2005to2020 %>%
     left_join(ChemicalRoutes_2020, by = c("Region", "Product")) %>%
     mutate(
-      Routes_Flow = Value.x * Share,
+      Routes_Flow = .data$Value.x * .data$Share,
       opmoPrc = "standard"
     ) %>%
-    select(Region, Year, Data1, opmoPrc, Routes_Flow) %>%
-    filter(!is.na(Data1))
+    select("Region", "Year", "Data1", "opmoPrc", "Routes_Flow") %>%
+    filter(!is.na(.data$Data1))
   
   # ---------------------------------------------------------------------------
   # Retrieve "OtherChem" Data
   # ---------------------------------------------------------------------------
   
-  OtherChem <- AllChemicalFlows_2005to2020 %>% filter(Product=="OtherChem") %>%
-    rename(Data1=Product, Routes_Flow=Value)%>%
+  OtherChem <- AllChemicalFlows_2005to2020 %>% filter(.data$Product=="OtherChem") %>%
+    rename(Data1="Product", Routes_Flow="Value")%>%
     mutate(opmoPrc = "standard", Data1="chemOld")
   
   # ---------------------------------------------------------------------------
@@ -85,12 +85,12 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   if(CCS==FALSE){
     AllChemicalRoutes_2005to2020 <- AllChemicalRoutes_2005to2020 %>%
-      group_by(Region, Year) %>%
+      group_by(.data$Region, .data$Year) %>%
       mutate(
-        Routes_Flow = ifelse(Data1 == "amSyNG",
-                       Routes_Flow + sum(Routes_Flow[Data1 == "amSyNG_cc"], na.rm = TRUE), 
-                       Routes_Flow),
-        Routes_Flow = ifelse(Data1 == "amSyNG_cc", 0, Routes_Flow)
+        Routes_Flow = ifelse(.data$Data1 == "amSyNG",
+                             .data$Routes_Flow + sum(.data$Routes_Flow[.data$Data1 == "amSyNG_cc"], na.rm = TRUE), 
+                             .data$Routes_Flow),
+        Routes_Flow = ifelse(.data$Data1 == "amSyNG_cc", 0, .data$Routes_Flow)
       ) %>%
       ungroup() 
   }
@@ -101,8 +101,7 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   #    - Get regional mapping and convert the combined data to a magpie object.
   #    - Aggregate from regions to country level using the mapping and weights.
   # ---------------------------------------------------------------------------
-  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE) %>%
-    .[, c("y2005", "y2010", "y2015", "y2020"), ]
+  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), ]
   
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
   

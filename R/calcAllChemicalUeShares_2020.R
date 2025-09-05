@@ -34,10 +34,10 @@ calcAllChemicalUeShares_2020 <- function() {
   # ---------------------------------------------------------------------------
   ChemicalFlows_2020 <- calcOutput("ChemicalFlows_2020", aggregate = TRUE)[, "y2020", ] %>%
     as.data.frame() %>%
-    select(-Cell) %>%
-    filter(!Data1 %in% c("ammonia", "methanol")) %>%
+    select(-"Cell") %>%
+    filter(!.data$Data1 %in% c("ammonia", "methanol")) %>%
     left_join(p37_mat2ue, by = c("Data1" = "Product")) %>%
-    mutate(ue_material = Value * mat2ue)
+    mutate(ue_material = .data$Value * .data$mat2ue)
   
   
   # ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ calcAllChemicalUeShares_2020 <- function() {
   # ---------------------------------------------------------------------------
   feIndustry <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = TRUE, scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
   
   # ---------------------------------------------------------------------------
@@ -56,8 +56,8 @@ calcAllChemicalUeShares_2020 <- function() {
   # ---------------------------------------------------------------------------
   AllChemicalUEShares_2020 <- ChemicalFlows_2020 %>%
     left_join(feIndustry, by = "Region") %>%
-    mutate(ue_share = ue_material / Value.y) %>%   # 'Value.y' from feIndustry
-    select(Region, Year.x, Data1.x, ue_share)
+    mutate(ue_share = .data$ue_material / .data$Value.y) %>%   # 'Value.y' from feIndustry
+    select("Region", "Year.x", "Data1.x", "ue_share")
   
   
   # ---------------------------------------------------------------------------
@@ -66,9 +66,9 @@ calcAllChemicalUeShares_2020 <- function() {
   #    - Create a new row for "OtherChem" representing the remaining share (1 minus the sum).
   # ---------------------------------------------------------------------------
   ue_summary <- AllChemicalUEShares_2020 %>%
-    group_by(Region, Year.x) %>%
+    group_by(.data$Region, .data$Year.x) %>%
     summarise(
-      ue_sum = sum(ue_share, na.rm = TRUE),
+      ue_sum = sum(.data$ue_share, na.rm = TRUE),
       .groups = "drop"
     )
   
@@ -77,11 +77,11 @@ calcAllChemicalUeShares_2020 <- function() {
       ue_summary %>%
         mutate(
           Data1.x = "OtherChem",       # New product name for residual share
-          ue_share = 1 - ue_sum         # Remaining share
+          ue_share = 1 - .data$ue_sum         # Remaining share
         )
     ) %>%
     mutate(all_in = "ue_chemicals") %>%
-    select(Region, Year.x, Data1.x, all_in, ue_share)
+    select("Region", "Year.x", "Data1.x", "all_in", "ue_share")
   
   
   # ---------------------------------------------------------------------------

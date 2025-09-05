@@ -9,8 +9,7 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   # Get IFA ammonia production volumes in Kt, convert to Mt and select the years 2015-2020.
   # ============================================================================
-  ammonia_production <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = TRUE) / 1000) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  ammonia_production <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = TRUE) / 1000)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame()
 
   # ============================================================================
@@ -20,7 +19,7 @@ calcAmmoniaRoute <- function() {
     as.data.frame() %>%
     # Exclude regions: China (CHA), Japan (JPN), and OAS
     # There is no data on the Asia Pacific Region in IEA_Ammonia, therefore Japan and OAS are taken from IEA_Petrochem (see below); for China there is more specific data (RMI_China)
-    filter(!(.[[2]] %in% c("CHA", "JPN", "OAS")))
+    filter(!.data$Region %in% c("CHA", "JPN", "OAS"))
 
   # Map Data1 values to REMIND categories
   ammonia_share_iea$Category <- case_when(
@@ -36,12 +35,12 @@ calcAmmoniaRoute <- function() {
   # Group by Region, Year, and Category, then calculate normalized share (%)
   # ----------------------------------------------------------------------------
   ammonia_share_iea <- ammonia_share_iea %>%
-    group_by(Region, Year, Category) %>%
-    summarise(Value = sum(Value, na.rm = TRUE)) %>%
-    group_by(Region, Year) %>%
-    mutate(normalized_value = (Value / sum(Value, na.rm = TRUE)) * 100) %>%
+    group_by(.data$Region, .data$Year, .data$Category) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>%
+    group_by(.data$Region, .data$Year) %>%
+    mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
-    select(-Value, -Year)
+    select(-"Value", -"Year")
 
   # ============================================================================
   # Get IEA shares for different ammonia production routes for Japan and OAS in 2017 (IEA_Petrochem)
@@ -62,13 +61,13 @@ calcAmmoniaRoute <- function() {
   #    - Sum the values, then set amSyCoal values to 0.
   #    - calculate the share per production route for each region-year group.
   ammonia_share_ieapetro <- ammonia_share_ieapetro %>%
-    group_by(Region, Year, Category) %>%
-    summarise(Value = sum(Value, na.rm = TRUE)) %>% # Sum values by group
-    mutate(Value = ifelse(Category == "amSyCoal", 0, Value)) %>% # Set amSyCoal values to 0
-    group_by(Region, Year) %>%
-    mutate(normalized_value = (Value / sum(Value, na.rm = TRUE)) * 100) %>% # Normalize
+    group_by(.data$Region, .data$Year, .data$Category) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>% # Sum values by group
+    mutate(Value = ifelse(.data$Category == "amSyCoal", 0, .data$Value)) %>% # Set amSyCoal values to 0
+    group_by(.data$Region, .data$Year) %>%
+    mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>% # Normalize
     ungroup() %>%
-    select(-Value, -Year)
+    select(-"Value", -"Year")
 
   # ============================================================================
   # Get China-specific ammonia data (Base Year 2020)
@@ -87,12 +86,12 @@ calcAmmoniaRoute <- function() {
 
   # Group by Region, Year, and Category, then normalize the share values
   ammonia_share_china <- ammonia_share_china %>%
-    group_by(Region, Year, Category) %>%
-    summarise(Value = sum(Value, na.rm = TRUE)) %>%
-    group_by(Region, Year) %>%
-    mutate(normalized_value = (Value / sum(Value, na.rm = TRUE)) * 100) %>%
+    group_by(.data$Region, .data$Year, .data$Category) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>%
+    group_by(.data$Region, .data$Year) %>%
+    mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
-    select(-Value, -Year)
+    select(-"Value", -"Year")
 
   # ============================================================================
   # Combine all ammonia share data (IEA, IEA Petrochem, and China)
@@ -106,14 +105,13 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   ammonia_route_value <- ammonia_share_all %>%
     left_join(ammonia_production, by = "Region") %>%
-    mutate(actual_value = normalized_value * Value / 100) %>%
-    select(-Value, -Cell, -Data1, -normalized_value)
+    mutate(actual_value = .data$normalized_value * .data$Value / 100) %>%
+    select(-"Value", -"Cell", -"Data1", -"normalized_value")
 
   # ============================================================================
   # Load non-aggregated ammonia production data (for weighting purposes)
   # ============================================================================
-  ammonia_production_all <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE) %>%
-    .[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ]
+  ammonia_production_all <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ]
 
   # ============================================================================
   # Load regional mapping for aggregation from regions to countries

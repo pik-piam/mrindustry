@@ -16,7 +16,7 @@ readIEA_PetrochemEI <- function() {
                      sheet = "Table 12. Petro Regional Coef",
                      range = "A1:O4",
                      skip = 0) %>%
-    select(-Benelux, -Canada, -France, -Italy, -Korea, -Taiwan)
+    select(-"Benelux", -"Canada", -"France", -"Italy", -"Korea", -"Taiwan")
   
   # ---------------------------------------------------------------------------
   # Clean and Convert Data
@@ -35,7 +35,7 @@ readIEA_PetrochemEI <- function() {
   #      holds the original column names and "Value" holds the corresponding values.
   # ---------------------------------------------------------------------------
   data <- data %>%
-    rename(Product = Region) %>%
+    rename(Product = "Region") %>%
     tidyr::pivot_longer(
       cols = 2:9,
       names_to = "Country",

@@ -10,30 +10,29 @@ calcHVCRoute <- function() {
   # Load IEA Petrochemical Production Data for BTX, Propylene, and Ethylene
   #    - Retrieve production data for selected years.
   # ----------------------------------------------------------
-  BTX_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_BTX", aggregate = TRUE) %>%
-    .[, c("X2015", "X2017", "X2025"), ] %>%
+  BTX_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_BTX", aggregate = TRUE)[, c("X2015", "X2017", "X2025"), ] %>%
     as.data.frame()
   
-  Propylene_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", aggregate = TRUE) %>%
-    .[, c("X2015", "X2017", "X2025"), ] %>%
+  Propylene_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", aggregate = TRUE)[, c("X2015", "X2017", "X2025"), ] %>%
     as.data.frame()
   
-  Ethylene_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", aggregate = TRUE) %>%
-    .[, c("X2015", "X2017", "X2025"), ] %>%
+  Ethylene_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", aggregate = TRUE)[, c("X2015", "X2017", "X2025"), ] %>%
     as.data.frame()
   
   # ----------------------------------------------------------
   # Define a helper function to interpolate missing years and filter data
   #    - Fills in missing years (2015-2020) per Region and source using linear interpolation.
   # ----------------------------------------------------------
+  Region <- NULL
+  source <- NULL
   interpolate_and_filter <- function(df) {
     df %>%
-      complete(Year = 2015:2020, nesting(Region, source)) %>%  # Fill missing years for each Region and source
-      arrange(Region, source, Year) %>%                         # Sort by Region, source, and Year
-      group_by(Region, source) %>%                              # Group for interpolation
-      mutate(Value = na.approx(Value, na.rm = FALSE)) %>%       # Linear interpolation
+      complete(Year = 2015:2020, nesting(Region, source)) %>%   # Fill missing years for each Region and source
+      arrange(.data$Region, .data$source, .data$Year) %>%       # Sort by Region, source, and Year
+      group_by(.data$Region, .data$source) %>%                  # Group for interpolation
+      mutate(Value = na.approx(.data$Value, na.rm = FALSE)) %>% # Linear interpolation
       ungroup() %>%
-      filter(Year <= 2020)                                      # Keep only years up to 2020
+      filter(.data$Year <= 2020)                                # Keep only years up to 2020
   }
   
   # ----------------------------------------------------------
@@ -46,11 +45,11 @@ calcHVCRoute <- function() {
     Propylene_IEA %>% mutate(source = "Propylene_IEA"),
     Ethylene_IEA %>% mutate(source = "Ethylene_IEA")
   ) %>%
-    mutate(Year = as.numeric(gsub("X", "", Year))) %>%  # Convert year labels to numeric
-    select(-Cell, -Data1) %>%                           # Remove unnecessary columns
+    mutate(Year = as.numeric(gsub("X", "", .data$Year))) %>%  # Convert year labels to numeric
+    select(-"Cell", -"Data1") %>%                           # Remove unnecessary columns
     interpolate_and_filter() %>%                        # Apply interpolation and filtering
-    group_by(Year, Region) %>%                          # Summarise production by Year and Region
-    summarise(value = sum(Value, na.rm = TRUE), .groups = "drop") %>%
+    group_by(.data$Year, .data$Region) %>%                          # Summarise production by Year and Region
+    summarise(value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
     mutate(source = "Total_HVCs")
   
   # ----------------------------------------------------------
@@ -61,12 +60,12 @@ calcHVCRoute <- function() {
   # ----------------------------------------------------------
   HVC_share_iea <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_HVCs", aggregate = TRUE)[, "y2017", ] %>%
     as.data.frame() %>%
-    group_by(Year) %>%  
-    mutate(Value = ifelse(Data1 == "MTO_MTA",
-                          ifelse(Region == "CHA", sum(Value[Data1 == "MTO_MTA"], na.rm = TRUE), 0),
-                          Value)) %>%  # Assign total MTO_MTA to CHA only
+    group_by(.data$Year) %>%  
+    mutate(Value = ifelse(.data$Data1 == "MTO_MTA",
+                          ifelse(.data$Region == "CHA", sum(.data$Value[.data$Data1 == "MTO_MTA"], na.rm = TRUE), 0),
+                          .data$Value)) %>%  # Assign total MTO_MTA to CHA only
     ungroup() %>%
-    filter(Region == "CHA")
+    filter(.data$Region == "CHA")
   
   # Map Data1 to custom categories
   HVC_share_iea$Category <- case_when(
@@ -77,12 +76,12 @@ calcHVCRoute <- function() {
   
   # Group and normalize the share data per Region and Year
   HVC_share_iea <- HVC_share_iea %>%
-    group_by(Region, Year, Category) %>%
-    summarise(Value = sum(Value, na.rm = TRUE), .groups = "drop") %>%
-    group_by(Region, Year) %>%
-    mutate(normalized_value = (Value / sum(Value, na.rm = TRUE)) * 100) %>%
+    group_by(.data$Region, .data$Year, .data$Category) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
+    group_by(.data$Region, .data$Year) %>%
+    mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
-    select(-Value, -Year)
+    select(-"Value", -"Year")
   
   # ----------------------------------------------------------
   # Process IEA HVC Feedstock Share Data
@@ -92,7 +91,7 @@ calcHVCRoute <- function() {
   # ----------------------------------------------------------
   HVC_Feedstockshare_iea <- calcOutput("IEA_Petrochem", subtype = "Feedstock_HVCs", aggregate = TRUE)[, "y2017", ] %>%
     as.data.frame() %>%
-    filter(Region != "CHA")  # Exclude China
+    filter(.data$Region != "CHA")  # Exclude China
   
   HVC_Feedstockshare_iea$Category <- case_when(
     HVC_Feedstockshare_iea$Data1 %in% c("Ethane") ~ "stCrNg",
@@ -100,15 +99,15 @@ calcHVCRoute <- function() {
   )
   
   HVC_Feedstockshare_iea <- HVC_Feedstockshare_iea %>%
-    group_by(Region, Year, Category) %>%
-    summarise(Value = sum(Value, na.rm = TRUE), .groups = "drop") %>%
-    group_by(Region, Year) %>%
-    mutate(normalized_value = (Value / sum(Value, na.rm = TRUE)) * 100) %>%
+    group_by(.data$Region, .data$Year, .data$Category) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
+    group_by(.data$Region, .data$Year) %>%
+    mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
-    select(-Value, -Year) %>%
+    select(-"Value", -"Year") %>%
     bind_rows(
       HVC_Feedstockshare_iea %>%
-        distinct(Region) %>%                 # For each unique Region, add a zero entry for mtoMta
+        distinct(.data$Region) %>%                 # For each unique Region, add a zero entry for mtoMta
         mutate(Category = "mtoMta", normalized_value = 0)
     )
   
@@ -124,14 +123,13 @@ calcHVCRoute <- function() {
   # ----------------------------------------------------------
   HVC_route_value <- HVC_share_all %>%
     left_join(HVCs_total, by = "Region") %>%
-    mutate(actual_value = normalized_value * value / 100) %>%
-    select(-value, -normalized_value, -source)
+    mutate(actual_value = .data$normalized_value * .data$value / 100) %>%
+    select(-"value", -"normalized_value", -"source")
 
   # ----------------------------------------------------------
   # Load Non-Aggregated HVC Total Production Data for Weighting
   # ----------------------------------------------------------
-  HVCs_total_all <- calcOutput("IEA_Petrochem", subtype = "production3type_All", aggregate = FALSE) %>%
-    .[, "y2017", "HVCs"]
+  HVCs_total_all <- calcOutput("IEA_Petrochem", subtype = "production3type_All", aggregate = FALSE)[, "y2017", "HVCs"]
   
   # ----------------------------------------------------------
   # Aggregate Regional Data to the Country Level

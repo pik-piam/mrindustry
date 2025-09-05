@@ -9,10 +9,9 @@ calcAllChemicalRoutes_2020 <- function(CCS=FALSE) {
   
   AllChemicalRoutes_2020<- calcOutput("AllChemicalRoutes_2005to2020",CCS=CCS,warnNA = FALSE, aggregate = TRUE)[,"y2020",]%>% 
     as.data.frame() %>%
-    select(-Cell)
+    select(-"Cell")
   
-  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)%>%
-    .[,c("y2020"),]
+  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[,c("y2020"),]
   
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry") 
   
