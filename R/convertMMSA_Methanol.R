@@ -34,8 +34,7 @@ convertMMSA_Methanol <- function(x) {
   # Load Regional-to-Country Mapping
   #    - Load the mapping file and filter out regions labeled as "rest".
   # ---------------------------------------------------------------------------
-  file_name <- "regionmappingMMSA.csv"
-  map <- toolGetMapping(file_name, type = "regional", where = "mrindustry") %>%
+  map <- toolGetMapping("regionmappingMMSA.csv", type = "regional", where = "mrindustry") %>%
     dplyr::filter(.data$IFAReg != "rest")
   
   # ---------------------------------------------------------------------------

@@ -40,8 +40,7 @@ convertIHS_Meth <- function(x) {
   #    - Load the mapping file for IHS_Meth (assumed for IEA or similar)
   #    - Exclude regions labeled as "rest"
   # ---------------------------------------------------------------------------
-  file_name <- "regionmappingIHS_Meth_2018.csv"
-  map <- toolGetMapping(file_name, type = "regional", where = "mrindustry") %>%
+  map <- toolGetMapping("regionmappingIHS_Meth_2018.csv", type = "regional", where = "mrindustry") %>%
     dplyr::filter(.data$IFAReg != "rest")
   
   # ---------------------------------------------------------------------------

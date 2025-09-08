@@ -46,8 +46,7 @@ convertIEA_Petrochem <- function(x) {
     x_HVCs     <- x[, , "HVCs"]
     
     # Load regional-to-country mapping for 7 regions, excluding "rest" regions
-    file_name <- "regionmappingIEA_Petrochem_7region.csv"
-    map <- toolGetMapping(file_name, type = "regional", where = "mrindustry") %>%
+    map <- toolGetMapping("regionmappingIEA_Petrochem_7region.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
     
     # Aggregate each chemical component to country level using corresponding weights
@@ -74,8 +73,7 @@ convertIEA_Petrochem <- function(x) {
     Chemcial_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, "y2017", ]
     
     # Load mapping for 7 regions
-    file_name <- "regionmappingIEA_Petrochem_7region.csv"
-    map <- toolGetMapping(file_name, type = "regional", where = "mrindustry") %>%
+    map <- toolGetMapping("regionmappingIEA_Petrochem_7region.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
     
     # Choose the appropriate weight based on the second component of the subtype
@@ -98,8 +96,7 @@ convertIEA_Petrochem <- function(x) {
     # ---------------------------------------------------------------------------
   } else if (subtype[1] == "Feedstock" || subtype[1] == "RouteRTS" || subtype[1] == "RouteCTS") {
     # Load 5-region mapping for feedstock/route data, excluding "rest" regions
-    file_name <- "regionmappingIEA_Petrochem_5region.csv"
-    map <- toolGetMapping(file_name, type = "regional", where = "mrindustry") %>%
+    map <- toolGetMapping("regionmappingIEA_Petrochem_5region.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
     
     # Retrieve overall weighting data for chemical energy
