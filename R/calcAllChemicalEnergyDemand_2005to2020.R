@@ -120,7 +120,7 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
     left_join(specFeDemTarget, by = c("tePrc", "opmoPrc"), relationship="many-to-many") %>%
     mutate(demFeTarget = .data$ChemFlow*.data$value) %>%
     group_by(.data$Region, .data$Year, .data$Data1)%>%
-    summarise(demFeTarget_total = sum(.data$demFeTarget), totalFlow = sum(.data$ChemFlow))
+    summarise(demFeTarget_total = sum(.data$demFeTarget), totalFlow = sum(.data$ChemFlow), .groups = "drop")
   
   demFeActual <- AllChemicalRoutes_2005to2020 %>% filter(.data$Year==2020) %>%
     mutate(Data1 =
@@ -130,7 +130,7 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
                        TRUE ~ .data$tePrc
              ))%>%
     group_by(.data$Region, .data$Year, .data$Data1) %>%
-    summarise(ChemFlow_total = sum(.data$ChemFlow)) %>%
+    summarise(ChemFlow_total = sum(.data$ChemFlow), .groups = "drop") %>%
     merge(specFeDem, by = c("Region", "Data1")) %>%
     mutate(demFeActual_total = .data$Value_new * .data$ChemFlow_total)
   

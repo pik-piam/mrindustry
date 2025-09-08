@@ -36,7 +36,7 @@ calcAmmoniaRoute <- function() {
   # ----------------------------------------------------------------------------
   ammonia_share_iea <- ammonia_share_iea %>%
     group_by(.data$Region, .data$Year, .data$Category) %>%
-    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
     group_by(.data$Region, .data$Year) %>%
     mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
@@ -62,7 +62,7 @@ calcAmmoniaRoute <- function() {
   #    - calculate the share per production route for each region-year group.
   ammonia_share_ieapetro <- ammonia_share_ieapetro %>%
     group_by(.data$Region, .data$Year, .data$Category) %>%
-    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>% # Sum values by group
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>% # Sum values by group
     mutate(Value = ifelse(.data$Category == "amSyCoal", 0, .data$Value)) %>% # Set amSyCoal values to 0
     group_by(.data$Region, .data$Year) %>%
     mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>% # Normalize
@@ -87,7 +87,7 @@ calcAmmoniaRoute <- function() {
   # Group by Region, Year, and Category, then normalize the share values
   ammonia_share_china <- ammonia_share_china %>%
     group_by(.data$Region, .data$Year, .data$Category) %>%
-    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
     group_by(.data$Region, .data$Year) %>%
     mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
@@ -104,7 +104,7 @@ calcAmmoniaRoute <- function() {
   #   - Compute the actual value using the normalized share.
   # ============================================================================
   ammonia_route_value <- ammonia_share_all %>%
-    left_join(ammonia_production, by = "Region") %>%
+    left_join(ammonia_production, by = "Region", relationship = "many-to-many") %>%
     mutate(actual_value = .data$normalized_value * .data$Value / 100) %>%
     select(-"Value", -"Cell", -"Data1", -"normalized_value")
 

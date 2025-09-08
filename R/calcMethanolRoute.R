@@ -43,7 +43,7 @@ calcMethanolRoute <- function() {
   # Group by Region, Year, and Category, then calculate normalized share (%)
   methanol_share_iea <- methanol_share_iea %>%
     group_by(.data$Region, .data$Year, .data$Category) %>%
-    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
     group_by(.data$Region, .data$Year) %>%
     mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
@@ -69,7 +69,7 @@ calcMethanolRoute <- function() {
   # Group by Region, Year, and Category, then calculate normalized share (%)
   methanol_share_china <- methanol_share_china %>%
     group_by(.data$Region, .data$Year, .data$Category) %>%
-    summarise(Value = sum(.data$Value, na.rm = TRUE)) %>%
+    summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
     group_by(.data$Region, .data$Year) %>%
     mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>%
     ungroup() %>%
