@@ -104,7 +104,7 @@ calcChemicalRoutes_2020<- function() {
   #    - Collapse dimensions, select the year 2020, and aggregate using regional mapping.
   # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
-  x <- as.magpie(Chemical_all, spatial = 1, temporal = 2, data = 5)
+  x <- as.magpie(Chemical_all, spatial = 1, temporal = 2, datacol = 5)
   
   x <- x[, "y2020", ]
   
