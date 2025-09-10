@@ -103,7 +103,7 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), ]
   
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   
   x <- as.magpie(AllChemicalRoutes_2005to2020, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 

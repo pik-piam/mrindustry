@@ -211,7 +211,7 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   # Aggregate Data to Country Level
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   
   x <- as.magpie(AllChem_SpecFeDem, spatial = 1, temporal = 2)
   x <- toolAggregate(

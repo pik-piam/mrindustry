@@ -89,7 +89,7 @@ calcAllChemicalUeShares_2020 <- function() {
   #    - Retrieve regional mapping.
   #    - Convert the UE data to a magpie object and aggregate from regions to countries.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(AllChemicalUEShares_2020, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
   

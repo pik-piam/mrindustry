@@ -100,7 +100,7 @@ calcFertilizerRoute <- function() {
   #      using the production data as weights.
   # ---------------------------------------------------------------------------
   
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(NFert_output, spatial = 1, temporal = 2)
   x <- toolAggregate(
     x,

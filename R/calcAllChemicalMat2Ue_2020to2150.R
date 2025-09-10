@@ -137,7 +137,7 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     select("Region","Year","Data1","all_in","new_mat2ue")
   
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
   
   # ---------------------------------------------------------------------------

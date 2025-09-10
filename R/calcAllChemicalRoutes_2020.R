@@ -13,7 +13,7 @@ calcAllChemicalRoutes_2020 <- function(CCS=FALSE) {
   
   Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[,c("y2020"),]
   
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry") 
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder") 
   
   x <- as.magpie(AllChemicalRoutes_2020, spatial = 1, temporal = 2)
   # Aggregate the regional data (xReg) to the country level using the mapping

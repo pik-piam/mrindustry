@@ -51,7 +51,7 @@ calcChemicalFlows_2020 <- function() {
   #    - Convert the summarized data to a magpie object.
   #    - Aggregate the regional data to the country level using the mapping and weights.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(ChemicalRoute_summarized, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 
                      weight = Chemical_Total[unique(map$CountryCode), , ])

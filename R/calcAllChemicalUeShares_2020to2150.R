@@ -151,7 +151,7 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     ) %>% select(-"ue_sum") 
   
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
   
   # ---------------------------------------------------------------------------

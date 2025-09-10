@@ -99,7 +99,7 @@ calcMethanolRoute <- function() {
   #    - Convert the data to a magpie object.
   #    - Aggregate regional data to country level using production weights.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry") 
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder") 
   x <- as.magpie(methanol_route_value, spatial = 1, temporal = 3)
   x <- toolAggregate(
     x,

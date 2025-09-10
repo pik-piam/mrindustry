@@ -27,7 +27,7 @@ convertIEA_PetrochemEI <- function(x) {
   #    - Load a broader mapping file "regionmappingH12.csv" to aggregate the data 
   #      from the regional level ("RegionCode") to the country level ("CountryCode").
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
   
   # ---------------------------------------------------------------------------

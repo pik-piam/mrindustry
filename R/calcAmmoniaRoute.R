@@ -116,7 +116,7 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   # Load regional mapping for aggregation from regions to countries
   # ============================================================================
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
 
   # ============================================================================
   # Convert ammonia route data to a magpie object for spatial and temporal analysis
