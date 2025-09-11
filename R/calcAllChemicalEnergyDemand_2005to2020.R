@@ -117,7 +117,7 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   # The ratio between actual and target demand for each route is assumed to be the same as for the overall steam cracking/ammonia/methanol synthesis
   # ---------------------------------------------------------------------------
   demFeTarget <- AllChemicalRoutes_2005to2020 %>% filter(.data$Year==2020) %>%
-    left_join(specFeDemTarget, by = c("tePrc", "opmoPrc"), relationship="many-to-many") %>%
+    merge(specFeDemTarget, by = c("tePrc", "opmoPrc"), relationship="many-to-many") %>%
     mutate(demFeTarget = .data$ChemFlow*.data$value) %>%
     group_by(.data$Region, .data$Year, .data$Data1)%>%
     summarise(demFeTarget_total = sum(.data$demFeTarget), totalFlow = sum(.data$ChemFlow), .groups = "drop")
@@ -154,7 +154,7 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   # Compute Energy Demand from Chemical Routes and SpecFeDemand and summarize to total energy demand per region, year and FE type
   # ---------------------------------------------------------------------------
   feChemical <- specFeDem_byRoute %>%
-    right_join(AllChemicalRoutes_2005to2020, by = c("Region", "tePrc", "opmoPrc"), relationship="many-to-many") %>%
+    merge(AllChemicalRoutes_2005to2020, by = c("Region", "tePrc", "opmoPrc"), relationship="many-to-many") %>%
     mutate(Energy_demand = .data$ChemFlow * .data$specFeDem) %>%
     select(c("Region", "Year", "tePrc", "opmoPrc", "entyFe", "Energy_demand"))
   
