@@ -5,7 +5,7 @@
 #'
 #' @author Qianzhi Zhang
 #' @importFrom dplyr if_else
-calcOECD_PlasticUseTotal <- function() {
+calcPlasticUseTotal <- function() {
   # ---------------------------------------------------------------------------
   # Load & clean regional use data (1990–2019)
   #    - Read and flatten OECD plastic use by region.
@@ -37,10 +37,8 @@ calcOECD_PlasticUseTotal <- function() {
   #    - Read regional production and map region names to codes.
   # ---------------------------------------------------------------------------
   prod_region_map <- c(China = "CHA", EU27.3 = "EUR", North.America = "USA")
-  prod_data <- read.csv(
-    "C:/Users/leoniesc/madrat/sources/PlasticEurope/PlasticProduction_region.csv" #C:/Data/madrat/sources/PlasticEurope/PlasticProduction_region.csv
-  ) %>%
-    tidyr::pivot_longer(-Year, names_to = "Region", values_to = "production") %>%
+  prod_data <- readSource("PlasticsEurope", subtype="PlasticProduction_region", convert=FALSE) %>%
+    as.data.frame() %>%
     dplyr::mutate(
       Year = as.integer(Year),
       Region = dplyr::recode(Region, !!!prod_region_map)

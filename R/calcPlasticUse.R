@@ -5,23 +5,21 @@
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticUse <- function() {
+calcPlasticUse <- function() {
   # ---------------------------------------------------------------------------
-  # Load and clean sectoral share data
-  #    - Read share output and prepare dataframe, rename Data2 to Data1 to align dimensions.
+  # Load sectoral share data
   # ---------------------------------------------------------------------------
   share_df <- calcOutput(
-    "OECD_PlasticUseShare", aggregate = TRUE
+    "PlasticUseShare", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
     dplyr::select(-Cell,-Year)
   
   # ---------------------------------------------------------------------------
-  # Load and clean total use data
-  #    - Read total use output and prepare dataframe.
+  # Load total use data
   # ---------------------------------------------------------------------------
   total_df <- calcOutput(
-    "OECD_PlasticUseTotal", aggregate = TRUE
+    "PlasticUseTotal", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
     dplyr::select(-Cell, -Data1) %>%
@@ -48,7 +46,7 @@ calcOECD_PlasticUse <- function() {
   x <- as.magpie(combined, spatial = 1, temporal = 2)
   
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   gdp_weights <- calcOutput(
     "GDP", scenario="SSP2", average2020 = FALSE, naming = "scenario", aggregate = FALSE

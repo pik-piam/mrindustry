@@ -7,14 +7,12 @@
 readUNCTAD()
 }
 \value{
-magpie object of the CUNCTAD data
+magpie object of the UNCTAD data
 }
 \description{
-Read-in US_PlasticsTradebyPartner file as
-a magclass object.
-}
-\details{
-UNCTAD is United Nations Conference on Trade and Development.
+Read-in US_PlasticsTradebyPartner file from the
+United Nations Conference on Trade and Development (UNCTAD).
+Data is filtered for Trading Partner == World, i.e. all trading partners aggregated.
 }
 \seealso{
 [readSource()]
@@ -24,5 +22,5 @@ a <- readSource(type = "UNCTAD")
 }
 }
 \author{
-Qianzhi Zhang
+Qianzhi Zhang, Leonie Schweiger
 }

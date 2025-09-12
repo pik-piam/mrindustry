@@ -1,18 +1,18 @@
 #' Calculate Country-Level Mechanical Recycling Rate Trajectories
 #'
 #' Generate time series of mechanical recycling rates by sector and region
-#' using OECD end-of-life (EoL) data and external sources, then aggregate to countries for 1990–2100.
+#' using OECD end-of-life (EoL) data and other sources, then aggregate to countries for 1990–2100.
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticMechReRate <- function() {
+calcPlasticMechReRate <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions
   #    - Retrieve manufacturing sectors (excluding 'Total') and regional codes.
   # ---------------------------------------------------------------------------
   sector_map <- toolGetMapping("structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry")
   targets    <- setdiff(unique(sector_map$Target), "Total")
-  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   regions    <- unique(region_map$RegionCode)
   
   # ---------------------------------------------------------------------------
@@ -35,37 +35,34 @@ calcOECD_PlasticMechReRate <- function() {
   # Incorporate external EoL share data (2005–2020)
   #    - Load EU, CNBS, US EPA datasets, compute mechanical recycling share.
   # ---------------------------------------------------------------------------
-  eu <- read.csv("C:/Users/leoniesc/madrat/sources/PlasticEurope/PlasticEol.csv") %>%
-    dplyr::slice(1:15) %>%
-    tidyr::pivot_longer(-Year, names_to = "Treatment", values_to = "Value") %>%
-    dplyr::mutate(Region = "EUR", Year = as.integer(Year))
-  cn <- read.csv("C:/Users/leoniesc/madrat/sources/China_CNBS/PlasticEol.csv") %>%
-    dplyr::select(-Source.) %>%
-    tidyr::pivot_longer(-Year, names_to = "Treatment", values_to = "Value") %>%
-    dplyr::mutate(Value = Value/100, Region="CHA", Year=as.integer(Year))
-  us <- read.csv("C:/Users/leoniesc/madrat/sources/US_EPA/PlasticEol.csv") %>%
-    dplyr::slice(1:10) %>%
-    tidyr::pivot_longer(-Year, names_to = "Treatment", values_to = "Value") %>%
-    dplyr::mutate(Value = Value/1000, Region="USA", Year=as.integer(Year))
+  eu <- readSource("PlasticsEurope", subtype="PlasticEoL_EU", convert=FALSE) %>%
+    as.data.frame() %>%
+    dplyr::mutate(Region = "EUR", Year = as.integer(as.character(Year)))
+  cn <- readSource("China_CNBS", convert=FALSE) %>%
+    as.data.frame() %>%
+    dplyr::mutate(Region="CHA", Year=as.integer(as.character(Year)))
+  us <- readSource("US_EPA", convert=FALSE) %>%
+    as.data.frame()%>%
+    dplyr::mutate(Region="USA", Year=as.integer(as.character(Year)))
   
   ext_combined <- dplyr::bind_rows(eu, cn, us) %>%
-    dplyr::filter(Year >= 2005, Year <= 2020) %>%
-    dplyr::group_by(Region, Year) %>%
+    dplyr::filter(.data$Year >= 2005, .data$Year <= 2020) %>%
+    dplyr::group_by(.data$Region, .data$Year) %>%
     dplyr::summarise(
-      total     = sum(Value, na.rm=TRUE),
-      recycled  = sum(Value[Treatment=="Recycled"], na.rm=TRUE),
+      total     = sum(.data$Value, na.rm=TRUE),
+      recycled  = sum(.data$Value[.data$Data1=="Recycled"], na.rm=TRUE),
       .groups   = "drop"
     ) %>%
-    dplyr::mutate(share = recycled/total) %>%
-    dplyr::select(Region, Year, share)
+    dplyr::mutate(share = .data$recycled/.data$total) %>%
+    dplyr::select("Region", "Year", "share")
   
   # ---------------------------------------------------------------------------
   # Merge external shares into mech_ext, replacing where available
   # ---------------------------------------------------------------------------
   mech_hist <- mech_ext %>%
     dplyr::left_join(ext_combined, by=c("Region","Year")) %>%
-    dplyr::mutate(Value = dplyr::if_else(!is.na(share), share, Value)) %>%
-    dplyr::select(Region, Year, Value)
+    dplyr::mutate(Value = dplyr::if_else(!is.na(.data$share), .data$share, .data$Value)) %>%
+    dplyr::select("Region", "Year", "Value")
   
   # ---------------------------------------------------------------------------
   # Fill 1990–1999 with Year-2000 values and extend to 2100

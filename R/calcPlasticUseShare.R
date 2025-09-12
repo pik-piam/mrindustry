@@ -1,11 +1,11 @@
-#' Calculate OECD Plastic Use Share by Country
+#' Calculate Plastic Use Share by Country
 #'
-#' Compute the share of plastic use by sector for each country, based on regional OECD data
-#' and supplemental EU shares, then aggregate to country level.
+#' Compute the share of plastic use by sector for each country in 2019, 
+#' based on regional OECD data and supplemental EU shares.
 #' 
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticUseShare <- function() {
+calcPlasticUseShare <- function() {
   # ---------------------------------------------------------------------------
   # Calculate share of plastic use by sector (plastics application) from OECD data
   # - Read OECD plastic use outputs at regional level.
@@ -24,48 +24,38 @@ calcOECD_PlasticUseShare <- function() {
   
   # ---------------------------------------------------------------------------
   # Replace shares for EU with EU plastic share reference data
-  # - Read CSV of PlasticEurope shares 
+  # - Read PlasticEurope shares 
   # - Map sectors of EU shares to sectors of OECD shares, for mapping "Agriculture" and "Others" to "Others" and "Textiles" use weights from OECD data
   # ---------------------------------------------------------------------------
-  eu_share_df <- read.csv(
-    "C:/Users/leoniesc/madrat/sources/PlasticEurope/PlasticShare_EU.csv" #C:/Data/madrat/sources/PlasticEurope/PlasticShare_EU.csv
-  ) %>%
-    tidyr::pivot_longer(
-      cols = -Year,
-      names_to = "Type",
-      values_to = "Share"
-    ) %>%
-    dplyr::filter(Type != "Total.Demand..Mt.") %>%
-    dplyr::mutate(Year = as.integer(as.character(Year)))
+  eu_share <- readSource("PlasticsEurope", subtype="PlasticShare_EU", convert=FALSE)
 
   sector_map <- toolGetMapping(
     "structuremappingPlasticShare.csv", type = "sectoral", where = "mrindustry"
   )
-  y_eu <- as.magpie(eu_share_df, temporal = 1) / 100
   weights_eu <- as.magpie(
     regional_df[c("Region", "Year", "Data2", "Value_sum")],
     spatial = 1, temporal = 2
   )
-  y_agg <- toolAggregate(
-    y_eu, rel = sector_map, dim = 3,
+  eu_share_agg <- toolAggregate(
+    eu_share/100, rel = sector_map, dim = 3,
     weight = weights_eu["EUR", "y2019", ],
     from = "Source", to = "Target"
   )
   
-  x_share <- as.magpie(
+  regional_share <- as.magpie(
     regional_df[c("Region", "Year", "Data2", "share")],
     spatial = 1, temporal = 2
   )
-  x_share["EUR", "y2019", ] <- y_agg["EUR", "y2019", ]
+  regional_share["EUR", "y2019", ] <- eu_share_agg["EUR", "y2019", ]
   
   # ---------------------------------------------------------------------------
   # Aggregate shares to country level
   # ---------------------------------------------------------------------------
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
-  x_country <- toolAggregate(
-    x_share, rel = region_map, dim = 1,
+  country_share <- toolAggregate(
+    regional_share, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
   )
   
@@ -73,11 +63,11 @@ calcOECD_PlasticUseShare <- function() {
   # Prepare final weight object and return
   #    - Set all aggregation weights to 1.
   # ---------------------------------------------------------------------------
-  weight <- x_country
+  weight <- country_share
   weight[,] <- 1
   
   return(list(
-    x = x_country,
+    x = country_share,
     weight = weight,
     unit = "%",
     description = "Sectoral plastic use shares aggregated to country level for 2019."

@@ -13,7 +13,7 @@ calcOECD_PlasticIncinRate <- function() {
   sector_map <- toolGetMapping("structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry")
   targets <- setdiff(unique(sector_map$Target), "Total")
   
-  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   regions <- unique(region_map$RegionCode)
   
   # ---------------------------------------------------------------------------
@@ -36,28 +36,22 @@ calcOECD_PlasticIncinRate <- function() {
   # Compute historical share from external datasets (2005–2020)
   #    - Load EU, China, and US EoL CSVs, compute incineration share per region-year.
   # ---------------------------------------------------------------------------
-  # (paths and unit conversions may need adjustment)
-  eu <- read.csv("C:/Users/leoniesc/madrat/sources/PlasticEurope/PlasticEol.csv") %>% #C:/Data/madrat/sources/PlasticEurope/PlasticEol.csv
-    dplyr::slice(1:15) %>%
-    tidyr::pivot_longer(-Year, names_to = "Treatment", values_to = "Value") %>%
-    dplyr::mutate(Region = "EUR", Year = as.integer(Year))
-  
-  cn <- read.csv("C:/Users/leoniesc/madrat/sources/China_CNBS/PlasticEol.csv") %>%
-    dplyr::select(-Source.) %>%
-    tidyr::pivot_longer(-Year, names_to = "Treatment", values_to = "Value") %>%
-    dplyr::mutate(Value = Value / 100, Region = "CHA", Year = as.integer(Year))
-  
-  us <- read.csv("C:/Users/leoniesc/madrat/sources/US_EPA/PlasticEol.csv") %>%
-    dplyr::slice(1:10) %>%
-    tidyr::pivot_longer(-Year, names_to = "Treatment", values_to = "Value") %>%
-    dplyr::mutate(Value = Value / 1000, Region = "USA", Year = as.integer(Year)) # in thousands of U.S. tons, to convert to metric tons *0.90718
+  eu <- readSource("PlasticsEurope", subtype="PlasticEoL_EU", convert=FALSE) %>%
+    as.data.frame() %>%
+    dplyr::mutate(Region = "EUR", Year = as.integer(as.character(Year)))
+  cn <- readSource("China_CNBS", convert=FALSE) %>%
+    as.data.frame() %>%
+    dplyr::mutate(Region="CHA", Year=as.integer(as.character(Year)))
+  us <- readSource("US_EPA", convert=FALSE) %>%
+    as.data.frame()%>%
+    dplyr::mutate(Region="USA", Year=as.integer(as.character(Year)))
   
   ext_all <- dplyr::bind_rows(eu, cn, us) %>%
     dplyr::filter(Year >= 2005, Year <= 2020) %>%
     dplyr::group_by(Region, Year) %>%
     dplyr::summarise(
       total = sum(Value, na.rm = TRUE),
-      inc = sum(Value[Treatment == "Incinerated"], na.rm = TRUE),
+      inc = sum(Value[Data1 == "Incinerated"], na.rm = TRUE),
       .groups = "drop"
     ) %>%
     dplyr::mutate(share = inc / total) %>%

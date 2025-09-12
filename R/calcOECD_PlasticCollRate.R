@@ -98,7 +98,7 @@ calcOECD_PlasticCollRate <- function() {
   # ---------------------------------------------------------------------------
   x <- as.magpie(final_df, spatial = 1, temporal = 2)
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   x <- toolAggregate(
     x, rel = region_map, dim = 1,
