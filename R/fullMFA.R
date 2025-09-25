@@ -4,6 +4,7 @@
 #' MFA model.
 #'
 #' @author Merlin HOSAK
+#' @author Bennet Weiss
 #' @seealso
 #' \code{\link[madrat]{readSource}}, \code{\link[madrat]{getCalculations}}, 
 #' \code{\link[madrat]{calcOutput}}, \code{\link[mrindustry]{calcSteelProduction}}
@@ -14,38 +15,52 @@
 #' fullMFA()
 #' }
 #'
-fullMFA <- function(scenario='SSP2', gdp_per_capita=FALSE) {
+fullMFA <- function(subtype, scenario='SSP2', gdp_per_capita=FALSE) {
+
+  # #  ------------- DRIVERS -------------
+  # calcOutput("Population1900To2150", file = "population1900To2150.cs4r", 
+  #           scenario=scenario)
+  # calcOutput("GDP1900To2150", file = "gdp1900To2150.cs4r", 
+  #           scenario=scenario, 
+  #           per_capita=gdp_per_capita)
+
+  # #  ------------- STEEL ----------------
   
-  #  ------------- DRIVERS -------------
-  calcOutput("Population1900To2150", file = "population1900To2150.cs3r", 
-             scenario=scenario)
-  calcOutput("GDP1900To2150", file = "gdp1900To2150.cs3r", 
-             scenario=scenario, 
-             per_capita=gdp_per_capita)
+  #   # Production
   
-  #  ------------- STEEL ----------------
+  # calcOutput("SteelProduction", file = "steel_production.cs3r")
   
-    # Production
+  #   # Trade
   
-  calcOutput("SteelProduction", file = "steel_production.cs3r")
+  # calcOutput("SteelTrade", file = "steel_imports.cs3r", subtype='imports')
+  # calcOutput("SteelTrade", file = "steel_exports.cs3r", subtype='exports')
+  # calcOutput("SteelTrade", file = "steel_scrap_imports.cs3r", subtype='scrap_imports')
+  # calcOutput("SteelTrade", file = "steel_scrap_exports.cs3r", subtype='scrap_exports')
+  # calcOutput("SteelTrade", file = "steel_indirect_imports.cs3r", subtype='indirect_imports')
+  # calcOutput("SteelTrade", file = "steel_indirect_exports.cs3r", subtype='indirect_exports')
   
-    # Trade
+  #   # Parameters
   
-  calcOutput("SteelTrade", file = "steel_imports.cs3r", subtype='imports')
-  calcOutput("SteelTrade", file = "steel_exports.cs3r", subtype='exports')
-  calcOutput("SteelTrade", file = "steel_scrap_imports.cs3r", subtype='scrap_imports')
-  calcOutput("SteelTrade", file = "steel_scrap_exports.cs3r", subtype='scrap_exports')
-  calcOutput("SteelTrade", file = "steel_indirect_imports.cs3r", subtype='indirect_imports')
-  calcOutput("SteelTrade", file = "steel_indirect_exports.cs3r", subtype='indirect_exports')
-  
-    # Parameters
-  
-  calcOutput("SteelStaticParameters", file = "steel_static_parameters.cs3r")
-  calcOutput("CullenFabricationYield", file = "fabrication_yield.cs3r", aggregate=F)
-  calcOutput("SteelLifetimes", subtype='Cooper2014', file = "lifetimes.cs3r", aggregate=F)
-  calcOutput("SteelRecoveryRate", subtype='WorldSteel', file = "recovery_rate.cs3r", aggregate=F)
-  calcOutput("SteelSectorSplits", subtype='Pauliuk2013', file = "sector_splits.cs3r", aggregate=F)
+  # calcOutput("SteelStaticParameters", file = "steel_static_parameters.cs3r")
+  # calcOutput("CullenFabricationYield", file = "fabrication_yield.cs3r", aggregate=F)
+  # calcOutput("SteelLifetimes", subtype='Cooper2014', file = "lifetimes.cs3r", aggregate=F)
+  # calcOutput("SteelRecoveryRate", subtype='WorldSteel', file = "recovery_rate.cs3r", aggregate=F)
+  # calcOutput("SteelSectorSplits", subtype='Pauliuk2013', file = "sector_splits.cs3r", aggregate=F)
   
   #  ------------- CEMENT -----------
   
+    # Production
+
+  calcOutput("BinderProduction", file = "CementProduction.cs4r", years=1900:2023, subtype="cement")
+
+    # Trade
+  
+  calcOutput("MaterialTrade", file = "CementTrade.cs4r", years=1900:2023, subtype="cement")
+  calcOutput("MaterialTrade", file = "ClinkerTrade.cs4r", years=1900:2023, subtype="clinker")
+
+    # Parameters
+
+  calcOutput("BuiltLifespan", file = "Lifetimes.cs4r")
+  calcOutput("ClinkerRatio", file = "ClinkerRatio.cs4r", years=1900:2023)
+
 }

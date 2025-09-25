@@ -1,6 +1,6 @@
 #' Get GDP from 1900-2150
 #' @description
-#' Calc GDP (PPP) from 1900-2150 yearly for the SIMSON format on a country 
+#' Calc GDP (PPP) from 1900-2150 yearly for the REMIND-MFA format on a country 
 #' level. Can be aggregated to regions via calcOutput aggregate parameter.
 #' Uses \link[=readOECD_GDP]{OECD_GDP} for historical GDP data as well as
 #' \link[=calcGDP]{calcGDP} from mrdrivers for current and future GDP data
@@ -34,14 +34,14 @@ calcGDP1900To2150 <- function(scenario='SSP2', per_capita=FALSE) {
   # finalize for calcOutput
   
   unit <- '2005 USD$PPP'
-  description='GDP from 1900-2150 yearly for the SIMSON format'
+  description='GDP from 1900-2150 yearly for the REMIND-MFA format'
   weight<-NULL
   
   # convert to per capita if requested
   if (per_capita) {
     gdp <- gdp / gdp_data$pop
     unit <- '2005 USD$PPP per capita'
-    description='GDP per capita from 1900-2150 yearly for the SIMSON format'
+    description='GDP per capita from 1900-2150 yearly for the REMIND-MFA format'
     weight <- gdp_data$pop
   } 
   
@@ -49,6 +49,8 @@ calcGDP1900To2150 <- function(scenario='SSP2', per_capita=FALSE) {
   if (any(is.na(gdp))) {
     warning("There are still NA values in the GDP data.")
   }
+
+  description <- paste(description, "\n(dimensions: Time,Region,value)")
   
   result <- list(x = gdp, 
                  weight = weight,  # TODO adapt weight for per capita data

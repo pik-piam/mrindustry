@@ -1,7 +1,7 @@
 #' Get population from 1900-2100 
 #' 
 #' @description 
-#' Calc population from 1900-2100 yearly for the SIMSON format on a country 
+#' Calc population from 1900-2100 yearly for the REMIND-MFA format on a country 
 #' level. Can be aggregated to regions via calcOutput aggregate parameter.
 #' Uses \link[=readGapminder]{Gapminder} and \link[=readUN_PopDiv]{UN_PopDiv} 
 #' datasets for historical population data as well as calcPopulation from 
@@ -31,11 +31,13 @@ calcPopulation1900To2150 <- function(scenario='SSP2') {
   if (any(is.na(pop))) {
     warning("There are still NA values in the population data after extrapolation.")
   }
+  description='Population from 1900-2100 yearly for the REMIND-MFA format'
+  description <- paste(description, "\n(dimensions: Time,Region,value)")
   
   result <- list(x = pop, 
                  weight = NULL,
                  unit='inhabitants',
-                 description='Population from 1900-2100 yearly for the SIMSON format')
+                 description=description)
   
   
   return(result)

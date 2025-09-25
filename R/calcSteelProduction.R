@@ -30,7 +30,7 @@ calcSteelProduction <- function() {
   result <- list(x = prod, 
                  weight = NULL,
                  unit='Tonnes',
-                 description='Steel production from 1900-2100 yearly for the SIMSON format')
+                 description='Steel production from 1900-2100 yearly for the REMIND-MFA format')
   
   return(result)
 }

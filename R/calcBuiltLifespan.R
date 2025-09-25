@@ -8,6 +8,7 @@ calcBuiltLifespan <- function() {
     "Aggregated data from literature research.",
     "Documentation can be found in Posted (https://github.com/PhilippVerpoort/posted)"
   )
+  description <- paste(description, "\n(dimensions: Historic Time,Region,Stock Type,value)")
   weight <- data
   weight[, , ] <- 1
   output <- list(

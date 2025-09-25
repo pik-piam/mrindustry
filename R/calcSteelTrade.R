@@ -43,7 +43,7 @@ calcSteelTrade <- function(subtype = 'imports') {
                  weight = NULL,
                  unit='Tonnes',
                  description=paste0('Steel trade:', subtype, 
-                                    'from 1900-2021 yearly for the SIMSON format.'))
+                                    'from 1900-2021 yearly for the REMIND-MFA format.'))
   
   return(trade)
 }
