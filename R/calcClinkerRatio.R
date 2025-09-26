@@ -58,7 +58,7 @@ calcClinkerRatio <- function() {
     "For data gaps, use GNR data. Before 1970, assume constant clinker ratio of 0.95.",
     "Remaining gaps filled by linear extrapolation."
   )
-  description <- paste(description, "\n(dimensions: Historic Time,Region,value)")
+  description <- paste(description, "\ndimensions: (Historic Time,Region,value)")
   output <- list(x = ratio, weight = weight, unit = unit, description = description)
   return(output)
 }

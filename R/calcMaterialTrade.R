@@ -61,7 +61,7 @@ calcMaterialTrade <- function(subtype) {
   } else {
     stop("Invalid subtype. Choose either 'cement' or 'clinker'.")
   }
-  description <- paste(description, "\n(dimensions: Historic Time,Region,value)")
+  description <- paste(description, "\ndimensions: (Historic Time,Region,value)")
   output <- list(x = trade, weight = NULL, unit = unit, description = description)
   return(output)
 }

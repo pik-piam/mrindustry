@@ -50,7 +50,7 @@ calcGDP1900To2150 <- function(scenario='SSP2', per_capita=FALSE) {
     warning("There are still NA values in the GDP data.")
   }
 
-  description <- paste(description, "\n(dimensions: Time,Region,value)")
+  description <- paste(description, "\ndimensions: (Time,Region,value)")
   
   result <- list(x = gdp, 
                  weight = weight,  # TODO adapt weight for per capita data

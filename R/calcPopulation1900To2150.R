@@ -32,7 +32,7 @@ calcPopulation1900To2150 <- function(scenario='SSP2') {
     warning("There are still NA values in the population data after extrapolation.")
   }
   description='Population from 1900-2100 yearly for the REMIND-MFA format'
-  description <- paste(description, "\n(dimensions: Time,Region,value)")
+  description <- paste(description, "\ndimensions: (Time,Region,value)")
   
   result <- list(x = pop, 
                  weight = NULL,

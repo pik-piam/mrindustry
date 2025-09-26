@@ -15,7 +15,8 @@
 #' fullMFA()
 #' }
 #'
-fullMFA <- function(subtype, scenario='SSP2', gdp_per_capita=FALSE) {
+fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE) {
+  # TODO: potentially move dimension information to "note" for better separation
 
   # #  ------------- DRIVERS -------------
   # calcOutput("Population1900To2150", file = "population1900To2150.cs4r", 

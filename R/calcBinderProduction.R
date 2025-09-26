@@ -13,7 +13,7 @@ calcBinderProduction <- function(subtype) {
     "Data reported on https://zenodo.org/records/11207133.",
     "Accessed: 24.02.2025."
   )
-  description <- paste(description, "\n(dimensions: Historic Time,Region,value)")
+  description <- paste(description, "\ndimensions: (Historic Time,Region,value)")
   output <- list(x = x, weight = NULL, unit = unit, description = description)
   return(output)
 }
