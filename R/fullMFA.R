@@ -52,16 +52,16 @@ fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE) {
   
     # Production
 
-  calcOutput("BinderProduction", file = "CementProduction.cs4r", years=1900:2023, subtype="cement")
+  calcOutput("BinderProduction", file = "cement_production.cs4r", years=1900:2023, subtype="cement")
 
     # Trade
   
-  calcOutput("MaterialTrade", file = "CementTrade.cs4r", years=1900:2023, subtype="cement")
-  calcOutput("MaterialTrade", file = "ClinkerTrade.cs4r", years=1900:2023, subtype="clinker")
+  calcOutput("MaterialTrade", file = "cement_trade.cs4r", years=1900:2023, subtype="cement")
+  calcOutput("MaterialTrade", file = "clinker_trade.cs4r", years=1900:2023, subtype="clinker")
 
     # Parameters
 
-  calcOutput("BuiltLifespan", file = "Lifetimes.cs4r")
-  calcOutput("ClinkerRatio", file = "ClinkerRatio.cs4r", years=1900:2023)
+  calcOutput("BuiltLifespan", file = "use_lifetime_mean.cs4r")
+  calcOutput("ClinkerRatio", file = "clinker_ratio.cs4r", years=1900:2023)
 
 }
