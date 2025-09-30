@@ -22,7 +22,7 @@ A \code{\link[magclass:magclass-package]{magpie}} object.
 Read ADVANCE WP2 Data
 }
 \seealso{
-\code{\link[=readSource]{readSource()}}, \code{\link[=convertADVANCE_WP2]{convertADVANCE_WP2()}}
+\code{\link[madrat:readSource]{madrat::readSource()}}, \code{\link[=convertADVANCE_WP2]{convertADVANCE_WP2()}}
 }
 \author{
 Michaja Pehl

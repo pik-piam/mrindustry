@@ -10,18 +10,18 @@ in the zero-carbon scenario.}
 calcRMI_China(subtype)
 }
 \arguments{
-\item{subtype[1]}{Type of RMI_China data sheet to read. Available types are:
-\itemize{
-  \item ChemDemand: ES1-3 China Chemical Demand
-  \item ChemStructure: ES10 China Chemical Structure
-}}
+\item{subtype}{Type of RMI_China data sheet to read. Available types are:
+  \itemize{
+    \item ChemDemand: ES1-3 China Chemical Demand
+    \item ChemStructure: ES10 China Chemical Structure
+  }
 
-\item{subtype[2]}{The specific product from the RMI_China data to read. Available types are:
-\itemize{
-  \item Ammonia
-  \item Methanol
-  \item Ethylene
-}}
+ The specific product from the RMI_China data to read. Available types are:
+  \itemize{
+    \item Ammonia
+    \item Methanol
+    \item Ethylene
+  }}
 }
 \description{
 Read-in RMI (Rocky Mountain Institute) "Transforming China Chemicals Industry Pathways and Outlook under the Carbon Neutrality Goal 2022.xlsx"

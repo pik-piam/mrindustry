@@ -21,11 +21,11 @@ Magpie object of the IEA Ammonia data.
 Read-in IEA Ammonia Technology Roadmap 2021 Fig 2.9 Ammonia production by process route and
 scenario in major ammonia producing regions data as a magclass object.
 }
-\seealso{
-[readSource()]
+\examples{
 \dontrun{
   a <- readSource(type = "IEA_Ammonia", subtype = "BaseYear_2020")
 }
+
 }
 \author{
 Qianzhi Zhang

@@ -2,7 +2,7 @@ Type: Package
 Package: mrindustry
 Title: input data generation for the REMIND industry module
 Version: 1.0.0
-Date: 2025-09-10
+Date: 2025-09-30
 Authors@R: c(
     person(given = "Falk", family = "Benke", email = "benke@pik-potsdam.de",
            role = c("aut", "cre")),
@@ -53,4 +53,4 @@ Suggests:
     mrremind (>= 0.220.0),
     testthat,
 Encoding: UTF-8
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

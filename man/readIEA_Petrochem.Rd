@@ -7,39 +7,42 @@
 readIEA_Petrochem(subtype)
 }
 \arguments{
-\item{subtype[1]}{Different data sheets to read. Available types are:
-\itemize{
-  \item Feedstock: Fig 4.5 Petrochem Feedstock for HVCs, Ammonia, Methanol
-  \item RouteRTS: Fig 4.9 Petro Prod Route RTS (Reference Technology Scenario) for HVCs, Ammonia, Methanol
-  \item RouteCTS: Fig 5.10 Petro Prod Route CTS (Clean Technology Scenario) for HVCs, Ammonia, Methanol
-  \item production3type: Fig 4.1 Petrochem Production for HVCs, Ammonia, Methanol
-  \item production5type: Fig A.1 Petrochem Prod Region for Ethylene, Propylene, BTX, Ammonia, Methanol
-}}
+\item{subtype}{Different data sheets to read. Available types are:
+  \itemize{
+    \item Feedstock: Fig 4.5 Petrochem Feedstock for HVCs, Ammonia, Methanol
+    \item RouteRTS: Fig 4.9 Petro Prod Route RTS (Reference Technology Scenario) for HVCs, Ammonia, Methanol
+    \item RouteCTS: Fig 5.10 Petro Prod Route CTS (Clean Technology Scenario) for HVCs, Ammonia, Methanol
+    \item production3type: Fig 4.1 Petrochem Production for HVCs, Ammonia, Methanol
+    \item production5type: Fig A.1 Petrochem Prod Region for Ethylene, Propylene, BTX, Ammonia, Methanol
+  }
 
-\item{subtype[2]}{Different products to read. Available types are:
-\itemize{
-  \item HVCs
-  \item Ammonia
-  \item Methanol
-  \item Ethylene
-  \item Propylene
-  \item BTX
-}}
+Different products to read. Available types are:
+  \itemize{
+    \item HVCs
+    \item Ammonia
+    \item Methanol
+    \item Ethylene
+    \item Propylene
+    \item BTX
+  }}
 }
 \value{
 MagPIE object of the IEA Petrochem data.
 }
 \description{
-Read-in IEA The Future of Petrochemicals 2018 data from several figures 
-(e.g., "Fig 4.1 Petrochem Production", "Fig A.1 Petrochem Prod Region", 
-"Fig 4.5 Petrochem Feedstock", "Fig 4.9 Petro Prod Route RTS", 
+Read-in IEA The Future of Petrochemicals 2018 data from several figures
+(e.g., "Fig 4.1 Petrochem Production", "Fig A.1 Petrochem Prod Region",
+"Fig 4.5 Petrochem Feedstock", "Fig 4.9 Petro Prod Route RTS",
 "Fig 5.10 Petro Prod Route CTS") as a MagPIE object.
 }
-\seealso{
-[readSource()]
+\examples{
 \dontrun{
   a <- readSource(type = "IEA_Petrochem", subtype = "Feedstock_HVCs")
 }
+
+}
+\seealso{
+[readSource()]
 }
 \author{
 Qianzhi Zhang

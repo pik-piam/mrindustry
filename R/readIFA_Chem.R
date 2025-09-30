@@ -1,7 +1,7 @@
 #' Read IFA
 #'
-#' Read-in IFA (International fertilizer Association) data .xlsx file containing 
-#' production, consumption, export and import volumes as well as capacities for 
+#' Read-in IFA (International fertilizer Association) data .xlsx file containing
+#' production, consumption, export and import volumes as well as capacities for
 #' ammonia and urea as a magclass object.
 #'
 #' @param subtype Character string specifying the type of IFA product data to read.
@@ -16,8 +16,8 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @seealso [readSource()]
 #'
+#' @examples
 #' \dontrun{
 #' a <- readSource(type = "IFA_Chem", subtype = "ammonia_statistics_production")
 #' }
@@ -71,14 +71,14 @@ readIFA_Chem <- function(subtype) {
                  ),
                  stop("Invalid subtype combination")  # Stop if an invalid subtype is provided
   )
-  
+
   # Extract parameters from the File list
   filename <- File$filename
   sheet_name <- File$sheet_name
   ranges <- File$ranges
   # toolSubtypeSelect selects the appropriate range based on the third component of subtype
   range <- toolSubtypeSelect(subtype[3], ranges)
-  
+
   # ---------------------------------------------------------------------------
   # Read Data from Excel Based on the Selected Subtype
   #    - For "statistics" type: read country names and data, then combine them.
@@ -88,17 +88,17 @@ readIFA_Chem <- function(subtype) {
     # Read country names
     country_data <- as.data.frame(read_excel(filename, sheet = sheet_name, range = File$countrylist, skip = 5))
     colnames(country_data) <- "Country"  # Rename column to "Country"
-    
+
     # Read data (production, export, import, or consumption) using the selected range
     data <- as.data.frame(read_excel(filename, sheet = sheet_name, range = range, skip = 5))
-    
+
     # Combine country names with data
     data <- cbind(country_data, data)
   } else if (subtype[2] == "capacities") {
     # For capacities, read the data directly (skip header rows if needed)
     data <- as.data.frame(read_excel(filename, sheet = sheet_name, range = range, skip = 1))
   }
-  
+
   # ---------------------------------------------------------------------------
   # Clean and Reshape Data
   #    - Remove rows with missing country names.
@@ -111,7 +111,7 @@ readIFA_Chem <- function(subtype) {
     names_to = "Year",   # New column for year
     values_to = "value"  # New column for values
   )
-  
+
   # ---------------------------------------------------------------------------
   # Convert Data to Magpie Object and Final Adjustments
   #    - Convert the cleaned data frame into a magpie object for further processing.
@@ -121,7 +121,7 @@ readIFA_Chem <- function(subtype) {
   data <- as.magpie(data, spatial = 1, temporal = 2)
   data[is.na(data)] <- 0
   getNames(data, dim = "data") <- key
-  
+
   # Return the final magpie object
   return(data)
 }

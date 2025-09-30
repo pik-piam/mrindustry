@@ -16,12 +16,14 @@ a magclass object.
 \details{
 ChinaBaogao is a Chinese business website that publishes industry analyses.
 }
-\seealso{
-[readSource()]
-
+\examples{
 \dontrun{
 a <- readSource(type = "ChinaBaogao")
 }
+
+}
+\seealso{
+[readSource()]
 }
 \author{
 Qianzhi Zhang

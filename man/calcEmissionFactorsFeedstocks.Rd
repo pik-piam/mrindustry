@@ -16,7 +16,7 @@ Calculate emission factors for feedstocks in the chemicals industry
 using emissions from UNFCCC and energy demands from IEA Energy Balances
 }
 \seealso{
-\code{\link[=calcOutput]{calcOutput()}}
+\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
 }
 \author{
 Falk Benke, Renato Rodrigues, Simón Moreno Leiva
