@@ -62,7 +62,7 @@ calcUNCTAD_PlasticOutput <- function(
     Data2  = unique(flow_df$Data2),
     stringsAsFactors = FALSE
   ) %>%
-    dplyr::left_join(base_2005, by = c("Region", "Data1"))
+    dplyr::left_join(base_2005, by = c("Region", "Data2"))
 
   # ---------------------------------------------------------------------------
   # Combine original, and historical data, then sort by year

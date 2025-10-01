@@ -15,7 +15,8 @@ calcUNCTAD_PlasticWaste(subtype)
 }
 \description{
 Read UNCTAD regional plastic waste trade data (exports or imports),
-fill missing historical and future years, then aggregate to country level for 1990–2100.
+fill missing historical years 1990–2004 with 2005 values and
+future years 2023-2100 with 2022 values, then aggregate to country level.
 }
 \author{
 Qianzhi Zhang

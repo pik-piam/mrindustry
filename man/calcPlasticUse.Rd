@@ -8,8 +8,8 @@ calcPlasticUse()
 }
 \description{
 Backcast total plastic use from 1990-2019 back to 1950.
-Combine sectoral use shares and total use to compute absolute plastic use
-by sector at country level for 1950-2019.
+Combine sectoral use shares and total use to compute plastic use
+by sector at country level for 1960-2019.
 }
 \author{
 Qianzhi Zhang
