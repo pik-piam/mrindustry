@@ -7,7 +7,7 @@
 readStegmann2022()
 }
 \value{
-magpie object of the data
+a magpie object of the data
 }
 \description{
 Read-in data for the End-of-Life fate of plastics
@@ -16,16 +16,7 @@ D. P. & Junginger, M. Plastic futures and their CO2 emissions.
 Nature 612, 272–276 (2022).
 https://www.nature.com/articles/s41586-022-05422-5
 Link to SI:
-https://static-content.springer.com/esm/art\%3A10.1038\%2Fs41586-022-05422-5/MediaObjects/41586_2022_5422_MOESM1_ESM.xlsx #nolint
-}
-\examples{
-\dontrun{
-a <- readSource(type = "Stegmann2022")
-}
-
-}
-\seealso{
-\code{\link{readSource}}
+https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-022-05422-5/MediaObjects/41586_2022_5422_MOESM1_ESM.xlsx #nolint
 }
 \author{
 Falk Benke, Simón Moreno
