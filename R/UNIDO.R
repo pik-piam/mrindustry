@@ -5,8 +5,8 @@
 #' @md
 #' @param subtype one of
 #'     - `INDSTAT2`: read INDSTAT 2 data
-#'     - `INDSTAT3`: read INDSTAT 3 data from [https://stat.unido.org/data/download?dataset=indstat&revision=3]
-#'     - `INDSTAT4`: read INDSTAT 4 data from [https://stat.unido.org/data/download?dataset=indstat&revision=4]
+#'     - `INDSTAT3`: read INDSTAT 3 data from https://stat.unido.org/data/download?dataset=indstat&revision=3
+#'     - `INDSTAT4`: read INDSTAT 4 data from https://stat.unido.org/data/download?dataset=indstat&revision=4
 #'       INDSTAT 4 data quality has not been vetted and should not be used for
 #'       production.
 #' @param x result from `readUNIDO()` as passed to `convertUNIDO()`

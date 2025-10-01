@@ -22,7 +22,7 @@ A \code{\link[magclass:magclass-package]{magpie}} object.
 Read data from Müller et al. 2013 (http://dx.doi.org/10.1021/es402618m).
 }
 \seealso{
-\code{\link[=readSource]{readSource()}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Michaja Pehl

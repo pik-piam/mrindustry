@@ -17,7 +17,7 @@ through personal communication (e-mail to Michaja Pehl).  Units are tonnes
 per year.
 }
 \seealso{
-\code{\link[=readSource]{readSource()}}
+\code{\link[madrat:readSource]{madrat::readSource()}}
 }
 \author{
 Michaja Pehl
