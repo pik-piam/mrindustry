@@ -22,7 +22,7 @@ calcMCeMaterialTrade <- function(subtype) {
   trade[is.na(trade)] <- 0
 
   # balance trade
-  production <- calcOutput("cBinderProduction", subtype = subtype, aggregate = FALSE)[, getYears(trade)]
+  production <- calcOutput("MCeBinderProduction", subtype = subtype, aggregate = FALSE)[, getYears(trade)]
   total_production <- dimSums(production, dim = 1)
   trade_imbalance <- dimSums(trade, dim = 1)
   trade <- trade - trade_imbalance * production / total_production

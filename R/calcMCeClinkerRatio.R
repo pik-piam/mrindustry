@@ -4,11 +4,11 @@
 calcMCeClinkerRatio <- function() {
   ratio_GNR <- readSource("GNR", subtype = "clinker_ratio")
   # Production
-  prod_cement <- calcOutput("cBinderProduction", subtype = "cement", aggregate = FALSE)
-  prod_clinker <- calcOutput("cBinderProduction", subtype = "clinker", aggregate = FALSE)
+  prod_cement <- calcOutput("MCeBinderProduction", subtype = "cement", aggregate = FALSE)
+  prod_clinker <- calcOutput("MCeBinderProduction", subtype = "clinker", aggregate = FALSE)
 
   # Trade
-  trade_clinker <- calcOutput("cMaterialTrade", subtype = "clinker", aggregate = FALSE)
+  trade_clinker <- calcOutput("MCeMaterialTrade", subtype = "clinker", aggregate = FALSE)
 
   consum_clinker <- prod_clinker
   consum_clinker[, getYears(trade_clinker), ] <- consum_clinker[, getYears(trade_clinker), ] - trade_clinker
