@@ -3,7 +3,7 @@
 #'
 #' @author Bennet Weiss
 #' @param subtype Material subtype. Can be "cement" or "clinker".
-calccMaterialTrade <- function(subtype) {
+calcMCeMaterialTrade <- function(subtype) {
   # collect trade data
   trade_chatham <- readSource("ChathamHouse", subtype = subtype)
   trade_comtrade <- readSource("UNComtrade", subtype = subtype)
