@@ -131,7 +131,7 @@ calcPlasticUseTotal <- function() {
   )
   magpie_x <- as.magpie(final_region, spatial = 1, temporal = 2)
   gdp_ssp2 <- calcOutput(
-    "GDP", scenario="SSP2", average2020 = FALSE, naming = "scenario", aggregate = FALSE
+    "GDP", scenario="SSP2", average2020 = FALSE, aggregate = FALSE
   )[, paste0("y", 1990:2019), "SSP2"]
   x_final <- toolAggregate(
     magpie_x, rel = map_df, dim = 1,
