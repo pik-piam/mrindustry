@@ -1,42 +1,47 @@
-#' Calculate Country-Level Mechanical Recycling Loss Trajectories
+#' Calculate Country-Level DAC-based Plastic Share Trajectories
 #'
-#' Generate time series of mechanical recycling loss trajectories by sector and region,
-#' then aggregate to countries for 1990–2100.
+#' Generate time series of Direct-Air-Capture-based plastic share trajectories by sector
+#' and aggregate from regions to countries for 1990–2100.
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticMechLoss <- function() {
+calcPlasticDACRate <- function() {
   # ---------------------------------------------------------------------------
-  # Define sectors and regions
-  #    - Retrieve manufacturing sectors (excluding 'Total') and regional codes.
+  # Load sectoral mapping and define sectors
+  #    - Retrieve sectoral targets from manufacturing mapping, excluding totals.
   # ---------------------------------------------------------------------------
   sector_map <- toolGetMapping(
     "structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry"
   )
-  targets <- setdiff(unique(sector_map$Target), "Total")
+  targets <- unique(sector_map$Target)
+  targets <- setdiff(targets, "Total")
+
+  # ---------------------------------------------------------------------------
+  # Load regional mapping and define regions
+  #    - Retrieve regional codes from mapping.
+  # ---------------------------------------------------------------------------
   region_map <- toolGetMapping(
     "regionmappingH12.csv", type = "regional", where = "mrindustry"
   )
   regions <- unique(region_map$RegionCode)
-  
+
   # ---------------------------------------------------------------------------
-  # Define time horizon and loss bounds
+  # Define time horizon and DAC-based share bounds
   #    - Years: 1990–2100
-  #    - Start loss (pre-2020): 0%
-  #    - End loss (2100): 5%
+  #    - Starting share (2020): 0%
+  #    - End share (2050): 1%
   # ---------------------------------------------------------------------------
   years <- 1990:2100
-  bounds <- data.frame(
+  share_bounds <- data.frame(
     Target = targets,
-    start  = 0.05,
-    end    = 0.05,
-    stringsAsFactors = FALSE
+    start  = 0,
+    end    = 0.01
   )
-  
+
   # ---------------------------------------------------------------------------
-  # Construct full dataset and compute loss trajectories
-  #    - Expand grid Year × Target × Region
-  #    - Merge bounds and interpolate values beyond 2020 to 2100
+  # Build full data frame of trajectories
+  #    - Expand grid of Year × Sector × Region
+  #    - Merge with share bounds and interpolate linearly
   # ---------------------------------------------------------------------------
   traj_df <- expand.grid(
     Year   = years,
@@ -44,34 +49,39 @@ calcOECD_PlasticMechLoss <- function() {
     Region = regions,
     stringsAsFactors = FALSE
   )
-  traj_df <- merge(traj_df, bounds, by = "Target")
+  traj_df <- merge(traj_df, share_bounds, by = "Target")
   traj_df$value <- with(traj_df, ifelse(
-    Year <= 2020,
-    start,
-    start + (Year - 2020) * (end - start) / (2100 - 2020)
+    Year <= 2020, start,
+    ifelse(
+      Year <= 2050,
+      start + (Year - 2020) * (end - start) / (2050 - 2020),
+      end
+    )
   ))
   traj_df <- dplyr::select(traj_df, Region, Year, Target, value)
-  
+
   # ---------------------------------------------------------------------------
-  # Convert to MagPIE and aggregate to countries
+  # Convert to MagPIE and aggregate to country level
+  #    - Map regional trajectories to countries (equal weights)
   # ---------------------------------------------------------------------------
   x <- as.magpie(traj_df, spatial = 1, temporal = 2)
   x <- toolAggregate(
     x, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
   )
-  
+
   # ---------------------------------------------------------------------------
   # Prepare weight object and return
+  #    - Equal weights (1) for all entries
   # ---------------------------------------------------------------------------
   weight <- x
   weight[,] <- 1
-  
+
   return(list(
     x           = x,
     weight      = weight,
-    unit        = "% Mechanical Recycling Loss",
-    description = "Mechanical recycling loss trajectories aggregated to country level for 1990–2100."
+    unit        = "% DAC-based Plastic",
+    description = "Projected DAC-based plastic share by sector, aggregated to country level for 1990–2100."
   ))
 }
 

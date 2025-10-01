@@ -5,7 +5,7 @@
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticCollRate <- function() {
+calcPlasticCollRate <- function() {
   # ---------------------------------------------------------------------------
   # Load and clean regional EoL data
   #    - Read end-of-life outputs and exclude non-collection categories.
@@ -24,7 +24,7 @@ calcOECD_PlasticCollRate <- function() {
       collected = sum(Value, na.rm = TRUE),
       .groups = "drop"
     )
-  
+
   # ---------------------------------------------------------------------------
   # Apply fixed collection rates for China
   #    - Use reported rates for specific years and interpolate.
@@ -32,7 +32,7 @@ calcOECD_PlasticCollRate <- function() {
   # source: Assessment of Plastic Stocks and Flows in China: 1978-2017; 1-(Untreatment share)
   fixed_years <- c(1990, 2005, 2010, 2015, 2017)
   fixed_vals  <- c(0.65, 0.68, 0.84, 0.96, 0.98)
-  
+
   # Interpolate for China across full timeline
   china_idx <- eol_df$Region == "CHA"
   interp_china <- approx(
@@ -40,7 +40,7 @@ calcOECD_PlasticCollRate <- function() {
     xout = eol_df$Year[china_idx], rule = 2
   )$y
   eol_df$collected[china_idx] <- interp_china
-  
+
   # ---------------------------------------------------------------------------
   # Fill 1990–2000 for other regions with 2000 level
   #    - For non-CHA regions, assign 2000 value to 1990–2000 period.
@@ -49,7 +49,7 @@ calcOECD_PlasticCollRate <- function() {
   value2000 <- non_cha %>%
     dplyr::filter(Year == 2000) %>%
     dplyr::select(Region, val2000 = collected)
-  
+
   eol_df <- eol_df %>%
     dplyr::left_join(value2000, by = "Region") %>%
     dplyr::mutate(
@@ -59,7 +59,7 @@ calcOECD_PlasticCollRate <- function() {
       )
     ) %>%
     dplyr::select(-val2000)
-  
+
   # ---------------------------------------------------------------------------
   # Extend series to 2100 with linear growth to 100%
   #    - Duplicate 2019 as 2020, then interpolate to reach 1.00 by 2100.
@@ -85,13 +85,13 @@ calcOECD_PlasticCollRate <- function() {
         (Year - 2020) * (target_final - start) / (2100 - 2020)
     ) %>%
     dplyr::select(Region, Year, collected)
-  
+
   final_df <- dplyr::bind_rows(
     dplyr::filter(ext_df, Year <= 2020) %>%
       dplyr::select(Region, Year, collected),
     future_df
   )
-  
+
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries
   #    - Map regions to countries with equal weights.
@@ -104,14 +104,14 @@ calcOECD_PlasticCollRate <- function() {
     x, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
   )
-  
+
   # ---------------------------------------------------------------------------
   # Prepare weight object and return
   #    - Equal weights (1) for all entries
   # ---------------------------------------------------------------------------
   weight <- x
   weight[,] <- 1
-  
+
   return(list(
     x           = x,
     weight      = weight,

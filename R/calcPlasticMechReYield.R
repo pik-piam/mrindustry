@@ -5,7 +5,7 @@
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticMechReYield <- function() {
+calcPlasticMechReYield <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions
   #    - Retrieve manufacturing sectors (excluding 'Total') and regional codes.
@@ -18,7 +18,7 @@ calcOECD_PlasticMechReYield <- function() {
     "regionmappingH12.csv", type = "regional", where = "mrindustry"
   )
   regions <- unique(region_map$RegionCode)
-  
+
   # ---------------------------------------------------------------------------
   # Define time horizon and yield bounds
   #    - Years: 1990–2100
@@ -32,7 +32,7 @@ calcOECD_PlasticMechReYield <- function() {
     end    = 0.79,
     stringsAsFactors = FALSE
   )
-  
+
   # ---------------------------------------------------------------------------
   # Construct full dataset and compute yield trajectories
   #    - Expand grid Year × Target × Region
@@ -51,7 +51,7 @@ calcOECD_PlasticMechReYield <- function() {
     start + (Year - 2020) * (end - start) / (2100 - 2020)
   ))
   traj_df <- dplyr::select(traj_df, Region, Year, Target, value)
-  
+
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries
   # ---------------------------------------------------------------------------
@@ -60,13 +60,13 @@ calcOECD_PlasticMechReYield <- function() {
     x, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
   )
-  
+
   # ---------------------------------------------------------------------------
   # Prepare weight object and return
   # ---------------------------------------------------------------------------
   weight <- x
   weight[,] <- 1
-  
+
   return(list(
     x           = x,
     weight      = weight,
