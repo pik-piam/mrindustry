@@ -1,7 +1,7 @@
 #' Calculate Country-Level Plastics Trade for Various Categories
 #'
 #' Reads UNCTAD plastics trade (exports or imports) data at regional level,
-#' fills missing historical years, and aggregates to country level.
+#' fills 1990-2004 years with data of 2005, and aggregates to country level.
 #'
 #' @param category Character; product category:
 #'   \itemize{
@@ -10,7 +10,7 @@
 #'     \item "intermediate" - Intermediate forms of plastic
 #'     \item "manufactured" - Intermediate manufactured plastic goods
 #'   }
-#' @param flow Character; trade flow:
+#' @param flow_label Character; trade flow:
 #'   \itemize{
 #'     \item "Exports" - Exports
 #'     \item "Imports" - Imports
@@ -18,13 +18,13 @@
 #' @author Qianzhi Zhang
 calcUNCTAD_PlasticOutput <- function(
     category = c("final", "primary", "intermediate", "manufactured"),
-    flow     = c("Exports", "Imports")
+    flow_label     = c("Exports", "Imports")
 ) {
   # ---------------------------------------------------------------------------
   # Match inputs and map to UNCTAD subtype identifier
   # ---------------------------------------------------------------------------
   category <- match.arg(category)
-  flow     <- match.arg(flow)
+  flow_label <- match.arg(flow_label)
   subtype_map <- list(
     final        = "Final_Region",
     primary      = "Primary_Region",
@@ -32,7 +32,7 @@ calcUNCTAD_PlasticOutput <- function(
     manufactured = "Manufactured_Region"
   )
   subtype_region <- subtype_map[[category]]
-  
+
   # ---------------------------------------------------------------------------
   # Load regional trade data for the selected category
   # ---------------------------------------------------------------------------
@@ -41,17 +41,14 @@ calcUNCTAD_PlasticOutput <- function(
   ) %>%
     as.data.frame() %>%
     dplyr::select(Region, Year, Data2, Data1, Value)
-  
+
   # ---------------------------------------------------------------------------
   # Filter by export or import flows
   # ---------------------------------------------------------------------------
-  flow_label <- ifelse(flow == "Exports",
-                       "Imports",
-                       "Exports")
   flow_df <- region_df %>%
-    dplyr::filter(Data2 == flow_label) %>%
-    dplyr::select(-Data2)
-  
+    dplyr::filter(Data1 == flow_label)  %>%
+    dplyr::select("Region","Year","Data2","Value")
+
   # ---------------------------------------------------------------------------
   # Fill missing historical years (1990–2004) using 2005 values
   # ---------------------------------------------------------------------------
@@ -62,11 +59,11 @@ calcUNCTAD_PlasticOutput <- function(
   hist_df <- expand.grid(
     Region = unique(flow_df$Region),
     Year   = hist_years,
-    Data1  = unique(flow_df$Data1),
+    Data2  = unique(flow_df$Data2),
     stringsAsFactors = FALSE
   ) %>%
     dplyr::left_join(base_2005, by = c("Region", "Data1"))
-  
+
   # ---------------------------------------------------------------------------
   # Combine original, and historical data, then sort by year
   # ---------------------------------------------------------------------------
@@ -76,12 +73,12 @@ calcUNCTAD_PlasticOutput <- function(
   full_df <- dplyr::bind_rows(core_df, hist_df) %>%
     dplyr::mutate(Year = as.integer(as.character(Year))) %>%
     dplyr::arrange(Year)
-  
+
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to country level using GDP weights
   # ---------------------------------------------------------------------------
   x <- as.magpie(
-    full_df %>% dplyr::select(Region, Year, Data1, Value),
+    full_df %>% dplyr::select(Region, Year, Data2, Value),
     spatial = 1, temporal = 2
   )
   region_map <- toolGetMapping(
@@ -98,7 +95,7 @@ calcUNCTAD_PlasticOutput <- function(
     to     = "CountryCode",
     weight = gdp_ssp2[unique(region_map$CountryCode), , ]
   )
-  
+
   # ---------------------------------------------------------------------------
   # Return results
   # ---------------------------------------------------------------------------
@@ -107,7 +104,7 @@ calcUNCTAD_PlasticOutput <- function(
     weight      = NULL,
     unit        = "Mt Plastic",
     description = sprintf(
-      "Country-level %s plastics %s (1990–2100)", category, flow
+      "Country-level %s plastics %s (1990–2100)", category, flow_label
     )
   )
 }

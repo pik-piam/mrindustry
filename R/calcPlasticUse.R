@@ -1,8 +1,8 @@
 #' Calculate Country-Level Plastic Use by Sector
 #'
 #' Backcast total plastic use from 1990-2019 back to 1950.
-#' Combine sectoral use shares and total use to compute absolute plastic use
-#' by sector at country level for 1950-2019.
+#' Combine sectoral use shares and total use to compute plastic use
+#' by sector at country level for 1960-2019.
 #'
 #' @author Qianzhi Zhang
 #'
@@ -24,7 +24,6 @@ calcPlasticUse <- function() {
   total <- calcOutput("PlasticUseTotal", aggregate = TRUE)
   Geyer <- readSource("Geyer", subtype="Prod_1950-2015")
   total_df <- toolBackcastByReference2D(total, Geyer) %>%
-    plasticProdBackcast:R/calcOECD_PlasticUse.R
     as.data.frame() %>%
     dplyr::mutate(Year = as.integer(as.character(Year)))%>%
     dplyr::select(-Cell,-Data1)
@@ -70,6 +69,6 @@ calcPlasticUse <- function() {
     x           = x,
     weight      = NULL,
     unit        = "Mt Plastic",
-    description = "Sectoral plastic use aggregated to country level for 1990-2019."
+    description = "Sectoral plastic use aggregated to country level for 1960-2019."
   ))
 }

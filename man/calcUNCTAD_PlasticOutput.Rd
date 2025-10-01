@@ -6,7 +6,7 @@
 \usage{
 calcUNCTAD_PlasticOutput(
   category = c("final", "primary", "intermediate", "manufactured"),
-  flow = c("Exports", "Imports")
+  flow_label = c("Exports", "Imports")
 )
 }
 \arguments{
@@ -18,7 +18,7 @@ calcUNCTAD_PlasticOutput(
   \item "manufactured" - Intermediate manufactured plastic goods
 }}
 
-\item{flow}{Character; trade flow:
+\item{flow_label}{Character; trade flow:
 \itemize{
   \item "Exports" - Exports
   \item "Imports" - Imports
@@ -26,7 +26,7 @@ calcUNCTAD_PlasticOutput(
 }
 \description{
 Reads UNCTAD plastics trade (exports or imports) data at regional level,
-fills missing historical years, and aggregates to country level.
+fills 1990-2004 years with data of 2005, and aggregates to country level.
 }
 \author{
 Qianzhi Zhang

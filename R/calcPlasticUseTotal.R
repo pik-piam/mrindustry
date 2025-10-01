@@ -16,7 +16,7 @@ calcPlasticUseTotal <- function() {
     as.data.frame() %>%
     dplyr::select(-Cell, -Data1, -Data2) %>%
     dplyr::mutate(Year = as.integer(as.character(Year)))
-  
+
   # ---------------------------------------------------------------------------
   # Compute baseline ratios for target vs. other regions
   #    - Define target regions and calculate per-region 2005 baseline ratios.
@@ -31,48 +31,42 @@ calcPlasticUseTotal <- function() {
     ) %>%
     dplyr::ungroup()
   use_other <- use_region %>% dplyr::filter(!Region %in% target_regions)
-  
+
   # ---------------------------------------------------------------------------
   # Load & reshape production data
   #    - Read regional production and map region names to codes.
   # ---------------------------------------------------------------------------
-  prod_region_map <- c(China = "CHA", EU27.3 = "EUR", North.America = "USA")
+  prod_region_map <- c("China" = "CHA", "EU27+3" = "EUR", "North America" = "USA")
   prod_data <- readSource("PlasticsEurope", subtype="PlasticProduction_region", convert=FALSE) %>%
     as.data.frame() %>%
     dplyr::mutate(
-      Year = as.integer(Year),
+      Year = as.integer(as.character(Year)),
       Region = dplyr::recode(Region, !!!prod_region_map)
     ) %>%
     dplyr::filter(Region %in% target_regions)
-  
+
   # ---------------------------------------------------------------------------
-  # Load & reshape trade data (net imports)
-  #    - Read UNCTAD net import data and convert to t.
+  # Calculate UNCTAD net imports for target regions
   # ---------------------------------------------------------------------------
-  trade_region_map <- c(
-    "China"                     = "CHA",
-    "European Union (2020 …)"  = "EUR",
-    "United States of America" = "USA",
-    "Canada"                    = "CAN"
-  )
-  trade_data <- read.csv(
-    "C:/Users/leoniesc/madrat/sources/UNCTAD/UNCTAD_Plastic_Net_Import_by_Region.csv" # C:/Data/madrat/sources/UNCTAD/UNCTAD_Plastic_Net_Import_by_Region.csv
-  ) %>%
-    dplyr::transmute(
-      Year       = as.integer(Year),
-      Region     = dplyr::recode(Economy.Label, !!!trade_region_map),
-      net_import = Net_Import / 1000
-    ) %>%
-    dplyr::filter(Region %in% target_regions)
-  
+  trade_data_region <- calcOutput("UNCTAD_PlasticTrade", subtype="Final_Region", aggregate=TRUE)%>%
+    as.data.frame()%>%
+    dplyr::filter(.data$Region %in% target_regions, .data$Region !="USA") # USA is included in trade_data_country
+  trade_data_country <- calcOutput("UNCTAD_PlasticTrade", subtype="Final_Country", aggregate=FALSE)%>%
+    as.data.frame()%>%
+    dplyr::filter(.data$Region %in% target_regions)
+  trade_data <- rbind(trade_data_region, trade_data_country) %>% pivot_wider(names_from="Data1", values_from="Value") %>%
+    dplyr::mutate(net_import = .data$Imports - .data$Exports,
+                  Year = as.integer(as.character(Year))) %>%
+    dplyr::select("Region","Year","net_import")
+
   # ---------------------------------------------------------------------------
   # Compute regional total use = production + net imports
   # ---------------------------------------------------------------------------
   use_calc <- prod_data %>%
     dplyr::left_join(trade_data, by = c("Region", "Year")) %>%
     tidyr::replace_na(list(net_import = 0)) %>%
-    dplyr::mutate(use = production + net_import)
-  
+    dplyr::mutate(use = Value + net_import)
+
   # ---------------------------------------------------------------------------
   # Adjust USA demand by Canada domestic demand
   #    - Subtract Canada's net import-adjusted demand from USA.
@@ -87,7 +81,7 @@ calcPlasticUseTotal <- function() {
     dplyr::left_join(trade_data, by = c("Region", "Year")) %>%
     tidyr::replace_na(list(net_import = 0)) %>%
     dplyr::transmute(Year, can_demand = Value - net_import)
-  
+
   # ---------------------------------------------------------------------------
   # Merge & update target region values
   #    - Apply adjustment for USA and baseline ratio for pre-2005 values.
@@ -105,7 +99,7 @@ calcPlasticUseTotal <- function() {
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(dplyr::all_of(names(use_region)))
-  
+
   # ---------------------------------------------------------------------------
   # Combine with other regions & apply EU scaling
   #    - Adjust EUR entries based on 2018 European plastics consumption (55.4 Mt according to Plastics Europe 2024 circular economy report).
@@ -122,7 +116,7 @@ calcPlasticUseTotal <- function() {
         Value
       )
     )
-  
+
   # ---------------------------------------------------------------------------
   # Aggregate to country level by GDP weights
   # ---------------------------------------------------------------------------
@@ -138,7 +132,7 @@ calcPlasticUseTotal <- function() {
     from = "RegionCode", to = "CountryCode",
     weight = gdp_ssp2[unique(map_df$CountryCode), , ]
   )
-  
+
   # ---------------------------------------------------------------------------
   # Return final output
   # ---------------------------------------------------------------------------

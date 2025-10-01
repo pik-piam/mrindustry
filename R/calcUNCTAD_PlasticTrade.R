@@ -31,7 +31,7 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
   )
   map_df   <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   gdp_ssp2 <- calcOutput("GDP", scenario="SSP2",average2020 = FALSE, naming = "scenario", aggregate = FALSE)[,paste0("y", 2005:2022), "SSP2"]
-  
+
   # ---------------------------------------------------------------------------
   # Helper: build region-level flows for given product and tag
   # ---------------------------------------------------------------------------
@@ -55,14 +55,14 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
       dplyr::left_join(df_ov, by = c("Region", "Year", "Data1"), suffix = c("", ".new")) %>%
       dplyr::mutate(Value = dplyr::if_else(!is.na(Value.new), Value.new, Value),
                     Data2 = data2_tag) %>%
-      dplyr::select(Region, Year, Data2, Data1, Value)
+      dplyr::select(Region, Year, Data1, Data2, Value)
     m_f <- as.magpie(df_f, spatial = 1, temporal = 2); m_f[is.na(m_f)] <- 0
     x <- toolAggregate(m_f, rel = map_df, dim = 1,
                        from = "RegionCode", to = "CountryCode",
                        weight = gdp_ssp2[unique(map_df$CountryCode), , ])
     return(x / 1000) # thousand tons to Mt
   }
-  
+
   # ---------------------------------------------------------------------------
   # Dispatch region-level subtypes
   # ---------------------------------------------------------------------------
@@ -98,21 +98,22 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
       description = "Region-level imports/exports of manufactured plastic goods"
     ))
   }
-  
+
   # ---------------------------------------------------------------------------
   # Helper: build country-level flows for given product
   # ---------------------------------------------------------------------------
-  build_country_flow <- function(prod_label) {
+  build_country_flow <- function(prod_label, data2_tag) {
     x <- data[,,grepl(prod_label, getItems(data, dim = 3))]
+    getItems(x, dim=3.2) <- data2_tag
     return(x / 1000) # thousand tons to Mt
   }
-  
+
   # ---------------------------------------------------------------------------
   # Dispatch country-level subtypes
   # ---------------------------------------------------------------------------
   if (subtype == "Final_Country") {
     return(list(
-      x           = build_country_flow("Final manufactured plastics goods"),
+      x           = build_country_flow("Final manufactured plastics goods", "Final Plastic"),
       weight      = NULL,
       unit        = "Mt",
       description = "Country-level imports/exports of final plastics"
@@ -120,7 +121,7 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
   }
   if (subtype == "Primary_Country") {
     return(list(
-      x           = build_country_flow("Plastics in primary forms"),
+      x           = build_country_flow("Plastics in primary forms", "Primary Plastic"),
       weight      = NULL,
       unit        = "Mt",
       description = "Country-level imports/exports of primary plastics"
@@ -128,7 +129,7 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
   }
   if (subtype == "Intermediate_Country") {
     return(list(
-      x           = build_country_flow("Intermediate forms of plastic"),
+      x           = build_country_flow("Intermediate forms of plastic", "Intermediate Plastic"),
       weight      = NULL,
       unit        = "Mt",
       description = "Country-level imports/exports of intermediate plastic forms"
@@ -136,13 +137,13 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
   }
   if (subtype == "Manufactured_Country") {
     return(list(
-      x           = build_country_flow("Intermediate manufactured plastic goods"),
+      x           = build_country_flow("Intermediate manufactured plastic goods", "Manufactured Plastic"),
       weight      = NULL,
       unit        = "Mt",
       description = "Country-level imports/exports of manufactured plastic goods"
     ))
   }
-  
+
   # ---------------------------------------------------------------------------
   # Dispatch waste subtypes
   # ---------------------------------------------------------------------------
@@ -164,7 +165,7 @@ calcUNCTAD_PlasticTrade <- function(subtype) {
       description = "Country-level plastic waste flows"
     ))
   }
-  
+
   # ---------------------------------------------------------------------------
   # Error handling for unknown subtype
   # ---------------------------------------------------------------------------
