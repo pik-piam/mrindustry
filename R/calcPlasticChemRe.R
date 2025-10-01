@@ -5,7 +5,7 @@
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticChemRe <- function(target = NULL) {
+calcPlasticChemRe <- function(target = NULL) {
   # ---------------------------------------------------------------------------
   # Define sectors and regions
   #    - Retrieve manufacturing sectors (excluding 'Total'), optionally filter by 'target'.
@@ -15,7 +15,7 @@ calcOECD_PlasticChemRe <- function(target = NULL) {
   targets <- if (is.null(target)) all_targets else intersect(target, all_targets)
   region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
   regions <- unique(region_map$RegionCode)
-  
+
   # ---------------------------------------------------------------------------
   # Define time horizon and share bounds
   #    - Years: 1990–2100
@@ -29,7 +29,7 @@ calcOECD_PlasticChemRe <- function(target = NULL) {
     end    = 0.10,
     stringsAsFactors = FALSE
   )
-  
+
   # ---------------------------------------------------------------------------
   # Construct full dataset and interpolate
   #    - Expand grid Year × Target × Region
@@ -51,7 +51,7 @@ calcOECD_PlasticChemRe <- function(target = NULL) {
     )
   ))
   traj_df <- dplyr::select(traj_df, Region, Year, Target, value)
-  
+
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries
   # ---------------------------------------------------------------------------
@@ -60,13 +60,13 @@ calcOECD_PlasticChemRe <- function(target = NULL) {
     x, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
   )
-  
+
   # ---------------------------------------------------------------------------
   # Prepare weight object and return
   # ---------------------------------------------------------------------------
   weight <- x
   weight[,] <- 1
-  
+
   return(list(
     x           = x,
     weight      = weight,

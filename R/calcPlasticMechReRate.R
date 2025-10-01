@@ -38,7 +38,7 @@ calcPlasticMechReRate <- function() {
   eu <- readSource("PlasticsEurope", subtype="PlasticEoL_EU", convert=FALSE) %>%
     as.data.frame() %>%
     dplyr::mutate(Region = "EUR", Year = as.integer(as.character(Year)))
-  cn <- readSource("China_CNBS", convert=FALSE) %>%
+  cn <- readSource("China_PlasticEoL", convert=FALSE) %>%
     as.data.frame() %>%
     dplyr::mutate(Region="CHA", Year=as.integer(as.character(Year)))
   us <- readSource("US_EPA", convert=FALSE) %>%

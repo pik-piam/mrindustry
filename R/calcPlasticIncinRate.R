@@ -5,17 +5,17 @@
 #'
 #' @author Qianzhi Zhang
 #'
-calcOECD_PlasticIncinRate <- function() {
+calcPlasticIncinRate <- function() {
   # ---------------------------------------------------------------------------
   # Define sectors and regions
   #    - Retrieve manufacturing sectors (excluding 'Total') and regional codes.
   # ---------------------------------------------------------------------------
   sector_map <- toolGetMapping("structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry")
   targets <- setdiff(unique(sector_map$Target), "Total")
-  
+
   region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   regions <- unique(region_map$RegionCode)
-  
+
   # ---------------------------------------------------------------------------
   # Load OECD incineration data and extend to 2020
   #    - Filter for 'Incinerated' fate and replicate 2019 to 2020.
@@ -26,12 +26,12 @@ calcOECD_PlasticIncinRate <- function() {
     dplyr::filter(Data1 == "Incinerated") %>%
     dplyr::select(-Data1) %>%
     dplyr::mutate(Year = as.integer(as.character(Year)))
-  
+
   incin_ext <- dplyr::bind_rows(
     incin_df,
     dplyr::filter(incin_df, Year == 2019) %>% dplyr::mutate(Year = 2020)
   )
-  
+
   # ---------------------------------------------------------------------------
   # Compute historical share from external datasets (2005–2020)
   #    - Load EU, China, and US EoL CSVs, compute incineration share per region-year.
@@ -39,13 +39,13 @@ calcOECD_PlasticIncinRate <- function() {
   eu <- readSource("PlasticsEurope", subtype="PlasticEoL_EU", convert=FALSE) %>%
     as.data.frame() %>%
     dplyr::mutate(Region = "EUR", Year = as.integer(as.character(Year)))
-  cn <- readSource("China_CNBS", convert=FALSE) %>%
+  cn <- readSource("China_PlasticEoL", convert=FALSE) %>%
     as.data.frame() %>%
     dplyr::mutate(Region="CHA", Year=as.integer(as.character(Year)))
   us <- readSource("US_EPA", convert=FALSE) %>%
     as.data.frame()%>%
     dplyr::mutate(Region="USA", Year=as.integer(as.character(Year)))
-  
+
   ext_all <- dplyr::bind_rows(eu, cn, us) %>%
     dplyr::filter(Year >= 2005, Year <= 2020) %>%
     dplyr::group_by(Region, Year) %>%
@@ -56,7 +56,7 @@ calcOECD_PlasticIncinRate <- function() {
     ) %>%
     dplyr::mutate(share = inc / total) %>%
     dplyr::select(Region, Year, share)
-  
+
   # ---------------------------------------------------------------------------
   # Merge ext shares into incin_ext, replacing where available
   # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ calcOECD_PlasticIncinRate <- function() {
     dplyr::left_join(ext_all, by = c("Region", "Year")) %>%
     dplyr::mutate(Value = if_else(!is.na(share), share, Value)) %>%
     dplyr::select(Region, Year, Value)
-  
+
   # ---------------------------------------------------------------------------
   # Fill 1990–2000 for non-CHA regions and extend to 2100
   #    - Copy Year 2000 value to 1990–1999; linearly interpolate from 2020 to 2100 to reach target 30%.
@@ -74,14 +74,14 @@ calcOECD_PlasticIncinRate <- function() {
   base2000 <- incin_hist %>%
     dplyr::filter(Year == 2000) %>%
     dplyr::select(Region, val2000 = Value)
-  
+
   hist_ext <- incin_hist %>%
     dplyr::left_join(base2000, by = "Region") %>%
     dplyr::mutate(
       Value = if_else(Region != "CHA" & Year >= 1990 & Year < 2000, val2000, Value)
     ) %>%
     dplyr::select(-val2000)
-  
+
   # Future 2021–2100
   target_share <- 0.30
   fut <- expand.grid(Region = regions, Year = 2021:2100, stringsAsFactors = FALSE) %>%
@@ -93,24 +93,24 @@ calcOECD_PlasticIncinRate <- function() {
       Value = start + (Year - 2020) * (target_share - start) / (2100 - 2020)
     ) %>%
     dplyr::select(Region, Year, Value)
-  
+
   final_df <- dplyr::bind_rows(
     hist_ext %>% dplyr::filter(Year < 2021),
     fut
   )
-  
+
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries
   # ---------------------------------------------------------------------------
   x <- as.magpie(final_df, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = region_map, dim = 1, from = "RegionCode", to = "CountryCode")
-  
+
   # ---------------------------------------------------------------------------
   # Prepare weight object and return
   # ---------------------------------------------------------------------------
   weight <- x
   weight[,] <- 1
-  
+
   return(list(
     x           = x,
     weight      = weight,

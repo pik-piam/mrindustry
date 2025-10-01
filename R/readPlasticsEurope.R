@@ -23,7 +23,7 @@
 #' @importFrom dplyr select filter
 #' @importFrom magclass as.magpie getComment<-
 #' @importFrom tidyr pivot_longer
-#' 
+#'
 readPlasticsEurope <- function(subtype) {
   # ---------------------------------------------------------------------------
   # Map subtype to Excel file parameters
@@ -42,7 +42,7 @@ readPlasticsEurope <- function(subtype) {
                    ),
                    stop("Invalid subtype: ", subtype)
   )
-  
+
   # ---------------------------------------------------------------------------
   # Read raw data from Excel
   raw_df <- read_excel(
@@ -51,12 +51,12 @@ readPlasticsEurope <- function(subtype) {
     range = params$range,
     skip  = 1
   )
-  
+
   # ---------------------------------------------------------------------------
   # Select and filter columns based on subtype
   df <- switch(
     subtype,
-    
+
     "PlasticProduction_region" = raw_df %>%
       pivot_longer(
         cols = -"Year",
@@ -64,7 +64,7 @@ readPlasticsEurope <- function(subtype) {
         values_to = "Production"
       ) %>%
       filter(.data$Region != "Total Production (Mt)"),
-    
+
     "PlasticShare_EU" = raw_df %>%
       pivot_longer(
         cols = -"Year",
@@ -72,7 +72,7 @@ readPlasticsEurope <- function(subtype) {
         values_to = "Share"
       ) %>%
       filter(.data$Type != "Total Demand (Mt)"),
-    
+
     "PlasticEoL_EU" = raw_df %>%
       pivot_longer(
         cols = -"Year",
@@ -81,7 +81,7 @@ readPlasticsEurope <- function(subtype) {
       ),
     stop("Unsupported subtype: ", subtype)
   )
-  
+
   # ---------------------------------------------------------------------------
   # Convert to magpie object and clean missing values
   # ---------------------------------------------------------------------------
@@ -92,10 +92,13 @@ readPlasticsEurope <- function(subtype) {
     "PlasticEoL_EU" = as.magpie(df, temporal = 1),
     stop("Unsupported subtype: ", subtype)
   )
-  
+
   magpie_data[is.na(magpie_data)] <- 0
+  if(subtype != "PlasticProduction_region"){
+    getItems(magpie_data, dim=1) <- "EUR"
+  }
   getComment(magpie_data) <- subtype
-  
+
   return(magpie_data)
 }
 

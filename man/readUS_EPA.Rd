@@ -11,6 +11,7 @@ magpie object of the US_EPA Data
 }
 \description{
 This function reads US EPA data on plastics EoL treatment in the US.
+Unit: thousands of U.S. tons
 }
 \seealso{
 [readSource()]

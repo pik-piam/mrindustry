@@ -2,10 +2,10 @@
 #'
 #' Generate time series of bio-based plastic share trajectories by sector
 #' and aggregate from regions to countries for 1990–2100.
-#' 
+#'
 #' @author Qianzhi Zhang
-#' 
-calcOECD_PlasticBioRate <- function() {
+#'
+calcPlasticBioRate <- function() {
   # ---------------------------------------------------------------------------
   # Load sectoral mapping and define sectors
   #    - Retrieve sectoral targets from manufacturing mapping, excluding totals.
@@ -15,7 +15,7 @@ calcOECD_PlasticBioRate <- function() {
   )
   targets <- unique(sector_map$Target)
   targets <- setdiff(targets, "Total")
-  
+
   # ---------------------------------------------------------------------------
   # Load regional mapping and define regions
   #    - Retrieve regional codes from mapping.
@@ -24,7 +24,7 @@ calcOECD_PlasticBioRate <- function() {
     "regionmappingH12.csv", type = "regional", where = "mrindustry"
   )
   regions <- unique(region_map$RegionCode)
-  
+
   # ---------------------------------------------------------------------------
   # Define time horizon and bio-based share bounds
   #    - Years: 1990–2100
@@ -37,7 +37,7 @@ calcOECD_PlasticBioRate <- function() {
     start  = 0,
     end    = 0.2
   )
-  
+
   # ---------------------------------------------------------------------------
   # Build full data frame of trajectories
   #    - Expand grid of Year × Sector × Region
@@ -59,7 +59,7 @@ calcOECD_PlasticBioRate <- function() {
     )
   ))
   traj_df <- dplyr::select(traj_df, Region, Year, Target, value)
-  
+
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to country level
   #    - Map regional trajectories to countries (equal weights)
@@ -69,14 +69,14 @@ calcOECD_PlasticBioRate <- function() {
     x, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
   )
-  
+
   # ---------------------------------------------------------------------------
   # Prepare weight object and return
   #    - Equal weights (1) for all entries
   # ---------------------------------------------------------------------------
   weight <- x
   weight[,] <- 1
-  
+
   return(list(
     x           = x,
     weight      = weight,
