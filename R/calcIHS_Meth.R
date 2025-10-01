@@ -1,15 +1,17 @@
-#' Retrieve methanol production, capacity and demand data for 2018 from 
+#' Retrieve methanol production, capacity and demand data for 2018 from
 #' 9TH RUSSIA & CIS OIL & GAS EXECUTIVE SUMMIT 2019 METHANOL,
-#' optionally the 2018 data is interpolated to 2010-2020 based on 
-#' temporal coverage of Methanol capacities 2010-2020 from IHS Markit 
+#' optionally the 2018 data is interpolated to 2010-2020 based on
+#' temporal coverage of Methanol capacities 2010-2020 from IHS Markit
 #'
-#' @param subtype[1] Type of Methanol data to read. Available types are:
+#' @param subtype
+#'
+#' Type of Methanol data to read. Available types are:
 #'                \itemize{
 #'                  \item Production
 #'                  \item Capacity
 #'                  \item Demand
 #'                }
-#' @param subtype[2] Temporal coverage of Methanol data. Available types are:
+#' Temporal coverage of Methanol data. Available types are:
 #'                \itemize{
 #'                  \item 2010-2020: Interpolated 2018 data to 2010-2020 using total global methanol production data.
 #'                  \item 2018: Data for the year 2018.

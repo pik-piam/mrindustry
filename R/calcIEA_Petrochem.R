@@ -1,9 +1,11 @@
-#' Read-in IEA The Future of Petrochemicals 2018 data from several figures 
-#' (e.g., "Fig 4.1 Petrochem Production", "Fig A.1 Petrochem Prod Region", 
-#' "Fig 4.5 Petrochem Feedstock", "Fig 4.9 Petro Prod Route RTS", 
+#' Read-in IEA The Future of Petrochemicals 2018 data from several figures
+#' (e.g., "Fig 4.1 Petrochem Production", "Fig A.1 Petrochem Prod Region",
+#' "Fig 4.5 Petrochem Feedstock", "Fig 4.9 Petro Prod Route RTS",
 #' "Fig 5.10 Petro Prod Route CTS") as a MagPIE object.
 #'
-#' @param subtype[1] Different data sheets to read. Available types are:
+#' @param subtype
+#'
+#' Different data sheets to read. Available types are:
 #'   \itemize{
 #'     \item Feedstock: Fig 4.5 Petrochem Feedstock for HVCs, Ammonia, Methanol
 #'     \item RouteRTS: Fig 4.9 Petro Prod Route RTS (Reference Technology Scenario) for HVCs, Ammonia, Methanol
@@ -12,7 +14,7 @@
 #'     \item production5type: Fig A.1 Petrochem Prod Region for Ethylene, Propylene, BTX, Ammonia, Methanol
 #'   }
 #'
-#' @param subtype[2] Different products to read. Available types are:
+#' Different products to read. Available types are:
 #'   \itemize{
 #'     \item HVCs
 #'     \item Ammonia

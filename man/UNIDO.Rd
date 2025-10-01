@@ -15,8 +15,8 @@ calcUNIDO(subtype = "INDSTAT3")
 \arguments{
 \item{subtype}{one of
 - \code{INDSTAT2}: read INDSTAT 2 data
-- \code{INDSTAT3}: read INDSTAT 3 data from \link{https://stat.unido.org/data/download?dataset=indstat&revision=3}
-- \code{INDSTAT4}: read INDSTAT 4 data from \link{https://stat.unido.org/data/download?dataset=indstat&revision=4}
+- \code{INDSTAT3}: read INDSTAT 3 data from https://stat.unido.org/data/download?dataset=indstat&revision=3
+- \code{INDSTAT4}: read INDSTAT 4 data from https://stat.unido.org/data/download?dataset=indstat&revision=4
 INDSTAT 4 data quality has not been vetted and should not be used for
 production.}
 
@@ -75,13 +75,13 @@ regressions according to this table\tabular{lll}{
 
 \code{calcUNIDO()} calculates \code{otherInd} subsector values as the difference
 between \code{manufacturing} and \code{cement}, \code{chemicals}, and \code{steel} values and is
-intended to be called through \code{\link[=calcOutput]{calcOutput()}}, which will aggregate regions.
+intended to be called through \code{\link[madrat:calcOutput]{madrat::calcOutput()}}, which will aggregate regions.
 }
 \description{
 Read and convert data from United Nations Industrial Organisation.
 }
 \seealso{
-\code{\link[=readSource]{readSource()}}, \code{\link[=calcOutput]{calcOutput()}}
+\code{\link[madrat:readSource]{madrat::readSource()}}, \code{\link[madrat:calcOutput]{madrat::calcOutput()}}
 }
 \author{
 Michaja Pehl

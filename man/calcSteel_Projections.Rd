@@ -51,7 +51,7 @@ A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \
 Function for calculating industry activity trajectories.
 }
 \seealso{
-\code{\link[=calcOutput]{calcOutput()}}
+\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
 }
 \author{
 Michaja Pehl

@@ -6,6 +6,9 @@
 \usage{
 convertMMSA_Methanol(x)
 }
+\arguments{
+\item{x}{a MagPIE object}
+}
 \value{
 MagPIE object of the MMSA_Methanol data aggregated to country level.
 }

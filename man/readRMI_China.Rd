@@ -7,18 +7,17 @@
 readRMI_China(subtype)
 }
 \arguments{
-\item{subtype[1]}{Type of RMI_China data sheet to read. Available types are:
-\itemize{
-  \item ChemDemand: ES1-3 China Chemical Demand
-  \item ChemStructure: ES10 China Chemical Structure
-}}
-
-\item{subtype[2]}{The specific product from the RMI_China data to read. Available types are:
-\itemize{
-  \item Ammonia
-  \item Methanol
-  \item Ethylene
-}}
+\item{subtype}{Type of RMI_China data sheet to read. Available types are:
+  \itemize{
+    \item ChemDemand: ES1-3 China Chemical Demand
+    \item ChemStructure: ES10 China Chemical Structure
+  }
+The specific product from the RMI_China data to read. Available types are:
+  \itemize{
+    \item Ammonia
+    \item Methanol
+    \item Ethylene
+  }}
 }
 \value{
 MagPIE object of the RMI_China data.
@@ -29,11 +28,11 @@ data from either "ES1-3 China Chemical Demand" or "ES29 China Chemical Structure
 Data contains chemical demand projections 2020-2050 for ammonia, methanol and ethylene and the feedstock structure for the production of ammonia, methanol and ethylene
 in the zero-carbon scenario.
 }
-\seealso{
-[readSource()]
+\examples{
 \dontrun{
   a <- readSource(type = "RMI_China", subtype = "ChemDemand_Ammonia")
 }
+
 }
 \author{
 Qianzhi Zhang

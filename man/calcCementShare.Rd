@@ -16,7 +16,7 @@ Non-OECD figures from IEA 2017 \href{https://www.zotero.org/groups/52011/rd3/ite
 by GDP for aggregation and converge towards global values by 2100.
 }
 \seealso{
-\code{\link[=calcOutput]{calcOutput()}}
+\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
 }
 \author{
 Michaja Pehl

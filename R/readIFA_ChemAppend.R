@@ -17,8 +17,8 @@
 #'
 #' @author Qianzhi Zhang
 #'
-#' @seealso [readSource()]
 #'
+#' @examples
 #' \dontrun{
 #'   a <- readSource(type = "IFA_ChemAppend", subtype = "AN_statistics_production")
 #' }
@@ -32,7 +32,7 @@ readIFA_ChemAppend <- function(subtype) {
   # ---------------------------------------------------------------------------
   subtype <- unlist(strsplit(subtype, "_"))
   key <- paste(subtype[1], subtype[2], sep = "_")
-  
+
   # ---------------------------------------------------------------------------
   # Select File Parameters Based on the Key
   #    - Use a switch statement to choose the appropriate file name, sheet,
@@ -89,14 +89,14 @@ readIFA_ChemAppend <- function(subtype) {
                  ),
                  stop("Invalid subtype combination")
   )
-  
+
   # Extract filename, sheet name, and data ranges from the File list.
   filename <- File$filename
   sheet_name <- File$sheet_name
   ranges <- File$ranges
   # Select the appropriate range based on the third component (e.g., "production")
   range <- toolSubtypeSelect(subtype[3], ranges)
-  
+
   # ---------------------------------------------------------------------------
   # Read Data from Excel Based on the Data Sheet Type
   #    - For "statistics" subtypes:
@@ -110,13 +110,13 @@ readIFA_ChemAppend <- function(subtype) {
     # Read country names from the defined range and rename the column.
     country_data <- as.data.frame(read_excel(filename, sheet = sheet_name, range = File$countrylist, skip = 5))
     colnames(country_data) <- "Country"
-    
+
     # Read the corresponding data.
     data <- as.data.frame(read_excel(filename, sheet = sheet_name, range = range, skip = 5))
-    
+
     # Combine country names with the corresponding data.
     data <- cbind(country_data, data)
-    
+
     # Reshape the data from wide to long format.
     data <- tidyr::pivot_longer(
       data,
@@ -127,7 +127,7 @@ readIFA_ChemAppend <- function(subtype) {
   } else if (subtype[2] == "capacities") {
     # For capacities, read the data directly.
     data <- as.data.frame(read_excel(filename, sheet = sheet_name, range = range, skip = 5))
-    
+
     # Reshape the data from wide to long format.
     data <- tidyr::pivot_longer(
       data,
@@ -136,7 +136,7 @@ readIFA_ChemAppend <- function(subtype) {
       values_to = "value"   # New column for values.
     )
   }
-  
+
   # ---------------------------------------------------------------------------
   # Convert the Data to a MagPIE Object and Finalize
   #    - Convert the reshaped data to a magpie object with spatial and temporal dimensions.
@@ -146,7 +146,7 @@ readIFA_ChemAppend <- function(subtype) {
   data <- as.magpie(data, spatial = 1, temporal = 2)
   data[is.na(data)] <- 0
   getComment(data) <- paste(subtype[1], subtype[2], subtype[3], sep = "_")
-  
+
   # ---------------------------------------------------------------------------
   # Return the Processed Data
   # ---------------------------------------------------------------------------

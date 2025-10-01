@@ -17,7 +17,7 @@ Combines cement production data from \code{\link[=readvanRuijven2016]{readvanRui
 2005 on.
 }
 \seealso{
-\link{calcOutput}
+\link[madrat:calcOutput]{madrat::calcOutput}
 }
 \author{
 Michaja Pehl

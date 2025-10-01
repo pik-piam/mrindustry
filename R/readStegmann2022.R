@@ -8,14 +8,8 @@
 #' Link to SI:
 #' https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-022-05422-5/MediaObjects/41586_2022_5422_MOESM1_ESM.xlsx #nolint
 #'
-#' @md
-#' @return magpie object of the data
+#' @return a magpie object of the data
 #' @author Falk Benke, Simón Moreno
-#' @seealso \code{\link{readSource}}
-#' @examples
-#' \dontrun{
-#' a <- readSource(type = "Stegmann2022")
-#' }
 #'
 readStegmann2022 <- function() {
   readxl::read_xlsx("41586_2022_5422_MOESM1_ESM.xlsx", sheet = "Data") %>%

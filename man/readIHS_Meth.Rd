@@ -7,18 +7,17 @@
 readIHS_Meth(subtype)
 }
 \arguments{
-\item{subtype[1]}{Type of Methanol data to read. Available types are:
-\itemize{
-  \item Production
-  \item Capacity
-  \item Demand
-}}
-
-\item{subtype[2]}{Temporal coverage of Methanol data. Available types are:
-\itemize{
-  \item 2010-2020: Interpolated 2018 data to 2010-2020 using total global methanol production data.
-  \item 2018: Data for the year 2018.
-}}
+\item{subtype}{Type of Methanol data to read. Available types are:
+               \itemize{
+                 \item Production
+                 \item Capacity
+                 \item Demand
+               }
+Temporal coverage of Methanol data. Available types are:
+               \itemize{
+                 \item 2010-2020: Interpolated 2018 data to 2010-2020 using total global methanol production data.
+                 \item 2018: Data for the year 2018.
+               }}
 }
 \value{
 Magpie object of the IHS_Meth data.
@@ -28,11 +27,11 @@ Read-in 9TH RUSSIA & CIS OIL & GAS EXECUTIVE SUMMIT 2019 METHANOL INS.xlsx file 
 Regional data on Methanol Production, Capacity and Demand from 2018 is combined with temporal coverage of Methanol capacities 2010-2020
 from IHS Markit to scale the 2018 data in order to estimate production, capacity and demand for 2010-2020.
 }
-\seealso{
-[readSource()]
+\examples{
 \dontrun{
   a <- readSource(type = "IHS_Meth", subtype = "Production_2018")
 }
+
 }
 \author{
 Qianzhi Zhang

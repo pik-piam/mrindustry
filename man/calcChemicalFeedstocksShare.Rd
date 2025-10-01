@@ -15,7 +15,7 @@ Calculates the share of \code{CHEMICAL} in \code{CHEMICAL = NECHEM} and converge
 towards the maximum value of either OECD or non-OECD countries by 2050.
 }
 \seealso{
-\code{\link[=calcOutput]{calcOutput()}}
+\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
 }
 \author{
 Michaja Pehl

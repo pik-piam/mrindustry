@@ -24,12 +24,11 @@ Read-in IFA (International fertilizer Association) data .xlsx file containing
 production volumes and/or capacities for ammonium nitrate (AN), ammonium sulphate (AS),
 calcium ammonium nitrate (CAN) and urea ammonium nitrate (UAN) as a magclass object.
 }
-\seealso{
-[readSource()]
-
+\examples{
 \dontrun{
   a <- readSource(type = "IFA_ChemAppend", subtype = "AN_statistics_production")
 }
+
 }
 \author{
 Qianzhi Zhang

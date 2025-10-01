@@ -19,16 +19,15 @@ Available types are:
 magpie object of the IFA data
 }
 \description{
-Read-in IFA (International fertilizer Association) data .xlsx file containing 
-production, consumption, export and import volumes as well as capacities for 
+Read-in IFA (International fertilizer Association) data .xlsx file containing
+production, consumption, export and import volumes as well as capacities for
 ammonia and urea as a magclass object.
 }
-\seealso{
-[readSource()]
-
+\examples{
 \dontrun{
 a <- readSource(type = "IFA_Chem", subtype = "ammonia_statistics_production")
 }
+
 }
 \author{
 Qianzhi Zhang
