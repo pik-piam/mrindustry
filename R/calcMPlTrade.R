@@ -80,7 +80,7 @@ calcMPlTrade <- function(
     spatial = 1, temporal = 2
   )
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   gdp_ssp2 <- calcOutput(
     "GDP", scenario="SSP2", average2020 = FALSE, naming = "scenario", aggregate = FALSE
@@ -93,6 +93,7 @@ calcMPlTrade <- function(
     to     = "CountryCode",
     weight = gdp_ssp2[unique(region_map$CountryCode), , ]
   )
+  getNames(x) <- NULL
 
   # ---------------------------------------------------------------------------
   # Return results

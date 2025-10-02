@@ -28,16 +28,16 @@ calcMPlOECD_MGshare <- function() {
       MaterialShare = Value / total_by_good
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(Region, Year, Data2, Data1, MaterialShare)
+    dplyr::select(Region, Data2, Data1, MaterialShare)
 
   # ---------------------------------------------------------------------------
   # Aggregate shares to country level
   #    - Convert to MagPIE and map regional codes to country codes.
   # ---------------------------------------------------------------------------
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
-  x <- as.magpie(ratio_df, spatial = 1, temporal = 2)
+  x <- as.magpie(ratio_df, spatial = 1)
   x <- toolAggregate(
     x, rel = region_map, dim = 1,
     from = "RegionCode", to = "CountryCode"
@@ -55,7 +55,7 @@ calcMPlOECD_MGshare <- function() {
     weight      = weight,
     unit        = "fraction",
     description = "Material share of plastics in different goods aggregated to country level for 2019.",
-    note        = "dimensions: (Time,Region,Good,Material,value)"
+    note        = "dimensions: (Region,Good,Material,value)"
   ))
 }
 

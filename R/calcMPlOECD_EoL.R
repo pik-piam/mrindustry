@@ -38,7 +38,7 @@ calcMPlOECD_EoL <- function() {
   #    - Convert to MagPIE and apply regional-to-country mapping.
   # ---------------------------------------------------------------------------
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   x <- as.magpie(eol_df, spatial = 1, temporal = 2)
   x <- toolAggregate(

@@ -93,10 +93,18 @@ calcMPlCollRate <- function() {
   )
 
   # ---------------------------------------------------------------------------
+  # Expand df by material
+  # ---------------------------------------------------------------------------
+  sector_map <- toolGetMapping("structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry")
+  targets    <- setdiff(unique(sector_map$Target), "Total")
+  exp_df <- crossing(final_df, targets) %>%
+    dplyr::select(Region, Year, targets, collected)
+
+  # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries
   #    - Map regions to countries with equal weights.
   # ---------------------------------------------------------------------------
-  x <- as.magpie(final_df, spatial = 1, temporal = 2)
+  x <- as.magpie(exp_df, spatial = 1, temporal = 2)
   region_map <- toolGetMapping(
     "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
@@ -117,6 +125,6 @@ calcMPlCollRate <- function() {
     weight      = weight,
     unit        = "% Collection rate",
     description = "Plastic collection rate trajectories aggregated to country level for 1990–2100.",
-    note        = "dimensions: (Time,Region,value)"
+    note        = "dimensions: (Time,Region,Material,value)"
   ))
 }

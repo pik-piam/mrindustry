@@ -21,7 +21,7 @@ calcMPlBioRate <- function() {
   #    - Retrieve regional codes from mapping.
   # ---------------------------------------------------------------------------
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   regions <- unique(region_map$RegionCode)
 
@@ -82,7 +82,7 @@ calcMPlBioRate <- function() {
     weight      = weight,
     unit        = "% Bio-based Plastic",
     description = "Projected bio-based plastic share by sector, aggregated to country level for 1990–2100.",
-    note        = "dimensions: (Time,Region,value)"
+    note        = "dimensions: (Time,Region,Material,value)"
   ))
 }
 

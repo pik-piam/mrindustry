@@ -13,7 +13,7 @@ calcMPlChemReRate <- function(target = NULL) {
   sector_map <- toolGetMapping("structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry")
   all_targets <- setdiff(unique(sector_map$Target), "Total")
   targets <- if (is.null(target)) all_targets else intersect(target, all_targets)
-  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   regions <- unique(region_map$RegionCode)
 
   # ---------------------------------------------------------------------------
@@ -72,7 +72,7 @@ calcMPlChemReRate <- function(target = NULL) {
     weight      = weight,
     unit        = "% Chemical recycling",
     description = "Chemical recycling rate trajectories aggregated to country level for 1990–2100.",
-    note        = "dimensions: (Time,Region,value)"
+    note        = "dimensions: (Time,Region,Material,value)"
   ))
 }
 

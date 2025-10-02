@@ -88,6 +88,7 @@ calcMPlEoL_shares <- function(subtype) {
     "All" = x,
     stop("Unsupported subtype: ", subtype)
   )
+  getNames(x) <- NULL
   # ---------------------------------------------------------------------------
   # Prepare weight object
   #    - Use equal weights (1) for all country-fate combinations.

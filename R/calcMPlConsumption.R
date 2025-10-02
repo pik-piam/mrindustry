@@ -121,7 +121,7 @@ calcMPlConsumption <- function() {
   # Aggregate to country level by GDP weights
   # ---------------------------------------------------------------------------
   map_df <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   magpie_x <- as.magpie(final_region, spatial = 1, temporal = 2)
   gdp_ssp2 <- calcOutput(

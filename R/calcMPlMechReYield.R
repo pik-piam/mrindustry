@@ -15,7 +15,7 @@ calcMPlMechReYield <- function() {
   )
   targets <- setdiff(unique(sector_map$Target), "Total")
   region_map <- toolGetMapping(
-    "regionmappingH12.csv", type = "regional", where = "mrindustry"
+    "regionmappingH12.csv", type = "regional", where = "mappingfolder"
   )
   regions <- unique(region_map$RegionCode)
 

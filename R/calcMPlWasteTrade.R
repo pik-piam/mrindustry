@@ -72,10 +72,11 @@ calcMPlWasteTrade <- function(subtype) {
   # Convert to MagPIE and aggregate to country level
   # ---------------------------------------------------------------------------
   x <- as.magpie(full_df %>% dplyr::select(Region, Year, Data2, Value), spatial = 1, temporal = 2)
-  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mrindustry")
+  region_map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
 
   gdp_ssp2 <- calcOutput("GDP", scenario="SSP2", average2020 = FALSE, naming = "scenario", aggregate = FALSE)[,"y2019", "SSP2"]
   x <- toolAggregate(x, rel = region_map, dim = 1, from = "RegionCode", to = "CountryCode", weight = gdp_ssp2[unique(region_map$CountryCode), , ])
+  getNames(x) <- NULL
 
   # ---------------------------------------------------------------------------
   # Return results
@@ -85,6 +86,6 @@ calcMPlWasteTrade <- function(subtype) {
     weight      = NULL,
     unit        = "Mt Plastic",
     description = "Country-level plastic waste trade flow aggregated for 1990–2100.",
-    note        = "dimensions: (Historic Time,Region,value)"
+    note        = "dimensions: (Time,Region,value)"
   ))
 }

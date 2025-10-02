@@ -100,9 +100,15 @@ calcMPlIncinRate <- function() {
   )
 
   # ---------------------------------------------------------------------------
+  # Expand df by material
+  # ---------------------------------------------------------------------------
+  exp_df <- crossing(final_df, targets) %>%
+    dplyr::select(Region, Year, targets, Value)
+
+  # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries
   # ---------------------------------------------------------------------------
-  x <- as.magpie(final_df, spatial = 1, temporal = 2)
+  x <- as.magpie(exp_df, spatial = 1, temporal = 2)
   x <- toolAggregate(x, rel = region_map, dim = 1, from = "RegionCode", to = "CountryCode")
 
   # ---------------------------------------------------------------------------
@@ -116,7 +122,7 @@ calcMPlIncinRate <- function() {
     weight      = weight,
     unit        = "% Plastic incineration",
     description = "Plastic incineration rate trajectories aggregated to country level for 1990–2100.",
-    note        = "dimensions: (Time,Region,value)"
+    note        = "dimensions: (Time,Region,Material,value)"
   ))
 }
 
