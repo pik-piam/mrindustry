@@ -4,9 +4,16 @@
 #'        - "Lifetime_mean"
 #'        - "Lifetime_std"
 calcMPlLifetime <- function(subtype) {
-  data <- readSource("Geyer", subtype=subtype, convert=FALSE)
-  weight <- data
-  weight[, , ] <- 1
+  data_raw <- readSource("Geyer", subtype=subtype, convert=FALSE)
+  sector_map <- toolGetMapping(
+    "structuremappingPlasticGeyerLifetime.csv", type = "sectoral", where = "mrindustry"
+  )
+  data <- toolAggregate(
+    data_raw, rel = sector_map, dim = 3,
+    from = "Source", to = "Target"
+  )
+  # remove category "Industrial Machinery"
+  data <- data[, , getItems(data, 3) != "Industrial Machinery"]
   description <- paste(
     subtype,
     " of plastic goods by use sector. ",
@@ -14,7 +21,7 @@ calcMPlLifetime <- function(subtype) {
   )
   output <- list(
     x = data,
-    weight = weight,
+    weight = NULL,
     unit = "years (a)",
     description = description,
     isocountries = FALSE,

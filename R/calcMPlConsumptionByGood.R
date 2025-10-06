@@ -22,7 +22,7 @@ calcMPlConsumptionByGood <- function() {
   # Backcast total use data to 1950
   # ---------------------------------------------------------------------------
   total <- calcOutput("MPlConsumption", aggregate = TRUE)
-  Geyer <- readSource("Geyer", subtype="Prod_1950-2015")
+  Geyer <- readSource("Geyer", subtype="Prod_1950-2015", convert=FALSE)
   total_df <- toolBackcastByReference2D(total, Geyer) %>%
     as.data.frame() %>%
     dplyr::mutate(Year = as.integer(as.character(Year)))%>%
