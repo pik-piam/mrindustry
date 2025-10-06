@@ -92,8 +92,8 @@ fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE, ru
     calcOutput("MPlOECD_MGshare",file = "plastic_material_shares_in_goods.cs4r")
     calcOutput("MPlMechReYield",round = 2, file = "plastic_mechanical_recycling_yield.cs4r") # fix 0.79
     calcOutput("MPlMechLoss",file = "plastic_reclmech_loss_uncontrolled_rate.cs4r")
-    calcOutput("MPlLifetime", subtype="Lifetime_mean", file = "plastic_lifetime_mean.cs4r")
-    calcOutput("MPlLifetime", subtype="Lifetime_std", file = "plastic_lifetime_mean.cs4r")
+    calcOutput("MPlLifetime", subtype="Lifetime_mean", aggregate=FALSE, file = "plastic_lifetime_mean.cs4r")
+    calcOutput("MPlLifetime", subtype="Lifetime_std", aggregate=FALSE, file = "plastic_lifetime_std.cs4r")
     # Historic EoL shares
     calcOutput("MPlEoL_shares", subtype="Collected", file = "plastic_hist_collection_rate.cs4r")
     calcOutput("MPlEoL_shares", subtype="Recycled", file = "plastic_hist_mechanical_recycling_rate.cs4r")
