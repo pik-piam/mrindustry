@@ -23,7 +23,7 @@
 #' @importFrom readxl read_excel
 #' @importFrom dplyr select filter
 #' @importFrom magclass as.magpie getComment<-
-#' 
+#'
 readOECD_Plastic <- function(subtype) {
   # ---------------------------------------------------------------------------
   # Parse input and validate
@@ -32,8 +32,7 @@ readOECD_Plastic <- function(subtype) {
     stop("Subtype must have at least three components, e.g. 'Use_2019_region'.")
   }
   key <- paste(parts[1], parts[2], sep = "_")  # e.g., "Use_2019"
-  level <- parts[3]                             # e.g., "region" or "world"
-  
+
   # ---------------------------------------------------------------------------
   # Map key to Excel file parameters
   params <- switch(key,
@@ -59,7 +58,7 @@ readOECD_Plastic <- function(subtype) {
                    ),
                    stop("Invalid subtype combination: ", key)
   )
-  
+
   # ---------------------------------------------------------------------------
   # Read raw data from Excel
   raw_df <- read_excel(
@@ -68,40 +67,40 @@ readOECD_Plastic <- function(subtype) {
     range = params$range,
     skip  = 1
   )
-  
+
   # ---------------------------------------------------------------------------
   # Select and filter columns based on subtype
   df <- switch(
     subtype,
     # Plastic use or waste by region
     "Use_2019_region" = raw_df %>%
-      select(`Reference area`, `Plastic polymer`, `Plastics application`,
-             TIME_PERIOD, OBS_VALUE),
+      select("Reference area", "Plastic polymer", "Plastics application",
+             "TIME_PERIOD", "OBS_VALUE"),
     "WasteType_2019_region" = raw_df %>%
-      select(`Reference area`, `Plastic polymer`, `Plastics application`,
-             TIME_PERIOD, OBS_VALUE),
+      select("Reference area", "Plastic polymer", "Plastics application",
+             "TIME_PERIOD", "OBS_VALUE"),
     "WasteEOL_1990-2019_region" = raw_df %>%
-      select(`Reference area`, `Plastic end-of-life fate`, `Plastic recycling`,
-             TIME_PERIOD, OBS_VALUE),
+      select("Reference area", "Plastic end-of-life fate", "Plastic recycling",
+             "TIME_PERIOD", "OBS_VALUE"),
     # Trend across time, filtered by scope
     "Use_1990-2019_region" = raw_df %>%
-      select(`Reference area`, `Plastic polymer`, `Plastics application`,
-             TIME_PERIOD, OBS_VALUE) %>%
-      filter(`Reference area` != "World"),
+      select("Reference area", "Plastic polymer", "Plastics application",
+             "TIME_PERIOD", "OBS_VALUE") %>%
+      filter(.data$`Reference area` != "World"),
     "Use_1990-2019_world" = raw_df %>%
-      select(`Reference area`, `Plastic polymer`, `Plastics application`,
-             TIME_PERIOD, OBS_VALUE) %>%
-      filter(`Reference area` == "World"),
+      select("Reference area", "Plastic polymer", "Plastics application",
+             "TIME_PERIOD", "OBS_VALUE") %>%
+      filter(.data$`Reference area` == "World"),
     stop("Unsupported subtype: ", subtype)
   )
-  
+
   # ---------------------------------------------------------------------------
   # Convert to magpie object and clean missing values
   # ---------------------------------------------------------------------------
   magpie_data <- as.magpie(df, spatial = 1, temporal = 4)
   magpie_data[is.na(magpie_data)] <- 0
   getComment(magpie_data) <- subtype
-  
+
   return(magpie_data)
 }
 

@@ -15,11 +15,11 @@ calcMPlGoodShare <- function() {
     "MPlOECD", subtype = "Use_2019_region", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
-    dplyr::filter(Data1 != "Total", Data2 != "Total") %>%
-    dplyr::group_by(Region, Year, Data2) %>%
-    dplyr::summarise(Value_sum = sum(Value, na.rm = TRUE), .groups = "drop") %>%
-    dplyr::group_by(Region, Year) %>%
-    dplyr::mutate(share = Value_sum / sum(Value_sum, na.rm = TRUE)) %>%
+    dplyr::filter(.data$Data1 != "Total", .data$Data2 != "Total") %>%
+    dplyr::group_by(.data$Region, .data$Year, .data$Data2) %>%
+    dplyr::summarise(Value_sum = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>%
+    dplyr::group_by(.data$Region, .data$Year) %>%
+    dplyr::mutate(share = .data$Value_sum / sum(.data$Value_sum, na.rm = TRUE)) %>%
     dplyr::ungroup()
 
   # ---------------------------------------------------------------------------

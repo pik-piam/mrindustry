@@ -45,15 +45,15 @@ calcMPlTrade <- function(
   # Filter by export or import flows
   # ---------------------------------------------------------------------------
   flow_df <- region_df %>%
-    dplyr::filter(Data1 == flow_label)  %>%
+    dplyr::filter(.data$Data1 == flow_label)  %>%
     dplyr::select("Region","Year","Value")
 
   # ---------------------------------------------------------------------------
   # Fill missing historical years (1990–2004) using 2005 values
   # ---------------------------------------------------------------------------
   base_2005 <- flow_df %>%
-    dplyr::filter(Year == 2005) %>%
-    dplyr::select(-Year)
+    dplyr::filter(.data$Year == 2005) %>%
+    dplyr::select(-"Year")
   hist_years <- 1990:2004
   hist_df <- expand.grid(
     Region = unique(flow_df$Region),
@@ -66,17 +66,17 @@ calcMPlTrade <- function(
   # Combine original, and historical data, then sort by year
   # ---------------------------------------------------------------------------
   core_df <- flow_df %>%
-    dplyr::filter(!Year %in% hist_years) %>%
-    dplyr::mutate(Year = as.integer(as.character(Year)))
+    dplyr::filter(!.data$Year %in% hist_years) %>%
+    dplyr::mutate(Year = as.integer(as.character(.data$Year)))
   full_df <- dplyr::bind_rows(core_df, hist_df) %>%
-    dplyr::mutate(Year = as.integer(as.character(Year))) %>%
-    dplyr::arrange(Year)
+    dplyr::mutate(Year = as.integer(as.character(.data$Year))) %>%
+    dplyr::arrange(.data$Year)
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to country level using GDP weights
   # ---------------------------------------------------------------------------
   x <- as.magpie(
-    full_df %>% dplyr::select(Region, Year, Value),
+    full_df %>% dplyr::select("Region", "Year", "Value"),
     spatial = 1, temporal = 2
   )
   region_map <- toolGetMapping(

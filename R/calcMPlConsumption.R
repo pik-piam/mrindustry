@@ -14,8 +14,8 @@ calcMPlConsumption <- function() {
     "MPlOECD", subtype = "Use_1990-2019_region", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell, -Data1, -Data2) %>%
-    dplyr::mutate(Year = as.integer(as.character(Year)))
+    dplyr::select(-"Cell", -"Data1", -"Data2") %>%
+    dplyr::mutate(Year = as.integer(as.character(.data$Year)))
 
   # ---------------------------------------------------------------------------
   # Compute baseline ratios for target vs. other regions
@@ -23,14 +23,14 @@ calcMPlConsumption <- function() {
   # ---------------------------------------------------------------------------
   target_regions <- c("CHA", "EUR", "USA", "CAN")
   use_target <- use_region %>%
-    dplyr::filter(Region %in% target_regions) %>%
-    dplyr::group_by(Region) %>%
+    dplyr::filter(.data$Region %in% target_regions) %>%
+    dplyr::group_by(.data$Region) %>%
     dplyr::mutate(
-      baseline2005 = Value[Year == 2005],
-      ratio        = Value / baseline2005
+      baseline2005 = .data$Value[.data$Year == 2005],
+      ratio        = .data$Value / .data$baseline2005
     ) %>%
     dplyr::ungroup()
-  use_other <- use_region %>% dplyr::filter(!Region %in% target_regions)
+  use_other <- use_region %>% dplyr::filter(!.data$Region %in% target_regions)
 
   # ---------------------------------------------------------------------------
   # Load & reshape production data
@@ -40,10 +40,10 @@ calcMPlConsumption <- function() {
   prod_data <- readSource("PlasticsEurope", subtype="PlasticProduction_region", convert=FALSE) %>%
     as.data.frame() %>%
     dplyr::mutate(
-      Year = as.integer(as.character(Year)),
-      Region = dplyr::recode(Region, !!!prod_region_map)
+      Year = as.integer(as.character(.data$Year)),
+      Region = dplyr::recode(.data$Region, !!!prod_region_map)
     ) %>%
-    dplyr::filter(Region %in% target_regions)
+    dplyr::filter(.data$Region %in% target_regions)
 
   # ---------------------------------------------------------------------------
   # Calculate UNCTAD net imports for target regions
@@ -56,7 +56,7 @@ calcMPlConsumption <- function() {
     dplyr::filter(.data$Region %in% target_regions)
   trade_data <- rbind(trade_data_region, trade_data_country) %>% pivot_wider(names_from="Data1", values_from="Value") %>%
     dplyr::mutate(net_import = .data$Imports - .data$Exports,
-                  Year = as.integer(as.character(Year))) %>%
+                  Year = as.integer(as.character(.data$Year))) %>%
     dplyr::select("Region","Year","net_import")
 
   # ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ calcMPlConsumption <- function() {
   use_calc <- prod_data %>%
     dplyr::left_join(trade_data, by = c("Region", "Year")) %>%
     tidyr::replace_na(list(net_import = 0)) %>%
-    dplyr::mutate(use = Value + net_import)
+    dplyr::mutate(use = .data$Value + .data$net_import)
 
   # ---------------------------------------------------------------------------
   # Adjust USA demand by Canada domestic demand
@@ -75,12 +75,12 @@ calcMPlConsumption <- function() {
     "MPlOECD", subtype = "Use_1990-2019_region", aggregate = FALSE
   ) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell, -Data1, -Data2) %>%
-    dplyr::mutate(Year = as.integer(as.character(Year))) %>%
-    dplyr::filter(Region == "CAN") %>%
+    dplyr::select(-"Cell", -"Data1", -"Data2") %>%
+    dplyr::mutate(Year = as.integer(as.character(.data$Year))) %>%
+    dplyr::filter(.data$Region == "CAN") %>%
     dplyr::left_join(trade_data, by = c("Region", "Year")) %>%
     tidyr::replace_na(list(net_import = 0)) %>%
-    dplyr::transmute(Year, can_demand = Value - net_import)
+    dplyr::transmute(.data$Year, can_demand = .data$Value - .data$net_import)
 
   # ---------------------------------------------------------------------------
   # Merge & update target region values
@@ -90,12 +90,12 @@ calcMPlConsumption <- function() {
     dplyr::left_join(use_calc, by = c("Region", "Year")) %>%
     dplyr::left_join(can_data, by = "Year") %>%
     dplyr::mutate(
-      use_adj = if_else(Region == "USA", use - can_demand, use)
+      use_adj = if_else(.data$Region == "USA", .data$use - .data$can_demand, .data$use)
     ) %>%
-    dplyr::group_by(Region) %>%
+    dplyr::group_by(.data$Region) %>%
     dplyr::mutate(
-      use_adj_2005 = use_adj[Year == 2005],
-      Value        = if_else(Year >= 2005, use_adj, use_adj_2005 * ratio)
+      use_adj_2005 = .data$use_adj[.data$Year == 2005],
+      Value        = if_else(.data$Year >= 2005, .data$use_adj, .data$use_adj_2005 * .data$ratio)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(dplyr::all_of(names(use_region)))
@@ -106,14 +106,14 @@ calcMPlConsumption <- function() {
   # ---------------------------------------------------------------------------
   final_region <- dplyr::bind_rows(updated_target, use_other)
   eur_2018_value <- final_region %>%
-    dplyr::filter(Region == "EUR", Year == 2018) %>%
-    dplyr::pull(Value)
+    dplyr::filter(.data$Region == "EUR", .data$Year == 2018) %>%
+    dplyr::pull(.data$Value)
   final_region <- final_region %>%
     dplyr::mutate(
       Value = if_else(
-        Region == "EUR",
-        Value * 55.4 / eur_2018_value,
-        Value
+        .data$Region == "EUR",
+        .data$Value * 55.4 / eur_2018_value,
+        .data$Value
       )
     )
 

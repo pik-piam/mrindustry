@@ -40,22 +40,22 @@ calcMPlUNCTAD <- function(subtype) {
     m_r <- toolAggregate(data, rel = map_df, dim = 1,
                          from = "CountryCode", to = "RegionCode")
     df_r <- as.data.frame(m_r) %>%
-      dplyr::filter(Data2 == prod_label) %>%
-      dplyr::mutate(Year = as.integer(as.character(Year))) %>%
-      dplyr::select(Region, Year, Data1, Value)
+      dplyr::filter(.data$Data2 == prod_label) %>%
+      dplyr::mutate(Year = as.integer(as.character(.data$Year))) %>%
+      dplyr::select("Region", "Year", "Data1", "Value")
     # get data directly on regional level and use this instead of aggregated data if available
     df_ov <- data_regional %>%
       as.data.frame() %>%
-      dplyr::filter(Region %in% names(recode_regions),
-                    Data2 == prod_label) %>%
-      dplyr::mutate(Region = dplyr::recode(Region, !!!recode_regions),
-                    Year   = as.integer(as.character(Year))) %>%
-      dplyr::select(Region, Year, Data1, Value)
+      dplyr::filter(.data$Region %in% names(recode_regions),
+                    .data$Data2 == prod_label) %>%
+      dplyr::mutate(Region = dplyr::recode(.data$Region, !!!recode_regions),
+                    Year   = as.integer(as.character(.data$Year))) %>%
+      dplyr::select("Region", "Year", "Data1", "Value")
     df_f <- df_r %>%
       dplyr::left_join(df_ov, by = c("Region", "Year", "Data1"), suffix = c("", ".new")) %>%
-      dplyr::mutate(Value = dplyr::if_else(!is.na(Value.new), Value.new, Value),
+      dplyr::mutate(Value = dplyr::if_else(!is.na(.data$Value.new), .data$Value.new, .data$Value),
                     Data2 = data2_tag) %>%
-      dplyr::select(Region, Year, Data1, Data2, Value)
+      dplyr::select("Region", "Year", "Data1", "Data2", "Value")
     m_f <- as.magpie(df_f, spatial = 1, temporal = 2); m_f[is.na(m_f)] <- 0
     x <- toolAggregate(m_f, rel = map_df, dim = 1,
                        from = "RegionCode", to = "CountryCode",

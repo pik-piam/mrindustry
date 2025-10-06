@@ -23,7 +23,7 @@ fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE, ru
   validSections <- c("drivers","steel","cement","plastic")
 
   if (is.null(run_sections)) {
-    sections <- validSections
+    run_sections <- validSections
   } else {
     bad <- setdiff(run_sections, validSections)
     if (length(bad)) stop("Invalid sections: ", paste(bad, collapse=", "))
@@ -91,7 +91,7 @@ fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE, ru
     # Parameters
     calcOutput("MPlOECD_MGshare",file = "plastic_material_shares_in_goods.cs4r")
     calcOutput("MPlMechReYield",round = 2, file = "plastic_mechanical_recycling_yield.cs4r") # fix 0.79
-    calcOutput("MPlMechLoss",file = "plastic_reclmech_loss_uncontrolled_rate.cs4r")
+    calcOutput("MPlMechLoss",file = "plastic_reclmech_loss_uncontrolled_rate.cs4r") # fix 0.05
     calcOutput("MPlLifetime", subtype="Lifetime_mean", aggregate=FALSE, file = "plastic_lifetime_mean.cs4r")
     calcOutput("MPlLifetime", subtype="Lifetime_std", aggregate=FALSE, file = "plastic_lifetime_std.cs4r")
     # Historic EoL shares
@@ -107,7 +107,7 @@ fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE, ru
     calcOutput("MPlBioRate",file = "plastic_bio_production_rate.cs4r")
     calcOutput("MPlDACRate",file = "plastic_daccu_production_rate.cs4r")
     # TODO
-    # lifetime, carbon content materials, and emission capture rate
+    # carbon content materials, and emission capture rate
   }
 
 }

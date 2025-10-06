@@ -14,21 +14,21 @@ calcMPlOECD_MGshare <- function() {
     "MPlOECD", subtype = "Use_2019_region", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell) %>%
-    dplyr::filter(Data1 != "Total", Data2 != "Total")
+    dplyr::select(-"Cell") %>%
+    dplyr::filter(.data$Data1 != "Total", .data$Data2 != "Total")
 
   # ---------------------------------------------------------------------------
   # Compute material shares by good
   #    - Group by region, year, and good (Data2), then calculate share of each subcategory (Data1).
   # ---------------------------------------------------------------------------
   ratio_df <- use_df %>%
-    dplyr::group_by(Region, Year, Data2) %>%
+    dplyr::group_by(.data$Region, .data$Year, .data$Data2) %>%
     dplyr::mutate(
-      total_by_good = sum(Value, na.rm = TRUE),
-      MaterialShare = Value / total_by_good
+      total_by_good = sum(.data$Value, na.rm = TRUE),
+      MaterialShare = .data$Value / .data$total_by_good
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(Region, Data2, Data1, MaterialShare)
+    dplyr::select("Region", "Data2", "Data1", "MaterialShare")
 
   # ---------------------------------------------------------------------------
   # Aggregate shares to country level

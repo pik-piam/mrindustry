@@ -51,14 +51,14 @@ calcMPlDACRate <- function() {
   )
   traj_df <- merge(traj_df, share_bounds, by = "Target")
   traj_df$value <- with(traj_df, ifelse(
-    Year <= 2020, start,
+    Year < 2020, start,
     ifelse(
       Year <= 2050,
-      start + (Year - 2020) * (end - start) / (2050 - 2020),
+      start + (Year - 2020)*(end - start)/(2050 - 2020),
       end
     )
   ))
-  traj_df <- dplyr::select(traj_df, Region, Year, Target, value)
+  traj_df <- dplyr::select(traj_df, "Region", "Year", "Target", "value")
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to country level

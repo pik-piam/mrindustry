@@ -14,7 +14,7 @@ calcMPlConsumptionByGood <- function() {
     "MPlGoodShare", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell,-Year)
+    dplyr::select(-"Cell",-"Year")
 
   # ---------------------------------------------------------------------------
   # Load total use data 1990-2019
@@ -25,23 +25,23 @@ calcMPlConsumptionByGood <- function() {
   Geyer <- readSource("Geyer", subtype="Prod_1950-2015", convert=FALSE)
   total_df <- toolBackcastByReference2D(total, Geyer) %>%
     as.data.frame() %>%
-    dplyr::mutate(Year = as.integer(as.character(Year)))%>%
-    dplyr::select(-Cell,-Data1)
+    dplyr::mutate(Year = as.integer(as.character(.data$Year)))%>%
+    dplyr::select(-"Cell",-"Data1")
 
   # ---------------------------------------------------------------------------
   # Combine shares and totals to compute sectoral use
   #    - Join on Region, Year, and Data1, calculate Value = Share * Total.
   # ---------------------------------------------------------------------------
   combined <- share_df %>%
-    dplyr::rename(Share = Value) %>%
+    dplyr::rename(Share = .data$Value) %>%
     dplyr::right_join(
-      total_df %>% dplyr::rename(Total = Value),
+      total_df %>% dplyr::rename(Total = .data$Value),
       by = c("Region"),
       relationship = "many-to-many"
     ) %>%
     dplyr::distinct() %>%
-    dplyr::mutate(Value = Share * Total) %>%
-    dplyr::select(Region, Year, Data1, Value)
+    dplyr::mutate(Value = .data$Share * .data$Total) %>%
+    dplyr::select("Region", "Year", "Data1", "Value")
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to country level

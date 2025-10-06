@@ -18,7 +18,7 @@
 readUS_EPA <- function() {
   # ---------------------------------------------------------------------------
   # Read raw data from csv
-  raw_df <- read.csv("PlasticEol.csv")
+  raw_df <- utils::read.csv("PlasticEol.csv")
 
   # ---------------------------------------------------------------------------
   # Clean and pivot data

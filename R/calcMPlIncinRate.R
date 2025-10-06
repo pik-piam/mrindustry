@@ -78,15 +78,15 @@ calcMPlIncinRate <- function() {
   hist_ext <- incin_hist %>%
     dplyr::left_join(base2000, by = "Region") %>%
     dplyr::mutate(
-      Value = if_else(Region != "CHA" & Year >= 1990 & Year < 2000, val2000, Value)
+      Value = if_else(.data$Region != "CHA" & .data$Year >= 1990 & .data$Year < 2000, .data$val2000, .data$Value)
     ) %>%
-    dplyr::select(-val2000)
+    dplyr::select(-"val2000")
 
   # Future 2021–2100
   target_share <- 0.30
   fut <- expand.grid(Region = regions, Year = 2021:2100, stringsAsFactors = FALSE) %>%
     dplyr::left_join(
-      hist_ext %>% dplyr::filter(Year == 2020) %>% dplyr::select(Region, start = Value),
+      hist_ext %>% dplyr::filter(.data$Year == 2020) %>% dplyr::select("Region", start = "Value"),
       by = "Region"
     ) %>%
     dplyr::mutate(
@@ -95,7 +95,7 @@ calcMPlIncinRate <- function() {
     dplyr::select(Region, Year, Value)
 
   final_df <- dplyr::bind_rows(
-    hist_ext %>% dplyr::filter(Year < 2021),
+    hist_ext %>% dplyr::filter(.data$Year < 2021),
     fut
   )
 
@@ -103,7 +103,7 @@ calcMPlIncinRate <- function() {
   # Expand df by material
   # ---------------------------------------------------------------------------
   exp_df <- crossing(final_df, targets) %>%
-    dplyr::select(Region, Year, targets, Value)
+    dplyr::select("Region", "Year", "targets", "Value")
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries

@@ -56,10 +56,10 @@ readGeyer <- function(subtype) {
     magpie_data <- as.magpie(df, temporal = 1)
   }
   if(subtype=="Lifetime_mean"){
-    magpie_data <- as.magpie(df %>% select(`Market Sector`, `Mean (in years)`))
+    magpie_data <- as.magpie(df %>% select("Market Sector", "Mean (in years)"))
   }
   if(subtype=="Lifetime_std"){
-    magpie_data <- as.magpie(df %>% select(`Market Sector`, `Standard deviation`))
+    magpie_data <- as.magpie(df %>% select("Market Sector", "Standard deviation"))
   }
   getComment(magpie_data) <- subtype
 

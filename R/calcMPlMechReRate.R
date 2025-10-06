@@ -21,14 +21,14 @@ calcMPlMechReRate <- function() {
   # ---------------------------------------------------------------------------
   mech_df <- calcOutput("MPlOECD_EoL", aggregate = TRUE) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell) %>%
-    dplyr::filter(Data1 == "Recycled") %>%
-    dplyr::select(-Data1) %>%
-    dplyr::mutate(Year = as.integer(as.character(Year)))
+    dplyr::select(-"Cell") %>%
+    dplyr::filter(.data$Data1 == "Recycled") %>%
+    dplyr::select(-"Data1") %>%
+    dplyr::mutate(Year = as.integer(as.character(.data$Year)))
 
   mech_ext <- dplyr::bind_rows(
     mech_df,
-    dplyr::filter(mech_df, Year == 2019) %>% dplyr::mutate(Year = 2020)
+    dplyr::filter(mech_df, .data$Year == 2019) %>% dplyr::mutate(Year = 2020)
   )
 
   # ---------------------------------------------------------------------------
@@ -37,13 +37,13 @@ calcMPlMechReRate <- function() {
   # ---------------------------------------------------------------------------
   eu <- readSource("PlasticsEurope", subtype="PlasticEoL_EU", convert=FALSE) %>%
     as.data.frame() %>%
-    dplyr::mutate(Region = "EUR", Year = as.integer(as.character(Year)))
+    dplyr::mutate(Region = "EUR", Year = as.integer(as.character(.data$Year)))
   cn <- readSource("China_PlasticEoL", convert=FALSE) %>%
     as.data.frame() %>%
-    dplyr::mutate(Region="CHA", Year=as.integer(as.character(Year)))
+    dplyr::mutate(Region="CHA", Year=as.integer(as.character(.data$Year)))
   us <- readSource("US_EPA", convert=FALSE) %>%
     as.data.frame()%>%
-    dplyr::mutate(Region="USA", Year=as.integer(as.character(Year)))
+    dplyr::mutate(Region="USA", Year=as.integer(as.character(.data$Year)))
 
   ext_combined <- dplyr::bind_rows(eu, cn, us) %>%
     dplyr::filter(.data$Year >= 2005, .data$Year <= 2020) %>%
@@ -68,22 +68,22 @@ calcMPlMechReRate <- function() {
   # Fill 1990–1999 with Year-2000 values and extend to 2100
   #    - Copy 2000 value back to 1990–1999; interpolate 2021–2100 to target 40%.
   # ---------------------------------------------------------------------------
-  base2000 <- mech_hist %>% dplyr::filter(Year==2000) %>% dplyr::select(Region, v2000=Value)
+  base2000 <- mech_hist %>% dplyr::filter(.data$Year==2000) %>% dplyr::select("Region", v2000="Value")
   hist_ext <- mech_hist %>%
     dplyr::left_join(base2000, by="Region") %>%
-    dplyr::mutate(Value=dplyr::if_else(Year<2000, v2000, Value)) %>%
-    dplyr::select(-v2000)
+    dplyr::mutate(Value=dplyr::if_else(.data$Year<2000, .data$v2000, .data$Value)) %>%
+    dplyr::select(-"v2000")
 
   future <- expand.grid(Region=regions, Year=2021:2100, stringsAsFactors=FALSE) %>%
     dplyr::left_join(
-      dplyr::filter(hist_ext, Year==2020) %>% dplyr::select(Region, start=Value),
+      dplyr::filter(hist_ext, .data$Year==2020) %>% dplyr::select("Region", start="Value"),
       by="Region"
     ) %>%
     dplyr::mutate(Value = start + (Year-2020)*(0.4-start)/(2050-2020)) %>%
     dplyr::select(Region, Year, Value)
 
   final_df <- dplyr::bind_rows(
-    hist_ext %>% dplyr::filter(Year<=2020),
+    hist_ext %>% dplyr::filter(.data$Year<=2020),
     future
   )
 
@@ -91,7 +91,7 @@ calcMPlMechReRate <- function() {
   # Expand df by material
   # ---------------------------------------------------------------------------
   exp_df <- crossing(final_df, targets) %>%
-    dplyr::select(Region, Year, targets, Value)
+    dplyr::select("Region", "Year", "targets", "Value")
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries

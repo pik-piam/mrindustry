@@ -58,7 +58,7 @@ calcMPlBioRate <- function() {
       end
     )
   ))
-  traj_df <- dplyr::select(traj_df, Region, Year, Target, value)
+  traj_df <- dplyr::select(traj_df, "Region", "Year", "Target", "value")
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to country level
