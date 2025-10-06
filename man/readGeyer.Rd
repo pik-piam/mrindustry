@@ -7,9 +7,10 @@
 readGeyer(subtype)
 }
 \arguments{
-\item{subtype}{Character string specifying the dataset and scope.
-For now only one subtype, but SI contains more data that we might to read in in the future:
-- "Prod_1950-2015"}
+\item{subtype}{Character string specifying the dataset and scope
+- "Prod_1950-2015"
+- "Lifetime_mean"
+- "Lifetime_std"}
 }
 \value{
 magpie object of the Geyer et al. Plastic data
