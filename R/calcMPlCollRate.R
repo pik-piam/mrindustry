@@ -14,14 +14,14 @@ calcMPlCollRate <- function() {
     "MPlOECD_EoL", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell) %>%
-    dplyr::filter(!Data1 %in% c("Littered", "Mismanaged")) %>%
+    dplyr::select(-"Cell") %>%
+    dplyr::filter(!.data$Data1 %in% c("Littered", "Mismanaged")) %>%
     dplyr::mutate(
-      Year = as.integer(as.character(Year))
+      Year = as.integer(as.character(.data$Year))
     ) %>%
-    dplyr::group_by(Region, Year) %>%
+    dplyr::group_by(.data$Region, .data$Year) %>%
     dplyr::summarise(
-      collected = sum(Value, na.rm = TRUE),
+      collected = sum(.data$Value, na.rm = TRUE),
       .groups = "drop"
     )
 
@@ -45,26 +45,26 @@ calcMPlCollRate <- function() {
   # Fill 1990–2000 for other regions with 2000 level
   #    - For non-CHA regions, assign 2000 value to 1990–2000 period.
   # ---------------------------------------------------------------------------
-  non_cha <- dplyr::filter(eol_df, Region != "CHA")
+  non_cha <- dplyr::filter(eol_df, .data$Region != "CHA")
   value2000 <- non_cha %>%
-    dplyr::filter(Year == 2000) %>%
-    dplyr::select(Region, val2000 = collected)
+    dplyr::filter(.data$Year == 2000) %>%
+    dplyr::select("Region", val2000 = "collected")
 
   eol_df <- eol_df %>%
     dplyr::left_join(value2000, by = "Region") %>%
     dplyr::mutate(
       collected = if_else(
-        Region != "CHA" & Year >= 1990 & Year <= 2000,
-        val2000, collected
+        .data$Region != "CHA" & .data$Year >= 1990 & .data$Year <= 2000,
+        .data$val2000, .data$collected
       )
     ) %>%
-    dplyr::select(-val2000)
+    dplyr::select(-"val2000")
 
   # ---------------------------------------------------------------------------
   # Extend series to 2100 with linear growth to 100%
   #    - Duplicate 2019 as 2020, then interpolate to reach 1.00 by 2100.
   # ---------------------------------------------------------------------------
-  base2019 <- eol_df %>% dplyr::filter(Year == 2019)
+  base2019 <- eol_df %>% dplyr::filter(.data$Year == 2019)
   ext_df <- dplyr::bind_rows(
     eol_df,
     dplyr::mutate(base2019, Year = 2020)
@@ -76,19 +76,19 @@ calcMPlCollRate <- function() {
     stringsAsFactors = FALSE
   ) %>%
     dplyr::left_join(
-      dplyr::filter(ext_df, Year == 2020) %>%
-        dplyr::select(Region, start = collected),
+      dplyr::filter(ext_df, .data$Year == 2020) %>%
+        dplyr::select("Region", start = "collected"),
       by = "Region"
     ) %>%
     dplyr::mutate(
-      collected = start +
-        (Year - 2020) * (target_final - start) / (2100 - 2020)
+      collected = .data$start +
+        (.data$Year - 2020) * (target_final - .data$start) / (2100 - 2020)
     ) %>%
-    dplyr::select(Region, Year, collected)
+    dplyr::select("Region", "Year", "collected")
 
   final_df <- dplyr::bind_rows(
-    dplyr::filter(ext_df, Year <= 2020) %>%
-      dplyr::select(Region, Year, collected),
+    dplyr::filter(ext_df, .data$Year <= 2020) %>%
+      dplyr::select("Region", "Year", "collected"),
     future_df
   )
 
@@ -98,7 +98,7 @@ calcMPlCollRate <- function() {
   sector_map <- toolGetMapping("structuremappingPlasticManu.csv", type = "sectoral", where = "mrindustry")
   targets    <- setdiff(unique(sector_map$Target), "Total")
   exp_df <- crossing(final_df, targets) %>%
-    dplyr::select(Region, Year, targets, collected)
+    dplyr::select("Region", "Year", "targets", "collected")
 
   # ---------------------------------------------------------------------------
   # Convert to MagPIE and aggregate to countries

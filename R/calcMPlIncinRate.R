@@ -22,14 +22,14 @@ calcMPlIncinRate <- function() {
   # ---------------------------------------------------------------------------
   incin_df <- calcOutput("MPlOECD_EoL", aggregate = TRUE) %>%
     as.data.frame() %>%
-    dplyr::select(-Cell) %>%
-    dplyr::filter(Data1 == "Incinerated") %>%
-    dplyr::select(-Data1) %>%
-    dplyr::mutate(Year = as.integer(as.character(Year)))
+    dplyr::select(-"Cell") %>%
+    dplyr::filter(.data$Data1 == "Incinerated") %>%
+    dplyr::select(-"Data1") %>%
+    dplyr::mutate(Year = as.integer(as.character(.data$Year)))
 
   incin_ext <- dplyr::bind_rows(
     incin_df,
-    dplyr::filter(incin_df, Year == 2019) %>% dplyr::mutate(Year = 2020)
+    dplyr::filter(incin_df, .data$Year == 2019) %>% dplyr::mutate(Year = 2020)
   )
 
   # ---------------------------------------------------------------------------
@@ -38,24 +38,24 @@ calcMPlIncinRate <- function() {
   # ---------------------------------------------------------------------------
   eu <- readSource("PlasticsEurope", subtype="PlasticEoL_EU", convert=FALSE) %>%
     as.data.frame() %>%
-    dplyr::mutate(Region = "EUR", Year = as.integer(as.character(Year)))
+    dplyr::mutate(Region = "EUR", Year = as.integer(as.character(.data$Year)))
   cn <- readSource("China_PlasticEoL", convert=FALSE) %>%
     as.data.frame() %>%
-    dplyr::mutate(Region="CHA", Year=as.integer(as.character(Year)))
+    dplyr::mutate(Region="CHA", Year=as.integer(as.character(.data$Year)))
   us <- readSource("US_EPA", convert=FALSE) %>%
     as.data.frame()%>%
-    dplyr::mutate(Region="USA", Year=as.integer(as.character(Year)))
+    dplyr::mutate(Region="USA", Year=as.integer(as.character(.data$Year)))
 
   ext_all <- dplyr::bind_rows(eu, cn, us) %>%
-    dplyr::filter(Year >= 2005, Year <= 2020) %>%
-    dplyr::group_by(Region, Year) %>%
+    dplyr::filter(.data$Year >= 2005, .data$Year <= 2020) %>%
+    dplyr::group_by(.data$Region, .data$Year) %>%
     dplyr::summarise(
-      total = sum(Value, na.rm = TRUE),
-      inc = sum(Value[Data1 == "Incinerated"], na.rm = TRUE),
+      total = sum(.data$Value, na.rm = TRUE),
+      inc = sum(.data$Value[.data$Data1 == "Incinerated"], na.rm = TRUE),
       .groups = "drop"
     ) %>%
-    dplyr::mutate(share = inc / total) %>%
-    dplyr::select(Region, Year, share)
+    dplyr::mutate(share = .data$inc / .data$total) %>%
+    dplyr::select("Region", "Year", "share")
 
   # ---------------------------------------------------------------------------
   # Merge ext shares into incin_ext, replacing where available
@@ -63,8 +63,8 @@ calcMPlIncinRate <- function() {
   # TODO: interpolate non-OECD data, otherwise only specific years get replaced
   incin_hist <- incin_ext %>%
     dplyr::left_join(ext_all, by = c("Region", "Year")) %>%
-    dplyr::mutate(Value = if_else(!is.na(share), share, Value)) %>%
-    dplyr::select(Region, Year, Value)
+    dplyr::mutate(Value = if_else(!is.na(.data$share), .data$share, .data$Value)) %>%
+    dplyr::select("Region", "Year", "Value")
 
   # ---------------------------------------------------------------------------
   # Fill 1990–2000 for non-CHA regions and extend to 2100
@@ -72,8 +72,8 @@ calcMPlIncinRate <- function() {
   # ---------------------------------------------------------------------------
   # Base 2000
   base2000 <- incin_hist %>%
-    dplyr::filter(Year == 2000) %>%
-    dplyr::select(Region, val2000 = Value)
+    dplyr::filter(.data$Year == 2000) %>%
+    dplyr::select("Region", val2000 = "Value")
 
   hist_ext <- incin_hist %>%
     dplyr::left_join(base2000, by = "Region") %>%
@@ -90,9 +90,9 @@ calcMPlIncinRate <- function() {
       by = "Region"
     ) %>%
     dplyr::mutate(
-      Value = start + (Year - 2020) * (target_share - start) / (2100 - 2020)
+      Value = .data$start + (.data$Year - 2020) * (target_share - .data$start) / (2100 - 2020)
     ) %>%
-    dplyr::select(Region, Year, Value)
+    dplyr::select("Region", "Year", "Value")
 
   final_df <- dplyr::bind_rows(
     hist_ext %>% dplyr::filter(.data$Year < 2021),

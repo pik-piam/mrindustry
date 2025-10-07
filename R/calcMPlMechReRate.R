@@ -79,8 +79,8 @@ calcMPlMechReRate <- function() {
       dplyr::filter(hist_ext, .data$Year==2020) %>% dplyr::select("Region", start="Value"),
       by="Region"
     ) %>%
-    dplyr::mutate(Value = start + (Year-2020)*(0.4-start)/(2050-2020)) %>%
-    dplyr::select(Region, Year, Value)
+    dplyr::mutate(Value = .data$start + (.data$Year-2020)*(0.4-.data$start)/(2050-2020)) %>%
+    dplyr::select("Region", "Year", "Value")
 
   final_df <- dplyr::bind_rows(
     hist_ext %>% dplyr::filter(.data$Year<=2020),

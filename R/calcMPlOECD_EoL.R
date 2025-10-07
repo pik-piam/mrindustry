@@ -16,22 +16,22 @@ calcMPlOECD_EoL <- function() {
     "MPlOECD", subtype = "WasteEOL_1990-2019_region", aggregate = TRUE
   ) %>%
     as.data.frame() %>%
-    dplyr::filter(!Data1 %in% c("Total", "Not applicable")) %>%
-    dplyr::select(-Cell, -Data2)
+    dplyr::filter(!.data$Data1 %in% c("Total", "Not applicable")) %>%
+    dplyr::select(-"Cell", -"Data2")
 
   # ---------------------------------------------------------------------------
   # Calculate per-region fate ratios
   #    - Sum values per region-year and compute ratio for each fate category.
   # ---------------------------------------------------------------------------
   eol_df <- eol_df %>%
-    dplyr::group_by(Region, Year) %>%
+    dplyr::group_by(.data$Region, .data$Year) %>%
     dplyr::mutate(
-      total = sum(Value, na.rm = TRUE),
-      ratio = Value / (total + eps)
+      total = sum(.data$Value, na.rm = TRUE),
+      ratio = .data$Value / (.data$total + eps)
     ) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-total, -Value) %>%
-    dplyr::rename(EoL_Ratio = ratio)
+    dplyr::select(-"total", -"Value") %>%
+    dplyr::rename(EoL_Ratio = "ratio")
 
   # ---------------------------------------------------------------------------
   # Aggregate ratios to country level
