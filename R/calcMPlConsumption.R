@@ -7,8 +7,7 @@
 #' @importFrom dplyr if_else
 calcMPlConsumption <- function() {
   # ---------------------------------------------------------------------------
-  # Load & clean regional use data (1990–2019)
-  #    - Read and flatten OECD plastic use by region.
+  # Load & clean OECD regional use data (1990–2019)
   # ---------------------------------------------------------------------------
   use_region <- calcOutput(
     "MPlOECD", subtype = "Use_1990-2019_region", aggregate = TRUE
@@ -18,9 +17,13 @@ calcMPlConsumption <- function() {
     dplyr::mutate(Year = as.integer(as.character(.data$Year)))
 
   # ---------------------------------------------------------------------------
-  # Compute baseline ratios for target vs. other regions
-  #    - Define target regions and calculate per-region 2005 baseline ratios.
+  # Replace modelled OECD data with actual data from PlasticsEurope where available
+  # - regions to be replaced are CHA, EUR and USA
+  # - actual data is production and not consumption, therefore it has to be corrected by net imports
+  # - as PlasticsEurope lists data for "North America", the CAN demand has to be subtracted to obtain USA demand
+  # - actual data is only after 2005, so data before 2005 is calculated from OECD data scaled by 2005 data
   # ---------------------------------------------------------------------------
+  # filter OECD data that will be replaced and get 2005 value for scaling
   target_regions <- c("CHA", "EUR", "USA", "CAN")
   use_target <- use_region %>%
     dplyr::filter(.data$Region %in% target_regions) %>%
@@ -32,10 +35,6 @@ calcMPlConsumption <- function() {
     dplyr::ungroup()
   use_other <- use_region %>% dplyr::filter(!.data$Region %in% target_regions)
 
-  # ---------------------------------------------------------------------------
-  # Load & reshape production data
-  #    - Read regional production and map region names to codes.
-  # ---------------------------------------------------------------------------
   prod_region_map <- c("China" = "CHA", "EU27+3" = "EUR", "North America" = "USA")
   prod_data <- readSource("PlasticsEurope", subtype="PlasticProduction_region", convert=FALSE) %>%
     as.data.frame() %>%
@@ -45,9 +44,7 @@ calcMPlConsumption <- function() {
     ) %>%
     dplyr::filter(.data$Region %in% target_regions)
 
-  # ---------------------------------------------------------------------------
   # Calculate UNCTAD net imports for target regions
-  # ---------------------------------------------------------------------------
   trade_data_region <- calcOutput("MPlUNCTAD", subtype="Final_Region", aggregate=TRUE)%>%
     as.data.frame()%>%
     dplyr::filter(.data$Region %in% target_regions, .data$Region !="USA") # USA is included in trade_data_country
@@ -59,18 +56,13 @@ calcMPlConsumption <- function() {
                   Year = as.integer(as.character(.data$Year))) %>%
     dplyr::select("Region","Year","net_import")
 
-  # ---------------------------------------------------------------------------
   # Compute regional total use = production + net imports
-  # ---------------------------------------------------------------------------
   use_calc <- prod_data %>%
     dplyr::left_join(trade_data, by = c("Region", "Year")) %>%
     tidyr::replace_na(list(net_import = 0)) %>%
     dplyr::mutate(use = .data$Value + .data$net_import)
 
-  # ---------------------------------------------------------------------------
-  # Adjust USA demand by Canada domestic demand
-  #    - Subtract Canada's net import-adjusted demand from USA.
-  # ---------------------------------------------------------------------------
+  # Calculate Canada's production by subtracting net imports from consumption (OECD data)
   can_data <- calcOutput(
     "MPlOECD", subtype = "Use_1990-2019_region", aggregate = FALSE
   ) %>%
@@ -80,31 +72,32 @@ calcMPlConsumption <- function() {
     dplyr::filter(.data$Region == "CAN") %>%
     dplyr::left_join(trade_data, by = c("Region", "Year")) %>%
     tidyr::replace_na(list(net_import = 0)) %>%
-    dplyr::transmute(.data$Year, can_demand = .data$Value - .data$net_import)
+    dplyr::transmute(.data$Year, can_prod = .data$Value - .data$net_import)
 
-  # ---------------------------------------------------------------------------
   # Merge & update target region values
-  #    - Apply adjustment for USA and baseline ratio for pre-2005 values.
-  # ---------------------------------------------------------------------------
   updated_target <- use_target %>%
     dplyr::left_join(use_calc, by = c("Region", "Year")) %>%
     dplyr::left_join(can_data, by = "Year") %>%
     dplyr::mutate(
-      use_adj = if_else(.data$Region == "USA", .data$use - .data$can_demand, .data$use)
+  # subtract Canada's production from North America production (net-import corrected for the USA) to get USA demand
+      use_adj = if_else(.data$Region == "USA", .data$use - .data$can_prod, .data$use)
     ) %>%
     dplyr::group_by(.data$Region) %>%
     dplyr::mutate(
+  # data before 2005 is calculated from OECD data scaled by 2005 data
       use_adj_2005 = .data$use_adj[.data$Year == 2005],
       Value        = if_else(.data$Year >= 2005, .data$use_adj, .data$use_adj_2005 * .data$ratio)
     ) %>%
     dplyr::ungroup() %>%
     dplyr::select(dplyr::all_of(names(use_region)))
+  final_region <- dplyr::bind_rows(updated_target, use_other)
 
   # ---------------------------------------------------------------------------
-  # Combine with other regions & apply EU scaling
-  #    - Adjust EUR entries based on 2018 European plastics consumption (55.4 Mt according to Plastics Europe 2024 circular economy report).
+  # for the EU, actual plastics consumption data is available:
+  # 55.4 Mt in 2018 according to Plastics Europe 2024 circular economy report
+  # -> use this value instead of the data calculated from production and net imports
+  #    and scale values from other years accordingly
   # ---------------------------------------------------------------------------
-  final_region <- dplyr::bind_rows(updated_target, use_other)
   eur_2018_value <- final_region %>%
     dplyr::filter(.data$Region == "EUR", .data$Year == 2018) %>%
     dplyr::pull(.data$Value)
