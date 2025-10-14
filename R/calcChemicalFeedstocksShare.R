@@ -101,32 +101,3 @@ calcChemicalFeedstocksShare <- function()
     min = 0, max = 1)
   )
 }
-
-# product_mapping <- toolGetMapping(
-#   name = 'structuremappingIO_outputs_Industry_subsectors.csv',
-#   type = 'sectoral'
-#   where = 'mrremind') %>%
-#   as_tibble() %>%
-#   select(product = 'iea_product', flow = 'iea_flows', pf = 'REMINDitems_out',
-#          weight = 'Weight') %>%
-#   filter('CHEMICAL' == .data$flow) %>%
-#   right_join(
-#     tribble(
-#       ~pf,   ~group,
-#       'feso_chemicals',   'solids',
-#       'feli_chemicals',   'liquids',
-#       'fega_chemicals',   'gases'),
-#
-#     'pf'
-#   ) %>%
-#   select('product', 'group', 'weight')
-
-# # FIXME: emission factors from generisdata_emi.prn; replace with numbers
-# # hard-coded into this (or some) package
-# emission_factors <- tribble(
-#   ~group,      ~emission.factor,
-#   'solids',    26.1,
-#   'liquids',   20,
-#   'gases',     15.3) %>%
-#   # GtC/ZJ * 1000 ZJ/EJ = GtC/EJ
-#   mutate(emission.factor = .data$emission.factor * 1000)
