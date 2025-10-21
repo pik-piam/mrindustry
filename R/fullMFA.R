@@ -76,36 +76,36 @@ fullMFA <- function(rev = 0, dev = "", scenario='SSP2', gdp_per_capita=FALSE, ru
   #  ------------- PLASTIC -----------
   if (runSection("plastic")) {
     # Consumption
-    calcOutput("MPlConsumptionByGood", file = "plastic_consumption.cs4r")
+    calcOutput("MPlConsumptionByGood", file = "pl_consumption.cs4r")
     # Trade
-    calcOutput("MPlTrade",category = "final", flow_label = "Exports",file = "plastic_final_his_exports.cs4r")
-    calcOutput("MPlTrade",category = "final", flow_label = "Imports",file = "plastic_final_his_imports.cs4r")
-    calcOutput("MPlTrade",category = "primary", flow_label = "Exports",file = "plastic_primary_his_exports.cs4r")
-    calcOutput("MPlTrade",category = "primary", flow_label = "Imports",file = "plastic_primary_his_imports.cs4r")
-    calcOutput("MPlTrade",category = "intermediate", flow_label = "Exports",file = "plastic_intermediate_his_exports.cs4r")
-    calcOutput("MPlTrade",category = "intermediate", flow_label = "Imports",file = "plastic_intermediate_his_imports.cs4r")
-    calcOutput("MPlTrade",category = "manufactured", flow_label = "Exports",file = "plastic_manufactured_his_exports.cs4r")
-    calcOutput("MPlTrade",category = "manufactured", flow_label = "Imports",file = "plastic_manufactured_his_imports.cs4r")
-    calcOutput("MPlWasteTrade",subtype = "export",file = "plastic_waste_exports.cs4r")
-    calcOutput("MPlWasteTrade",subtype = "import",file = "plastic_waste_imports.cs4r")
+    calcOutput("MPlTrade",category = "final", flow_label = "Exports",file = "pl_final_his_exports.cs4r")
+    calcOutput("MPlTrade",category = "final", flow_label = "Imports",file = "pl_final_his_imports.cs4r")
+    calcOutput("MPlTrade",category = "primary", flow_label = "Exports",file = "pl_primary_his_exports.cs4r")
+    calcOutput("MPlTrade",category = "primary", flow_label = "Imports",file = "pl_primary_his_imports.cs4r")
+    calcOutput("MPlTrade",category = "intermediate", flow_label = "Exports",file = "pl_intermediate_his_exports.cs4r")
+    calcOutput("MPlTrade",category = "intermediate", flow_label = "Imports",file = "pl_intermediate_his_imports.cs4r")
+    calcOutput("MPlTrade",category = "manufactured", flow_label = "Exports",file = "pl_manufactured_his_exports.cs4r")
+    calcOutput("MPlTrade",category = "manufactured", flow_label = "Imports",file = "pl_manufactured_his_imports.cs4r")
+    calcOutput("MPlWasteTrade",subtype = "export",file = "pl_waste_exports.cs4r")
+    calcOutput("MPlWasteTrade",subtype = "import",file = "pl_waste_imports.cs4r")
     # Parameters
-    calcOutput("MPlOECD_MGshare",file = "plastic_material_shares_in_goods.cs4r")
-    calcOutput("MPlMechReYield",round = 2, file = "plastic_mechanical_recycling_yield.cs4r") # fix 0.79
-    calcOutput("MPlMechLoss",file = "plastic_reclmech_loss_uncontrolled_rate.cs4r") # fix 0.05
-    calcOutput("MPlLifetime", subtype="Lifetime_mean", aggregate=FALSE, file = "plastic_lifetime_mean.cs4r")
-    calcOutput("MPlLifetime", subtype="Lifetime_std", aggregate=FALSE, file = "plastic_lifetime_std.cs4r")
+    calcOutput("MPlOECD_MGshare",file = "pl_material_shares_in_goods.cs4r")
+    calcOutput("MPlMechReYield",round = 2, file = "pl_mechanical_recycling_yield.cs4r") # fix 0.79
+    calcOutput("MPlMechLoss",file = "pl_reclmech_loss_uncontrolled_rate.cs4r") # fix 0.05
+    calcOutput("MPlLifetime", subtype="Lifetime_mean", aggregate=FALSE, file = "pl_lifetime_mean.cs4r")
+    calcOutput("MPlLifetime", subtype="Lifetime_std", aggregate=FALSE, file = "pl_lifetime_std.cs4r")
     # Historic EoL shares
-    calcOutput("MPlEoL_shares", subtype="Collected", file = "plastic_hist_collection_rate.cs4r")
-    calcOutput("MPlEoL_shares", subtype="Recycled", file = "plastic_hist_mechanical_recycling_rate.cs4r")
-    calcOutput("MPlEoL_shares", subtype="Incinerated", file = "plastic_hist_incineration_rate.cs4r")
+    calcOutput("MPlEoL_shares", subtype="Collected", file = "pl_hist_collection_rate.cs4r")
+    calcOutput("MPlEoL_shares", subtype="Recycled", file = "pl_hist_mechanical_recycling_rate.cs4r")
+    calcOutput("MPlEoL_shares", subtype="Incinerated", file = "pl_hist_incineration_rate.cs4r")
     # EoL shares including extrapolations (to be moved to the MFA soon)
-    calcOutput("MPlCollRate", file = "plastic_collection_rate.cs4r")
-    calcOutput("MPlMechReRate", file = "plastic_mechanical_recycling_rate.cs4r")
-    calcOutput("MPlIncinRate", file = "plastic_incineration_rate.cs4r")
+    calcOutput("MPlCollRate", file = "pl_collection_rate.cs4r")
+    calcOutput("MPlMechReRate", file = "pl_mechanical_recycling_rate.cs4r")
+    calcOutput("MPlIncinRate", file = "pl_incineration_rate.cs4r")
     # Future rates (historic = 0)
-    calcOutput("MPlChemReRate",file = "plastic_chemical_recycling_rate.cs4r")
-    calcOutput("MPlBioRate",file = "plastic_bio_production_rate.cs4r")
-    calcOutput("MPlDACRate",file = "plastic_daccu_production_rate.cs4r")
+    calcOutput("MPlChemReRate",file = "pl_chemical_recycling_rate.cs4r")
+    calcOutput("MPlBioRate",file = "pl_bio_production_rate.cs4r")
+    calcOutput("MPlDACRate",file = "pl_daccu_production_rate.cs4r")
     # TODO
     # carbon content materials, and emission capture rate
   }
