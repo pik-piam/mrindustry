@@ -9,7 +9,6 @@ calcEnergyBalancesOutputToIndustry <- function() {
                              where = "mrindustry",
                              returnPathOnly = FALSE)
 
-
   data <- readSource("IEA", subtype = "EnergyBalances") * 4.1868e-5
 
   # apply corrections to IEA data to cope with fragmentary time series
