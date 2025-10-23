@@ -4,10 +4,20 @@
 \alias{fullMFA}
 \title{Load all MFA data}
 \usage{
-fullMFA(scenario = "SSP2", gdp_per_capita = FALSE)
+fullMFA(
+  rev = 0,
+  dev = "",
+  scenario = "SSP2",
+  gdp_per_capita = FALSE,
+  run_sections = NULL
+)
+}
+\arguments{
+\item{run_sections}{Character vector selecting which parts to run.
+Allowed: c("drivers","steel","cement"). NULL (default) runs all.}
 }
 \description{
-Function that produces the complete regional data sets required for the 
+Function that produces the complete regional data sets required for the
 MFA model.
 }
 \examples{
@@ -18,9 +28,11 @@ fullMFA()
 
 }
 \seealso{
-\code{\link[madrat]{readSource}}, \code{\link[madrat]{getCalculations}}, 
+\code{\link[madrat]{readSource}}, \code{\link[madrat]{getCalculations}},
 \code{\link[madrat]{calcOutput}}, \code{\link[mrindustry]{calcSteelProduction}}
 }
 \author{
 Merlin HOSAK
+
+Bennet Weiss
 }
