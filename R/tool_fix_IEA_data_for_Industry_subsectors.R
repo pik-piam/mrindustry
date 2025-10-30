@@ -16,9 +16,6 @@
 #' @md
 #' @param data MAgPIE object containing the IEA Energy Balances data
 #'
-#' @param ieamatch mapping of IEA product/flow combinations to REMIND
-#'        `sety`/`fety`/`te` combinations as used in mrremind::calcIO()
-#'
 #' @param threshold minimum share each industry subsector uses of each product.
 #'   Defaults to 1 %.
 #'
@@ -37,8 +34,7 @@
 #' @importFrom stats na.omit
 #' @importFrom tidyr complete gather nesting spread crossing
 #' @export
-tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
-                                                      threshold = 1e-2) {
+tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   . <- NULL
 
@@ -500,10 +496,26 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
                     'CONSTRUC', 'TEXTILES')
 
   # all products associated with those flows
-  products_to_fix <- ieamatch %>%
-    filter(.data$iea_flows %in% flows_to_fix) %>%
-    getElement('iea_product') %>%
-    unique()
+
+  # these used to be retrieved from the iea mapping before
+  # products_to_fix <- ieamatch %>%
+  #   filter(.data$iea_flows %in% flows_to_fix) %>%
+  #   getElement('iea_product') %>%
+  #   unique()
+
+  # now, we hard code them, as the mapping is being refactored, potentially causing
+  # unwanted side effects in this tool function
+
+  # for now, we use the products associated with the flows, according to the old mapping
+  # TODO: revise and update the list of products to be fixed
+  products_to_fix <- c(
+    'ELECTR', 'BIOGASES', 'GASWKSGS', 'NATGAS', 'GEOTHERM', 'HEAT', 'ADDITIVE', 'AVGAS', 'BIODIESEL',
+    'BIOGASOL', 'BITUMEN', 'CRNGFEED', 'CRUDEOIL', 'ETHANE', 'JETGAS', 'LPG', 'LUBRIC', 'NAPHTHA',
+    'NGL', 'NONBIODIES', 'NONBIOGASO', 'NONBIOJETK', 'OBIOLIQ', 'ONONSPEC', 'OTHKERO', 'PARWAX', 'REFFEEDS',
+    'REFINGAS', 'RESFUEL', 'WHITESP', 'ANTCOAL', 'BITCOAL', 'BKB', 'BROWN', 'CHARCOAL', 'COKCOAL',
+    'GASCOKE', 'HARDCOAL', 'INDWASTE', 'LIGNITE', 'MUNWASTEN', 'MUNWASTER', 'OILSHALE', 'PATFUEL', 'PEAT',
+    'PEATPROD', 'PETCOKE', 'PRIMSBIO', 'RENEWNS', 'SUBCOAL'
+  )
 
   region_mapping <- toolGetMapping(name = 'regionmapping_21_EU11.csv',
                                    type = 'regional',
