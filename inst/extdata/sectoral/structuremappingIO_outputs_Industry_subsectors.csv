@@ -659,12 +659,9 @@ GASCOKE;TFC;pecoal;sesofos;coaltr;1;
 GASCOKE;TRANSEQ;sesofos;feso_otherInd;tdso_otherInd;1;
 GASCOKE;WOODPRO;sesofos;feso_otherInd;tdso_otherInd;1;
 GASWKSGS;AGRICULT;segafos;fega_otherInd;tdga_otherInd;1;
-GASWKSGS;AUTOCHP;;;;;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
-GASWKSGS;AUTOCHP;pecoal;segafos;coalgas;1;
-GASWKSGS;AUTOELEC;;;;;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
-GASWKSGS;AUTOELEC;pecoal;segafos;coalgas;1;
-GASWKSGS;AUTOHEAT;;;;;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
-GASWKSGS;AUTOHEAT;pecoal;segafos;coalgas;1;
+GASWKSGS;AUTOCHP;pecoal;segafos;coalgas;1;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
+GASWKSGS;AUTOELEC;pecoal;segafos;coalgas;1;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
+GASWKSGS;AUTOHEAT;pecoal;segafos;coalgas;1;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
 GASWKSGS;AVBUNK;segafos;fegat;tdfosgat;-1;
 GASWKSGS;CHEMICAL;segafos;fega_chemicals;tdga_chemicals;1;
 GASWKSGS;COMMPUB;segafos;fegab;tdfosgab;1;
@@ -687,12 +684,9 @@ GASWKSGS;HEMAINH;pecoal;sehe;coalhp;1;This seel output in reality is produced fr
 GASWKSGS;INONSPEC;segafos;fega_otherInd;tdga_otherInd;1;
 GASWKSGS;IRONSTL;segafos;fega_steel;tdga_steel;1;
 GASWKSGS;MACHINE;segafos;fega_otherInd;tdga_otherInd;1;
-GASWKSGS;MAINCHP;;;;;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
-GASWKSGS;MAINCHP;pecoal;segafos;coalgas;1;
-GASWKSGS;MAINELEC;;;;;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
-GASWKSGS;MAINELEC;pecoal;segafos;coalgas;1;
-GASWKSGS;MAINHEAT;;;;;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
-GASWKSGS;MAINHEAT;pecoal;segafos;coalgas;1;
+GASWKSGS;MAINCHP;pecoal;segafos;coalgas;1;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
+GASWKSGS;MAINELEC;pecoal;segafos;coalgas;1;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
+GASWKSGS;MAINHEAT;pecoal;segafos;coalgas;1;We withraw the solids used in TBLASTFUR TGASWKS TCOKEOVS and producing gas which is used in the production of electricity The coefficient converts gas in solids
 GASWKSGS;MARBUNK;segafos;fegat;tdfosgat;-1;
 GASWKSGS;MINING;segafos;fega_otherInd;tdga_otherInd;1;
 GASWKSGS;NONENUSE;segafos;fega_chemicals;tdga_chemicals;1;
