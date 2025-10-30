@@ -17,7 +17,6 @@ calcEnergyBalancesOutputToIndustry <- function() {
     tidyr::unite("target", tidyselect::all_of(target), sep = ".", remove = FALSE) %>%
     tidyr::unite("product.flow", c("iea_product", "iea_flows"), sep = ".")
 
-
   data <- readSource("IEA", subtype = "EnergyBalances") * 4.1868e-5
 
   # apply corrections to IEA data to cope with fragmentary time series
@@ -36,11 +35,6 @@ calcEnergyBalancesOutputToIndustry <- function() {
             paste(newProductFlows, collapse = "\n")
     )
   }
-
-  # FIXME remove product/flow combinations from the mapping that have been
-  # removed from the data while replacing coke oven and blast furnace outputs
-  ieamatch <- ieamatch %>%
-    filter(.data$product.flow %in% getNames(data))
 
   reminditems <-  do.call(
     mbind,
