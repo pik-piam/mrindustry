@@ -509,13 +509,24 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # for now, we use the products associated with the flows, according to the old mapping
   # TODO: revise and update the list of products to be fixed
   products_to_fix <- c(
-    'ELECTR', 'BIOGASES', 'GASWKSGS', 'NATGAS', 'GEOTHERM', 'HEAT', 'ADDITIVE', 'AVGAS', 'BIODIESEL',
-    'BIOGASOL', 'BITUMEN', 'CRNGFEED', 'CRUDEOIL', 'ETHANE', 'JETGAS', 'LPG', 'LUBRIC', 'NAPHTHA',
-    'NGL', 'NONBIODIES', 'NONBIOGASO', 'NONBIOJETK', 'OBIOLIQ', 'ONONSPEC', 'OTHKERO', 'PARWAX', 'REFFEEDS',
-    'REFINGAS', 'RESFUEL', 'WHITESP', 'ANTCOAL', 'BITCOAL', 'BKB', 'BROWN', 'CHARCOAL', 'COKCOAL',
-    'GASCOKE', 'HARDCOAL', 'INDWASTE', 'LIGNITE', 'MUNWASTEN', 'MUNWASTER', 'OILSHALE', 'PATFUEL', 'PEAT',
-    'PEATPROD', 'PETCOKE', 'PRIMSBIO', 'RENEWNS', 'SUBCOAL'
+    'ADDITIVE', 'ANTCOAL', 'AVGAS', 'BIODIESEL', 'BIOGASES', 'BIOGASOL', 'BITCOAL', 'BITUMEN',
+    'BKB', 'BROWN', 'CHARCOAL', 'COKCOAL', 'CRNGFEED', 'CRUDEOIL', 'ELECTR', 'ETHANE',
+    'GASCOKE', 'GASWKSGS', 'GEOTHERM', 'HARDCOAL', 'HEAT', 'INDWASTE', 'JETGAS', 'LIGNITE',
+    'LPG', 'LUBRIC', 'MUNWASTEN', 'MUNWASTER', 'NAPHTHA', 'NATGAS', 'NGL', 'NONBIODIES',
+    'NONBIOGASO', 'NONBIOJETK', 'OBIOLIQ', 'OILSHALE', 'ONONSPEC', 'OTHKERO', 'PARWAX', 'PATFUEL',
+    'PEAT', 'PEATPROD', 'PETCOKE', 'PRIMSBIO', 'REFFEEDS', 'REFINGAS', 'RENEWNS', 'RESFUEL',
+    'SUBCOAL', 'WHITESP'
   )
+
+  # products to fix according to the latest mapping
+  # products_to_fix <- c(
+  #   'ANTCOAL', 'AVGAS', 'BIODIESEL', 'BIOGASES', 'BIOGASOL', 'BITCOAL', 'BITUMEN', 'BKB',
+  #   'BROWN', 'CHARCOAL', 'COKCOAL', 'CRNGFEED', 'CRUDEOIL', 'ELECTR', 'ETHANE', 'GASCOKE',
+  #   'GASWKSGS', 'GEOTHERM', 'HARDCOAL', 'HEAT', 'INDWASTE', 'LIGNITE', 'LPG', 'LUBRIC',
+  #   'MUNWASTEN', 'MUNWASTER', 'NAPHTHA', 'NATGAS', 'NGL', 'NONBIODIES', 'NONBIOGASO', 'NONBIOJETK',
+  #   'OBIOLIQ', 'OILSHALE', 'ONONSPEC', 'OTHKERO', 'PARWAX', 'PATFUEL', 'PEAT', 'PEATPROD',
+  #   'PETCOKE', 'PRIMSBIO', 'REFINGAS', 'RENEWNS', 'RESFUEL', 'SUBCOAL', 'WHITESP'
+  # )
 
   region_mapping <- toolGetMapping(name = 'regionmapping_21_EU11.csv',
                                    type = 'regional',

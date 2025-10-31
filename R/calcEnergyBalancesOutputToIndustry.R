@@ -23,7 +23,7 @@ calcEnergyBalancesOutputToIndustry <- function() {
   namesBefore <- getNames(data)
   data <- tool_fix_IEA_data_for_Industry_subsectors(data)
 
-  # warn if dimensions not present in the mapping have been added to the data
+  # warn if product flows not present in the mapping have been added to the data
   newItems <- setdiff(getNames(data), namesBefore)
   productFlows <- unique(pull(ieamatch, "product.flow"))
   newProductFlows <- setdiff(newItems, productFlows)
