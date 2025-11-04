@@ -2,10 +2,18 @@
 % Please edit documentation in R/readWorldSteelDigitised.R
 \name{readWorldSteelDigitised}
 \alias{readWorldSteelDigitised}
-\title{Read Data from World Steel Association 1978-2022 yearbooks digitized to Excel sheets
-E.g. from 1982: https://worldsteel.org/wp-content/uploads/Steel-Statistical-Yearbook-1982.pdf}
+\title{Read World Steel Digitised}
 \usage{
-readWorldSteelDigitised(subtype = "world_production")
+readWorldSteelDigitised(subtype = "worldProduction")
+}
+\arguments{
+\item{subtype}{Character string defining which subtype of data to read.
+Available subtypes are:
+'worldProduction', 'production', 'bofProduction', 'eafProduction',
+'productionByProcess', 'imports', 'exports', 'scrapImports', 'scrapExports',
+'scrapConsumptionYearbooks', 'scrapConsumptionFigures',
+'specificScrapConsumption_70s', 'worldScrapConsumption',
+'indirectImportsByCategory_2013', 'indirectExportsByCategory_2013'}
 }
 \description{
 Read Data from World Steel Association 1978-2022 yearbooks digitized to Excel sheets

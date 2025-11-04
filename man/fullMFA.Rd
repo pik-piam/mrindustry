@@ -4,7 +4,7 @@
 \alias{fullMFA}
 \title{Load all MFA data}
 \usage{
-fullMFA(scenario = "SSP2", gdp_per_capita = FALSE)
+fullMFA(scenario = "SSP2", gdpPerCapita = FALSE)
 }
 \description{
 Function that produces the complete regional data sets required for the 

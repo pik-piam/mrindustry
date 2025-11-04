@@ -2,7 +2,7 @@
 % Please edit documentation in R/calcSteelProduction.R
 \name{calcSteelProduction}
 \alias{calcSteelProduction}
-\title{Get Steel Production data}
+\title{Calc Steel Production}
 \usage{
 calcSteelProduction()
 }
