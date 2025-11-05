@@ -9,50 +9,32 @@ calcEnergyBalancesOutputToIndustry <- function() {
                              where = "mrindustry",
                              returnPathOnly = FALSE)
 
+  target <- c("REMINDitems_in", "REMINDitems_out", "REMINDitems_tech")
+
+  ieamatch <- ieamatch %>%
+    select(tidyselect::all_of(c("iea_product", "iea_flows", "Weight", target))) %>%
+    stats::na.omit() %>%
+    tidyr::unite("target", tidyselect::all_of(target), sep = ".", remove = FALSE) %>%
+    tidyr::unite("product.flow", c("iea_product", "iea_flows"), sep = ".")
+
   data <- readSource("IEA", subtype = "EnergyBalances") * 4.1868e-5
 
   # apply corrections to IEA data to cope with fragmentary time series
   namesBefore <- getNames(data)
-  data <- tool_fix_IEA_data_for_Industry_subsectors(data, ieamatch, threshold = 1e-2)
+  data <- tool_fix_IEA_data_for_Industry_subsectors(data)
 
-  # warn if dimensions not present in the mapping have been added to the data
-  newProductFlows <- tibble(
-    text = setdiff(getNames(data), namesBefore)
-  ) %>%
-    tidyr::separate("text", c("product", "flow"), sep = "\\.") %>%
-    dplyr::anti_join(
-      ieamatch %>%
-        as_tibble() %>%
-        select(product = "iea_product", flow = "iea_flows"),
-      c("product", "flow")
-    ) %>%
-    tidyr::unite("text", c("product", "flow"), sep = ".") %>%
-    pull("text")
+  # warn if product flows not present in the mapping have been added to the data
+  newItems <- setdiff(getNames(data), namesBefore)
+  productFlows <- unique(pull(ieamatch, "product.flow"))
+  newProductFlows <- setdiff(newItems, productFlows)
 
+  # FIXME: investigate, as these product flows mean potential losses after mapping
   if (!rlang::is_empty(newProductFlows)) {
     message("Product/flow combinations not present in mapping added by ",
             "fix_IEA_data_for_Industry_subsectors():\n",
             paste(newProductFlows, collapse = "\n")
     )
   }
-
-  # FIXME remove product/flow combinations from the mapping that have been
-  # removed from the data while replacing coke oven and blast furnace outputs
-  ieamatch <- ieamatch %>%
-    as_tibble() %>%
-    filter(paste(.data$iea_product, .data$iea_flows, sep = ".")
-           %in% getNames(data))
-
-
-  target <- c("REMINDitems_in", "REMINDitems_out", "REMINDitems_tech")
-
-  ieamatch <- ieamatch %>%
-    as_tibble() %>%
-    select(tidyselect::all_of(c("iea_product", "iea_flows", "Weight", target))) %>%
-    stats::na.omit() %>%
-    tidyr::unite("target", tidyselect::all_of(target), sep = ".", remove = FALSE) %>%
-    tidyr::unite("product.flow", c("iea_product", "iea_flows"), sep = ".") %>%
-    filter(.data$`product.flow` %in% getNames(data))
 
   reminditems <-  do.call(
     mbind,
