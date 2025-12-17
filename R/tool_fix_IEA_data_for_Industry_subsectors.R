@@ -54,6 +54,10 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
       mutate(year = as.integer(.data$year))
   }
 
+  ## IEA data as dataframe ----
+  df_data <- data %>%
+    .clean_data()
+
   ## flow definitions ----
   IEA_flows <- tribble(
     ~summary.flow,   ~flow,
@@ -228,20 +232,12 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
   ### blast furnace output products ----
   # products blast furnaces supply to other flows
   outputs_BLASTFUR <- data_BLASTFUR_outputs %>%
-    pull('product') %>%
-    unique()
-
-  ### product/flow to be replaced ----
-  # all blast furnace outputs and flows to be replaced, that are actually present
-  # in the data
-  product_flow_BLASTFUR_to_replace <- intersect(
-    cartesian(outputs_BLASTFUR, flow_BLASTFUR_to_replace),
-    getNames(data))
+    select(-value)
 
   ### blast furnace product use ----
-  data_BLASTFUR_use <- data %>%
-    `[`(,, product_flow_BLASTFUR_to_replace) %>%
-    .clean_data()
+  data_BLASTFUR_use <- df_data %>%
+    filter(flow %in% flow_BLASTFUR_to_replace ) %>%
+    right_join(outputs_BLASTFUR)
 
   ## blast furnace replacement data ----
   # outputs are replaced joule-by-joule with inputs, according to the input shares
@@ -259,8 +255,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/years that have no inputs into blast furnaces, yet
-    # outputs from them and use of blast furnace products (e.g. ISR 1973)
+    # assume that countries/years that have no inputs into blast furnaces,
+    # also have no outputs and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid blast furnace replacement data') %>%
@@ -306,22 +302,14 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
     filter(0 < .data$value)
 
   ### coke oven output products ----
-  # products coke ovens supply to other flows
+  # products blast furnaces supply to other flows
   outputs_COKEOVS <- data_COKEOVS_outputs %>%
-    pull('product') %>%
-    unique()
-
-  ### product/flows to be replaced ----
-  # all coke oven outputs and flows to be replaced, that are actually present in
-  # the data
-  product_flow_COKEOVS_to_replace <- intersect(
-    cartesian(outputs_COKEOVS, flow_COKEOVS_to_replace),
-    getNames(data))
+    select(-value)
 
   ### coke oven product use ----
-  data_COKEOVS_use <- data %>%
-    `[`(,, product_flow_COKEOVS_to_replace) %>%
-    .clean_data()
+  data_COKEOVS_use <- df_data %>%
+    filter(flow %in% flow_COKEOVS_to_replace ) %>%
+    right_join(outputs_COKEOVS)
 
   ## coke oven replacement data ----
   # outputs are replaced joule-by-joule with inputs, according to the input shares
@@ -338,8 +326,9 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/year that have no inputs into coke ovens but use
-    # coke oven outputs (which most likely are imported)
+    # assume that countries/years that have no inputs into coke ovens,
+    # also have no outputs and use of coke oven products
+    # (in reality these products may be imported, but we neglect this case)
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid coke oven replacement data') %>%
@@ -360,8 +349,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/year that have no inputs into coke ovens but use
-    # coke oven outputs (which most likely are imported)
+    # assume that countries/years that have no inputs into coke ovens,
+    # also have no transformation losses
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid coke oven loss data') %>%
@@ -412,8 +401,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/years that have no inputs into blast furnaces, yet
-    # outputs from them and use of blast furnace products (e.g. ISR 1973)
+    # assume that countries/years that have no inputs into blast furnaces,
+    # also have no outputs and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid blast furnace replacement data') %>%
@@ -436,8 +425,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, ieamatch,
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/years that have no inputs into blast furnaces, yet
-    # outputs from them and use of blast furnace products (e.g. ISR 1973)
+    # assume that countries/years that have no inputs into blast furnaces,
+    # also have no transformation losses
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid blast furnace loss data') %>%
