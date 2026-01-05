@@ -317,7 +317,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # furnace inputs by coke oven inputs (further below).
   data_COKEOVS <- bind_rows(
     data_COKEOVS %>%
-      filter(!.data$product %in% outputs_BLASTFUR),
+      anti_join(outputs_BLASTFUR),
 
     data_BLASTFUR_replacement %>%
       filter(.data$flow %in% c('ECOKEOVS', 'TCOKEOVS')) %>%
@@ -405,10 +405,10 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # furnace inputs by coke oven inputs (here).
   data_BLASTFUR <- bind_rows(
     data_BLASTFUR %>%
-      filter(!.data$product %in% outputs_COKEOVS),
+      anti_join(outputs_COKEOVS),
 
     data_COKEOVS_replacement %>%
-      filter(.data$flow %in% c('EBLATFUR', 'TBLASTFUR')) %>%
+      filter(.data$flow %in% c('EBLASTFUR', 'TBLASTFUR')) %>%
       select(-'flow')
   ) %>%
     group_by(!!!syms(c('iso3c', 'year', 'product'))) %>%
@@ -475,7 +475,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   data_replace <- bind_rows(
     # filter already replaced data
     data_COKEOVS_replacement %>%
-      filter(!.data$flow %in% c('EBLATFUR', 'TBLASTFUR')),
+      filter(!.data$flow %in% c('EBLASTFUR', 'TBLASTFUR')),
 
     data_BLASTFUR_replacement %>%
       filter(!.data$flow %in% c('ECOKEOVS', 'TCOKEOVS')),
