@@ -246,6 +246,14 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   ## 1.3 Replace BF outputs and by inputs ----
 
+  # Example of how replacement routine works:
+  # BF outputs: BLFURGAS.MAINELEC = -20
+  # BF inputs: OVENCOKE.TBLASTFUR = -90, COKCOAL.TBLASTFUR = -10
+  # BF outputs are attributed to inputs via input shares:
+  # New BF outputs:
+  # OVENCOKE.MAINELEC = -20 * (90 / 100) = -18
+  # COKCOAL.MAINELEC = -20 * (10 / 100) = -2
+
   # all products in/out of blast furnace transformation and energy demand, except
   # summary flows 'TOTAL' and 'MRENEW'
   data_BLASTFUR <- data %>%
@@ -300,6 +308,15 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     summarise(value = sum(.data$value), .groups = 'drop')
 
   ## 1.4 Replace CO outputs by inputs ----
+
+  # Example of how replacement routine works:
+  # CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
+  # CO inputs: COKCOAL.TCOKEOVS = -180, NATGAS.TCOKEOVS = -20
+  # CO outputs are attributed to inputs via input shares:
+  # New CO outputs:
+  # COKCOAL.TBLASTFUR = -10 * (180 / 200) = -9
+  # NATGAS.TBLASTFUR = -10 * (20 / 200) = -1
+
   # all products in/out of coke oven transformation and energy demand, except
   # summary flows 'TOTAL' and 'MRENEW'
   data_COKEOVS <- data %>%
@@ -374,6 +391,17 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # TCOKEOVS) are allotted to the IRONSTL sector
   # losses are the difference of inputs and outputs, weighted by input shares
   # right_join() filters out countries/years that do not use coke oven products
+
+  # Example calculation of transformation losses:
+  # CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
+  # CO inputs: COKCOAL.TCOKEOVS = -180, NATGAS.TCOKEOVS = -20
+  # Transformation losses are calculated as difference between
+  # inputs and outputs that are attributed to inputs by input shares:
+  # Coke oven energy losses:
+  # COKCOAL.IRONSTL = 180 - 10 * (180 / 200) = 171
+  # NATGAS.IRONSTL = 20 - 10 * (20 / 200) = 18
+  # Note coke oven losses are attributed to IRONSTL flow.
+
   data_COKEOVS_loss <- right_join(
     data_COKEOVS_inputs,
 
@@ -450,6 +478,17 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # losses are the difference of inputs and outputs, weighted by input shares
   # right_join() filters out countries/years that do not use blast furnace
   # products
+
+  # Example calculation of transformation losses:
+  # BF outputs: BLFURGAS.MAINELEC = -20
+  # BF inputs: COKCOAL.TBLASTFUR = -90, ELECTR.TBLASTFUR = -10
+  # Transformation losses are calculated as difference between
+  # inputs and outputs that are attributed to inputs by input shares:
+  # Blast furnace energy losses:
+  # COKCOAL.IRONSTL = 100 - 20 * (90 / 100) = 82
+  # ELECTR.IRONSTL = 10 - 20 * (10 / 100) = 8
+  # Note blast furnace losses are attributed to IRONSTL
+
   data_BLASTFUR_loss <- right_join(
     data_BLASTFUR_inputs,
 
