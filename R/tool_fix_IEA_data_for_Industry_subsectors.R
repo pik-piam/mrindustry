@@ -481,7 +481,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   # Example calculation of transformation losses:
   # BF outputs: BLFURGAS.MAINELEC = -20
-  # BF inputs: COKCOAL.TBLASTFUR = -90, ELECTR.TBLASTFUR = -10
+  # BF inputs: COKCOAL.TBLASTFUR = -90, ELECTR.EBLASTFUR = -10
   # Transformation losses are calculated as difference between
   # inputs and outputs that are attributed to inputs by input shares:
   # Blast furnace energy losses:
@@ -534,6 +534,22 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   regions_keep <- sort(getRegions(data))
   years_keep   <- sort(getYears(data))
+
+
+  # get unique combinations of products and flows from coke oven data to be replaced
+  product_flow_COKEOVS_to_replace <- data_COKEOVS_use %>%
+    select(product, flow) %>%
+    distinct() %>%
+    mutate(product_flow = paste(product, flow, sep = ".")) %>%
+    pull(product_flow)
+
+  # get unique combinations of products and flows from blast furnace data to be replaced
+  product_flow_BLASTFUR_to_replace <- data_BLASTFUR_use %>%
+    select(product, flow) %>%
+    distinct() %>%
+    mutate(product_flow = paste(product, flow, sep = ".")) %>%
+    pull(product_flow)
+
   names_keep   <- sort(setdiff(getNames(data),
                                c(product_flow_COKEOVS_to_replace,
                                  product_flow_BLASTFUR_to_replace)))
