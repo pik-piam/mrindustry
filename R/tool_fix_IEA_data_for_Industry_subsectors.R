@@ -25,7 +25,7 @@
 #'
 #' @return a MAgPIE object
 #'
-#' @author Michaja Pehl
+#' @author Michaja Pehl, Felix Schreyer
 #'
 #' @importFrom assertr not_na assert
 #' @importFrom dplyr anti_join group_by inner_join left_join mutate pull rename
