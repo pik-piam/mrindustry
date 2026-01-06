@@ -276,11 +276,11 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   ### blast furnace output products
   # products blast furnaces supply to other flows
   outputs_BLASTFUR <- data_BLASTFUR_outputs %>%
-    select(-value)
+    select(-'value')
 
   ### blast furnace product use
   data_BLASTFUR_use <- df_data %>%
-    filter(flow %in% flow_BLASTFUR_to_replace ) %>%
+    filter(.data$flow %in% flow_BLASTFUR_to_replace ) %>%
     right_join(outputs_BLASTFUR)
 
   # outputs are replaced joule-by-joule with inputs, according to the input shares
@@ -356,11 +356,11 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   ### coke oven output products
   # products blast furnaces supply to other flows
   outputs_COKEOVS <- data_COKEOVS_outputs %>%
-    select(-value)
+    select(-'value')
 
   ### coke oven product use
   data_COKEOVS_use <- df_data %>%
-    filter(flow %in% flow_COKEOVS_to_replace ) %>%
+    filter(.data$flow %in% flow_COKEOVS_to_replace ) %>%
     right_join(outputs_COKEOVS)
 
   # outputs are replaced joule-by-joule with inputs, according to the input shares
@@ -538,17 +538,17 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   # get unique combinations of products and flows from coke oven data to be replaced
   product_flow_COKEOVS_to_replace <- data_COKEOVS_use %>%
-    select(product, flow) %>%
+    select(.data$product, .data$flow) %>%
     distinct() %>%
-    mutate(product_flow = paste(product, flow, sep = ".")) %>%
-    pull(product_flow)
+    mutate(product_flow = paste(.data$product, .data$flow, sep = ".")) %>%
+    pull(.data$product_flow)
 
   # get unique combinations of products and flows from blast furnace data to be replaced
   product_flow_BLASTFUR_to_replace <- data_BLASTFUR_use %>%
-    select(product, flow) %>%
+    select(.data$product, .data$flow) %>%
     distinct() %>%
-    mutate(product_flow = paste(product, flow, sep = ".")) %>%
-    pull(product_flow)
+    mutate(product_flow = paste(.data$product, .data$flow, sep = ".")) %>%
+    pull(.data$product_flow)
 
   names_keep   <- sort(setdiff(getNames(data),
                                c(product_flow_COKEOVS_to_replace,
