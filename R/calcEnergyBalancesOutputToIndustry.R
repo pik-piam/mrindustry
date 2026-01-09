@@ -36,16 +36,19 @@ calcEnergyBalancesOutputToIndustry <- function() {
     )
   }
 
+
   reminditems <-  do.call(
     mbind,
     lapply(unique(ieamatch$target),
            function(item) {
              product_flow <- ieamatch %>%
-               filter(item == .data$target) %>%
+               filter(item == .data$target,
+                      .data$product.flow %in% getNames(data)) %>%
                pull("product.flow")
 
              weights <- ieamatch %>%
-               filter(item == .data$target) %>%
+               filter(item == .data$target,
+                      .data$product.flow %in% getNames(data)) %>%
                pull("Weight") %>%
                as.numeric()
 

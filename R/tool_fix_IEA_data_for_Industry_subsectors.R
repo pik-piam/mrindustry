@@ -1,27 +1,31 @@
-#' Apply corrections to IEA data needed for Industry subsectors
+#' Apply adjustments to industry-related IEA data
 #'
-#' Apply corrections to IEA data to cope with fragmentary time series and
-#' replace outputs from blast furnaces and coke ovens, that are inputs into
-#' industry subsectors, by their respective inputs.
+#' This function prepares the industry-related IEA before mapping it to REMIND sectors. There are three different types of adjustments done:
+#' 1. replace coke oven and blast furnace outputs (`BLFURGS`, `OGASES`, `OVENCOKE`,
+#' `COKEOVGS`, `COALTAR`, `NONCRUDE`) by inputs
+#' (required for dealing with energy flows from the steel sector to other sectors)
+#' 2. prepare industry-related time series
+#' 3. apply corrections to IEA data to cope with fragmentary time series
+#'
 #' The corrections done by this function are rather rudimentary and crude. This
 #' gets smoothed away in regional aggregation. But do not use the resulting
 #' country-level data without additional scrutiny.
 #'
 #' Use regional or global averages if IEA industry data lists energy use only as
 #' "non-specified".
-#' Outputs from blast furnaces (`BLFURGS`, `OGASES`) and coke ovens (`OVENCOKE`,
-#' `COKEOVGS`, `COALTAR`, `NONCRUDE`), that are inputs into industry subsectors.
-#' Used internally in mrremind::calcIO() for subtype `output_Industry_subsectors`.
 #'
 #' @md
 #' @param data MAgPIE object containing the IEA Energy Balances data
+#'
+#' @param ieamatch mapping of IEA product/flow combinations to REMIND sectors and energy carriers
+#'
 #'
 #' @param threshold minimum share each industry subsector uses of each product.
 #'   Defaults to 1 %.
 #'
 #' @return a MAgPIE object
 #'
-#' @author Michaja Pehl
+#' @author Michaja Pehl, Felix Schreyer
 #'
 #' @importFrom assertr not_na assert
 #' @importFrom dplyr anti_join group_by inner_join left_join mutate pull rename
@@ -36,9 +40,42 @@
 #' @export
 tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
+
+  ####
+
+  # This function contains the following steps:
+
+  # (CO = coke oven,
+  #  BF = blast furnace)
+
+  # 1. Replace steel sector outputs by inputs
+  #   1.1 Define functions
+  #   1.2 Prepare data and define flows
+  #   1.3 Replace BF outputs by inputs
+  #   1.4 Replace CO outputs by inputs
+  #   1.5 Calculate CO Losses
+  #   1.6 Recalculate BF inputs w/ CO replacements
+  #   1.7 Calculate BF Losses
+  #   1.8 Replace IEA data with steel sector adjustments
+  # 2. Prepare Industry Subsectors Timeseries
+  #   2.1 Define flows and mappings
+  #   2.2 Extend industry subsector timeseries
+  #   2.3 Apply five-year moving average
+  # 3. Fix suspicious industry products
+  #   3.1 Prepare data to fix
+  #   3.2 Redistribute products to industry-related flows
+  #   3.3 Replace and append data
+
+  ####
+
+  # 1. Replace steel sector outputs by inputs ----
+
+  ## 1.1 Define functions ----
+
+
+
   . <- NULL
 
-  # replace coke oven and blast furnace outputs ----
   .clean_data <- function(m, keep_zeros = FALSE) {
     m %>%
       as.data.frame() %>%
@@ -50,7 +87,13 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
       mutate(year = as.integer(.data$year))
   }
 
-  ## flow definitions ----
+  ## 1.2 Prepare data and define flows ----
+
+  ## IEA data as dataframe
+  df_data <- data %>%
+    .clean_data()
+
+  ## flow definitions
   IEA_flows <- tribble(
     ~summary.flow,   ~flow,
     # Total Primary Energy Production
@@ -191,17 +234,26 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   summary_flows <- unique(na.omit(IEA_flows$summary.flow))
   all_flows <- c(base_flows, summary_flows)
 
-  ### blast furnace flows to be replaced ----
+  ### blast furnace flows to be replaced
   # all transformation, energy system and final consumption flows, except for
   # those related to blast furnaces
   flow_BLASTFUR_to_replace <- setdiff(all_flows, c('EBLASTFUR', 'TBLASTFUR'))
 
-  ### coke oven flows to be replaced ----
+  ### coke oven flows to be replaced
   # all transformation, energy system and final consumption flows, except for
   # those related to coke ovens
   flow_COKEOVS_to_replace <- setdiff(all_flows, c('ECOKEOVS', 'TCOKEOVS'))
 
-  ## blast furnace data ----
+  ## 1.3 Replace BF outputs and by inputs ----
+
+  # Example of how replacement routine works:
+  # BF outputs: BLFURGAS.MAINELEC = -20
+  # BF inputs: OVENCOKE.TBLASTFUR = -90, COKCOAL.TBLASTFUR = -10
+  # BF outputs are attributed to inputs via input shares:
+  # New BF outputs:
+  # OVENCOKE.MAINELEC = -20 * (90 / 100) = -18
+  # COKCOAL.MAINELEC = -20 * (10 / 100) = -2
+
   # all products in/out of blast furnace transformation and energy demand, except
   # summary flows 'TOTAL' and 'MRENEW'
   data_BLASTFUR <- data %>%
@@ -211,35 +263,26 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ### blast furnace inputs ----
+  ### blast furnace inputs
   # inputs into transformation/energy system are negative
   data_BLASTFUR_inputs <- data_BLASTFUR %>%
     filter(0 > .data$value)
 
-  ### blast furnace outputs ----
+  ### blast furnace outputs
   # outputs from transformation are positive
   data_BLASTFUR_outputs <- data_BLASTFUR %>%
     filter(0 < .data$value)
 
-  ### blast furnace output products ----
+  ### blast furnace output products
   # products blast furnaces supply to other flows
   outputs_BLASTFUR <- data_BLASTFUR_outputs %>%
-    pull('product') %>%
-    unique()
+    select(-'value')
 
-  ### product/flow to be replaced ----
-  # all blast furnace outputs and flows to be replaced, that are actually present
-  # in the data
-  product_flow_BLASTFUR_to_replace <- intersect(
-    cartesian(outputs_BLASTFUR, flow_BLASTFUR_to_replace),
-    getNames(data))
+  ### blast furnace product use
+  data_BLASTFUR_use <- df_data %>%
+    filter(.data$flow %in% flow_BLASTFUR_to_replace ) %>%
+    right_join(outputs_BLASTFUR)
 
-  ### blast furnace product use ----
-  data_BLASTFUR_use <- data %>%
-    `[`(,, product_flow_BLASTFUR_to_replace) %>%
-    .clean_data()
-
-  ## blast furnace replacement data ----
   # outputs are replaced joule-by-joule with inputs, according to the input shares
   # right_join() filters out countries/years that do not use blast furnace
   # products
@@ -255,8 +298,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/years that have no inputs into blast furnaces, yet
-    # outputs from them and use of blast furnace products (e.g. ISR 1973)
+    # assume that countries/years that have no inputs into blast furnaces,
+    # also have no outputs and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid blast furnace replacement data') %>%
@@ -264,7 +307,16 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ## coke oven data ----
+  ## 1.4 Replace CO outputs by inputs ----
+
+  # Example of how replacement routine works:
+  # CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
+  # CO inputs: COKCOAL.TCOKEOVS = -180, NATGAS.TCOKEOVS = -20
+  # CO outputs are attributed to inputs via input shares:
+  # New CO outputs:
+  # COKCOAL.TBLASTFUR = -10 * (180 / 200) = -9
+  # NATGAS.TBLASTFUR = -10 * (20 / 200) = -1
+
   # all products in/out of coke oven transformation and energy demand, except
   # summary flows 'TOTAL' and 'MRENEW'
   data_COKEOVS <- data %>%
@@ -274,7 +326,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  #### apply blast furnace replacement ----
+  #### apply blast furnace replacement
   # Coke ovens and blast furnaces can be both inputs and outputs to one another at
   # the same time.  To untangle this, we first replace blast furnace outputs that
   # are inputs into coke ovens by coke oven outputs, which are netted with the
@@ -282,7 +334,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # furnace inputs by coke oven inputs (further below).
   data_COKEOVS <- bind_rows(
     data_COKEOVS %>%
-      filter(!.data$product %in% outputs_BLASTFUR),
+      anti_join(outputs_BLASTFUR),
 
     data_BLASTFUR_replacement %>%
       filter(.data$flow %in% c('ECOKEOVS', 'TCOKEOVS')) %>%
@@ -291,35 +343,26 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ### coke oven inputs ----
+  ### coke oven inputs
   # inputs into transformation/energy system are negative
   data_COKEOVS_inputs <- data_COKEOVS %>%
     filter(0 > .data$value)
 
-  ### coke oven outputs ----
+  ### coke oven outputs
   # outputs from transformation are positive
   data_COKEOVS_outputs <- data_COKEOVS %>%
     filter(0 < .data$value)
 
-  ### coke oven output products ----
-  # products coke ovens supply to other flows
+  ### coke oven output products
+  # products blast furnaces supply to other flows
   outputs_COKEOVS <- data_COKEOVS_outputs %>%
-    pull('product') %>%
-    unique()
+    select(-'value')
 
-  ### product/flows to be replaced ----
-  # all coke oven outputs and flows to be replaced, that are actually present in
-  # the data
-  product_flow_COKEOVS_to_replace <- intersect(
-    cartesian(outputs_COKEOVS, flow_COKEOVS_to_replace),
-    getNames(data))
+  ### coke oven product use
+  data_COKEOVS_use <- df_data %>%
+    filter(.data$flow %in% flow_COKEOVS_to_replace ) %>%
+    right_join(outputs_COKEOVS)
 
-  ### coke oven product use ----
-  data_COKEOVS_use <- data %>%
-    `[`(,, product_flow_COKEOVS_to_replace) %>%
-    .clean_data()
-
-  ## coke oven replacement data ----
   # outputs are replaced joule-by-joule with inputs, according to the input shares
   # right_join() filters out countries/years that do not use coke oven products
   data_COKEOVS_replacement <- right_join(
@@ -334,19 +377,31 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/year that have no inputs into coke ovens but use
-    # coke oven outputs (which most likely are imported)
+    # assume that countries/years that have no inputs into coke ovens,
+    # also have no outputs and use of coke oven products
+    # (in reality these products may be imported, but we neglect this case)
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid coke oven replacement data') %>%
     mutate(value = .data$value * .data$factor) %>%
     select('iso3c', 'year', 'product', 'flow', 'value')
 
-  ## coke oven loss data ----
+  ## 1.5 Calculate CO Losses ----
   # coke oven losses (true losses from ECOKEOVS and transformation energy from
   # TCOKEOVS) are allotted to the IRONSTL sector
   # losses are the difference of inputs and outputs, weighted by input shares
   # right_join() filters out countries/years that do not use coke oven products
+
+  # Example calculation of transformation losses:
+  # CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
+  # CO inputs: COKCOAL.TCOKEOVS = -180, NATGAS.TCOKEOVS = -20
+  # Transformation losses are calculated as difference between
+  # inputs and outputs that are attributed to inputs by input shares:
+  # Coke oven energy losses:
+  # COKCOAL.IRONSTL = 180 - 10 * (180 / 200) = 171
+  # NATGAS.IRONSTL = 20 - 10 * (20 / 200) = 18
+  # Note coke oven losses are attributed to IRONSTL flow.
+
   data_COKEOVS_loss <- right_join(
     data_COKEOVS_inputs,
 
@@ -356,8 +411,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/year that have no inputs into coke ovens but use
-    # coke oven outputs (which most likely are imported)
+    # assume that countries/years that have no inputs into coke ovens,
+    # also have no transformation losses
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid coke oven loss data') %>%
@@ -368,9 +423,9 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     ungroup() %>%
     select('iso3c', 'year', 'product', 'flow', 'value')
 
-  ## recalculate blast furnace inputs w/ coke oven replacements ----
+  ## 1.6 Recalculate BF inputs w/ CO replacements ----
 
-  #### apply coke oven replacement ----
+  #### apply coke oven replacement
   # Coke ovens and blast furnaces can be both inputs and outputs to one another at
   # the same time.  To untangle this, we first replace blast furnace outputs that
   # are inputs into coke ovens by coke oven outputs, which are netted with the
@@ -378,21 +433,21 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # furnace inputs by coke oven inputs (here).
   data_BLASTFUR <- bind_rows(
     data_BLASTFUR %>%
-      filter(!.data$product %in% outputs_COKEOVS),
+      anti_join(outputs_COKEOVS),
 
     data_COKEOVS_replacement %>%
-      filter(.data$flow %in% c('EBLATFUR', 'TBLASTFUR')) %>%
+      filter(.data$flow %in% c('EBLASTFUR', 'TBLASTFUR')) %>%
       select(-'flow')
   ) %>%
     group_by(!!!syms(c('iso3c', 'year', 'product'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ### blast furnace inputs ----
+  ### blast furnace inputs
   # inputs into transformation/energy system are negative
   data_BLASTFUR_inputs <- data_BLASTFUR %>%
     filter(0 > .data$value)
 
-  ### blast furnace replacement data ----
+  ### blast furnace replacement data
   # outputs are replaced joule-by-joule with inputs, according to the input shares
   # right_join() filters out countries/years that do not use blast furnace
   # products
@@ -408,8 +463,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/years that have no inputs into blast furnaces, yet
-    # outputs from them and use of blast furnace products (e.g. ISR 1973)
+    # assume that countries/years that have no inputs into blast furnaces,
+    # also have no outputs and use of blast furnace products (e.g. ISR 1973)
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid blast furnace replacement data') %>%
@@ -417,12 +472,23 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ## blast furnace loss data ----
+  ## 1.7 Calculate BF Losses ----
   # blast furnace losses (true losses from EBLASTFUR and transformation energy
   # from TBLASTFUR) are allotted to the IRONSTL sector
   # losses are the difference of inputs and outputs, weighted by input shares
   # right_join() filters out countries/years that do not use blast furnace
   # products
+
+  # Example calculation of transformation losses:
+  # BF outputs: BLFURGAS.MAINELEC = -20
+  # BF inputs: COKCOAL.TBLASTFUR = -90, ELECTR.EBLASTFUR = -10
+  # Transformation losses are calculated as difference between
+  # inputs and outputs that are attributed to inputs by input shares:
+  # Blast furnace energy losses:
+  # COKCOAL.IRONSTL = 100 - 20 * (90 / 100) = 82
+  # ELECTR.IRONSTL = 10 - 20 * (10 / 100) = 8
+  # Note blast furnace losses are attributed to IRONSTL
+
   data_BLASTFUR_loss <- right_join(
     data_BLASTFUR_inputs,
 
@@ -432,8 +498,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
     c('iso3c', 'year')
   ) %>%
-    # FIXME: filter countries/years that have no inputs into blast furnaces, yet
-    # outputs from them and use of blast furnace products (e.g. ISR 1973)
+    # assume that countries/years that have no inputs into blast furnaces,
+    # also have no transformation losses
     filter(!is.na(.data$product)) %>%
     assert(not_na, everything(),
            description = 'Only valid blast furnace loss data') %>%
@@ -444,11 +510,11 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     ungroup() %>%
     select('iso3c', 'year', 'product', 'flow', 'value')
 
-  ## replace coke oven and blast furnace products ----
+  ## 1.8 Replace IEA data with steel sector adjustments ----
   data_replace <- bind_rows(
     # filter already replaced data
     data_COKEOVS_replacement %>%
-      filter(!.data$flow %in% c('EBLATFUR', 'TBLASTFUR')),
+      filter(!.data$flow %in% c('EBLASTFUR', 'TBLASTFUR')),
 
     data_BLASTFUR_replacement %>%
       filter(!.data$flow %in% c('ECOKEOVS', 'TCOKEOVS')),
@@ -468,6 +534,22 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   regions_keep <- sort(getRegions(data))
   years_keep   <- sort(getYears(data))
+
+
+  # get unique combinations of products and flows from coke oven data to be replaced
+  product_flow_COKEOVS_to_replace <- data_COKEOVS_use %>%
+    select(.data$product, .data$flow) %>%
+    distinct() %>%
+    mutate(product_flow = paste(.data$product, .data$flow, sep = ".")) %>%
+    pull(.data$product_flow)
+
+  # get unique combinations of products and flows from blast furnace data to be replaced
+  product_flow_BLASTFUR_to_replace <- data_BLASTFUR_use %>%
+    select(.data$product, .data$flow) %>%
+    distinct() %>%
+    mutate(product_flow = paste(.data$product, .data$flow, sep = ".")) %>%
+    pull(.data$product_flow)
+
   names_keep   <- sort(setdiff(getNames(data),
                                c(product_flow_COKEOVS_to_replace,
                                  product_flow_BLASTFUR_to_replace)))
@@ -489,6 +571,10 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   )
 
   data <- data_fixed
+
+  # 2. Prepare Industry Subsector Time Series ----
+
+  ## 2.1 Define flows and mappings ----
 
   # all industry subsector flows
   flows_to_fix <- c('IRONSTL', 'CHEMICAL', 'NONFERR', 'NONMET', 'TRANSEQ',
@@ -534,7 +620,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     as_tibble() %>%
     select('iso3c' = .data$CountryCode, 'region' = .data$RegionCode)
 
-  # extend industry subsector time series ----
+  ## 2.2 Extend industry subsector time series ----
   # subset of data containing industry subsector products and flows
   data_industry <- data %>%
     `[`(,,intersect(getNames(data),
@@ -549,7 +635,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     inner_join(region_mapping, 'iso3c') %>%
     assert(not_na, .data$region)
 
-  ## apply five-year moving average ----
+  ## 2.3 Apply five-year moving average ----
   data_industry <- data_industry %>%
     group_by(.data$iso3c, .data$region, .data$product, .data$flow) %>%
     arrange(.data$year) %>%
@@ -560,6 +646,10 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
       # ignoring NAs in mean() stumps the mean on the edges to four/three years
       FUN = function(x) { mean(x, na.rm = TRUE) })) %>%
     ungroup()
+
+  # 3. Fix suspicious products in industry ----
+
+  ## 3.1 Prepare data to fix ----
 
   # all products that use less then 1 % of total energy outside of non-specified
   # industry are 'suspicious' and will be fixed
@@ -627,7 +717,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     assert(not_na, .data$value) %>%
     overwrite(data_industry)
 
-  # redistribute at least <threshold> of each product into each subsector ----
+  ## 3.2 Redistribute products to industry-related flows ----
+  # redistribute at least <threshold> of each product into each subsector
   data_industry_fixed <- data_industry_fixed %>%
     complete(nesting(!!!syms(c('iso3c', 'region', 'year', 'product'))),
              flow = c(flows_to_fix, 'INONSPEC'),
@@ -679,7 +770,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     ungroup() %>%
     select('iso3c', 'region', 'year', 'product', 'flow', 'value')
 
-  # replace and append fixed data ----
+  ## 3.3 Replace and append fixed data ----
   data_industry_fixed_overwrite <- data_industry_fixed %>%
     semi_join(
       data_industry,
