@@ -61,7 +61,7 @@ convertMMSA_Methanol <- function(x) {
   # Retrieve Weighting Data for Demand Aggregation
   #    - Retrieve final energy (FE) data for 2018 to serve as weights for total demand aggregation.
   # ---------------------------------------------------------------------------
-  fe <- calcOutput("FE", source = "IEA", aggregate = FALSE)
+  fe <- calcOutput("FE", aggregate = FALSE)
   fe_2018 <- fe[, "y2018", "FE (EJ/yr)"]
 
   # ---------------------------------------------------------------------------
