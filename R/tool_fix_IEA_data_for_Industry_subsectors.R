@@ -532,6 +532,51 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   data_replace[is.na(data_replace)] <- 0
 
+
+  # new part for replacement ----
+
+  # data to be replaced as dataframe
+  df_replace <-  bind_rows(
+    # filter already replaced data
+    data_COKEOVS_replacement %>%
+      filter(!.data$flow %in% c('EBLASTFUR', 'TBLASTFUR')),
+
+    data_BLASTFUR_replacement %>%
+      filter(!.data$flow %in% c('ECOKEOVS', 'TCOKEOVS')),
+
+    data_COKEOVS_loss %>%
+      sum_total_('product', name = 'TOTAL'),
+
+    data_BLASTFUR_loss %>%
+      sum_total_('product', name = 'TOTAL')
+  ) %>%
+    group_by(!!!syms(setdiff(colnames(.), 'value'))) %>%
+    summarise(value = sum(.data$value), .groups = 'drop')
+
+  # add flows of coke oven and blast furnace adjustment routine to original data
+  df_data_fixed <- df_data %>%
+    left_join(df_replace,
+              by = c('iso3c', 'year', 'product', 'flow'),
+              suffix = c('', '.replace')) %>%
+    mutate(value = ifelse(is.na(.data$value.replace),
+                          .data$value,
+                          .data$value + .data$value.replace)) %>%
+    select(.data$iso3c, .data$year, .data$product, .data$flow, .data$value)
+
+  # df_data_fixed <- df_data %>%
+  #   anti_join(df_replace, by = c('iso3c', 'year', 'product', 'flow')) %>%
+  #   bind_rows(df_replace)
+
+  # convert into magclass object via as.magpie
+  data_fixed <- df_data_fixed %>%
+    arrange(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
+    as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
+
+
+  # end new part -----
+
+
+
   regions_keep <- sort(getRegions(data))
   years_keep   <- sort(getYears(data))
 
