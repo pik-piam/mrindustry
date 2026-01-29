@@ -572,6 +572,56 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   data <- data_fixed
 
+  ## 1.9 Set coke oven and blast furnace flows to zero ----
+
+  data[,,c('ECOKEOVS', 'TCOKEOVS',
+            'EBLASTFUR', 'TBLASTFUR')] <- 0
+
+
+  ## 1.10 Recalculate summary flows after CO+BF adjustment ----
+
+
+  # define additional summary flows to be recalculated
+  additional_summary_flows <- tribble(
+    ~summary.flow,   ~flow,
+    # Manufacturing Industry
+    'MANUFACT',          'IRONSTL',    # iron and steel
+    'MANUFACT',          'CHEMICAL',   # chemical and petrochemical
+    'MANUFACT',          'NONFERR',    # non-ferrous metals
+    'MANUFACT',          'NONMET',     # non-metallic minerals
+    'MANUFACT',          'TRANSEQ',    # transport equipment
+    'MANUFACT',          'MACHINE',    # machinery
+    'MANUFACT',          'FOODPRO',    # food production
+    'MANUFACT',          'PAPERPRO',   # paper, pulp, and print
+    'MANUFACT',          'WOODPRO',    # wood and wood products
+    'MANUFACT',          'TEXTILES'   # textiles
+  )
+
+  # sum all flows after CO+BF adjustment to get summary flows as defined in IEA_flows table above
+  data_sum_flows <- data %>%
+    as_tibble() %>%
+    rename(product = 'data', flow = 'data1') %>%
+    # join IEA flow definitions to get summary flows
+    inner_join(IEA_flows %>%
+                 filter(!is.na(.data$summary.flow)) %>%
+                 rbind(additional_summary_flows),
+               by = 'flow') %>%
+    group_by(!!!syms(c('region', 'year', 'product', 'summary.flow'))) %>%
+    summarise(value = sum(.data$value), .groups = 'drop') %>%
+    ungroup() %>%
+    rename(flow = 'summary.flow') %>%
+    arrange(!!!syms(c('region', 'year', 'product', 'flow'))) %>%
+    as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
+
+   # replace summary flows in original data
+    data_new <- data
+    # summary flows present in both datasets
+    summary_flows_to_replace <- intersect(getNames(data_new), getNames(data_sum_flows))
+    data_new[,,summary_flows_to_replace] <- data_sum_flows[,,summary_flows_to_replace]
+    data <- data_new
+
+
+
   # 2. Prepare Industry Subsector Time Series ----
 
   ## 2.1 Define flows and mappings ----
