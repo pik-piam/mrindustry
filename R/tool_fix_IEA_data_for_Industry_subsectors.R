@@ -97,14 +97,14 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   IEA_flows <- tribble(
     ~summary.flow,   ~flow,
     # Total Primary Energy Production
-    'TPES',          'INDPROD',    # primary energy production
-    'TPES',          'IMPORTS',
-    'TPES',          'EXPORTS',
-    'TPES',          'MARBUNK',    # international marine bunkers
-    'TPES',          'AVBUNK',     # international aviation bunkers
+    'TES',          'INDPROD',    # primary energy production
+    'TES',          'IMPORTS',
+    'TES',          'EXPORTS',
+    'TES',          'MARBUNK',    # international marine bunkers
+    'TES',          'AVBUNK',     # international aviation bunkers
     NA_character_,   'TRANSFER',   # inter-product transfers, product transfers,
     # and recycling
-    'TPES',          'STOCKCHA',   # stock changes
+    'TES',          'STOCKCHA',   # stock changes
 
     # Transformation Processes
     'TOTTRANF',      'MAINELEC',    # main activity producer electricity plants
