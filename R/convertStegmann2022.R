@@ -10,7 +10,7 @@ convertStegmann2022 <- function(x) {
 
   regmapping <- toolGetMapping("regionmapping_IMAGE_PBL_Stegmann2022.csv", where = "mrremind", type = "regional")
 
-  fe <- calcOutput("FE", source = "IEA", aggregate = FALSE)[unique(regmapping$CountryCode), 2016, "FE (EJ/yr)"]
+  fe <- calcOutput("FE", aggregate = FALSE)[unique(regmapping$CountryCode), 2016, "FE (EJ/yr)"]
 
   out <- toolAggregate(x, regmapping, from = "RegionAbbreviation", to = "CountryCode", weight = fe)
   out <- toolCountryFill(out, fill = 0, verbosity = 2)
