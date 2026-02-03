@@ -51,8 +51,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # 1. Replace steel sector outputs by inputs
   #   1.1 Define functions
   #   1.2 Prepare data and define flows
-  #   1.3 Replace BF outputs by inputs
-  #   1.4 Replace CO outputs by inputs
+  #   1.3 Replace flows of BF outputs and by inputs into BF
+  #   1.4 Replace flows of CO outputs by inputs to CO
   #   1.5 Calculate CO Losses
   #   1.6 Recalculate BF inputs w/ CO replacements
   #   1.7 Calculate BF Losses
@@ -243,13 +243,13 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # those related to coke ovens
   flow_COKEOVS_to_replace <- setdiff(all_flows, c('ECOKEOVS', 'TCOKEOVS'))
 
-  ## 1.3 Replace BF outputs and by inputs ----
+  ## 1.3 Replace flows of BF outputs and by inputs into BF ----
 
   # Example of how replacement routine works:
-  # BF outputs: BLFURGAS.MAINELEC = -20
+  # Flows of BF outputs into other sectors: BLFURGAS.MAINELEC = -20
   # BF inputs: OVENCOKE.TBLASTFUR = -90, COKCOAL.TBLASTFUR = -10
-  # BF outputs are attributed to inputs via input shares:
-  # New BF outputs:
+  # Flows of BF outputs are attributed to inputs via input shares:
+  # New BF output flows
   # OVENCOKE.MAINELEC = -20 * (90 / 100) = -18
   # COKCOAL.MAINELEC = -20 * (10 / 100) = -2
 
@@ -306,13 +306,13 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ## 1.4 Replace CO outputs by inputs ----
+  ## 1.4 Replace flwos of CO outputs by inputs to CO ----
 
   # Example of how replacement routine works:
-  # CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
+  # Flow of CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
   # CO inputs: COKCOAL.TCOKEOVS = -180, NATGAS.TCOKEOVS = -20
-  # CO outputs are attributed to inputs via input shares:
-  # New CO outputs:
+  # Flows of CO outputs are attributed to inputs via input shares:
+  # New Flows CO outputs:
   # COKCOAL.TBLASTFUR = -10 * (180 / 200) = -9
   # NATGAS.TBLASTFUR = -10 * (20 / 200) = -1
 
