@@ -148,7 +148,6 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     'TOTENGY',       'ENUC',        # nuclear industry
     'TOTENGY',       'ECHARCOAL',   # charcoal production plants
     'TOTENGY',       'ENONSPEC',    # non-specified energy industry
-    'TOTENGY',       'DISTLOSS',    # distribution and transmission losses
 
     # Final Consumption
     'TFC',           'IRONSTL',    # iron and steel
