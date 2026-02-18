@@ -176,6 +176,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     'TFC',           'AGRICULT',   # agriculture/forestry
     'TFC',           'FISHING',    # fishing
     'TFC',           'ONONSPEC',   # non-specified other consumption
+    'TFC',           'NONENUSE',   # non-energy use
 
 
     'TOTIND',        'IRONSTL',    # iron and steel
