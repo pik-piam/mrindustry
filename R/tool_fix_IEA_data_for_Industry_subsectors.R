@@ -51,8 +51,8 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # 1. Replace steel sector outputs by inputs
   #   1.1 Define functions
   #   1.2 Prepare data and define flows
-  #   1.3 Replace BF outputs by inputs
-  #   1.4 Replace CO outputs by inputs
+  #   1.3 Replace flows of BF outputs and by inputs into BF
+  #   1.4 Replace flows of CO outputs by inputs to CO
   #   1.5 Calculate CO Losses
   #   1.6 Recalculate BF inputs w/ CO replacements
   #   1.7 Calculate BF Losses
@@ -91,20 +91,20 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
 
   ## IEA data as dataframe
   df_data <- data %>%
-    .clean_data()
+    .clean_data(keep_zeros = T)
 
   ## flow definitions
   IEA_flows <- tribble(
     ~summary.flow,   ~flow,
     # Total Primary Energy Production
-    'TPES',          'INDPROD',    # primary energy production
-    'TPES',          'IMPORTS',
-    'TPES',          'EXPORTS',
-    'TPES',          'MARBUNK',    # international marine bunkers
-    'TPES',          'AVBUNK',     # international aviation bunkers
+    'TES',          'INDPROD',    # primary energy production
+    'TES',          'IMPORTS',
+    'TES',          'EXPORTS',
+    'TES',          'MARBUNK',    # international marine bunkers
+    'TES',          'AVBUNK',     # international aviation bunkers
     NA_character_,   'TRANSFER',   # inter-product transfers, product transfers,
     # and recycling
-    'TPES',          'STOCKCHA',   # stock changes
+    'TES',          'STOCKCHA',   # stock changes
 
     # Transformation Processes
     'TOTTRANF',      'MAINELEC',    # main activity producer electricity plants
@@ -148,7 +148,6 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     'TOTENGY',       'ENUC',        # nuclear industry
     'TOTENGY',       'ECHARCOAL',   # charcoal production plants
     'TOTENGY',       'ENONSPEC',    # non-specified energy industry
-    'TOTENGY',       'DISTLOSS',    # distribution and transmission losses
 
     # Final Consumption
     'TFC',           'IRONSTL',    # iron and steel
@@ -177,6 +176,7 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     'TFC',           'AGRICULT',   # agriculture/forestry
     'TFC',           'FISHING',    # fishing
     'TFC',           'ONONSPEC',   # non-specified other consumption
+    'TFC',           'NONENUSE',   # non-energy use
 
 
     'TOTIND',        'IRONSTL',    # iron and steel
@@ -244,13 +244,13 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
   # those related to coke ovens
   flow_COKEOVS_to_replace <- setdiff(all_flows, c('ECOKEOVS', 'TCOKEOVS'))
 
-  ## 1.3 Replace BF outputs and by inputs ----
+  ## 1.3 Replace flows of BF outputs and by inputs into BF ----
 
   # Example of how replacement routine works:
-  # BF outputs: BLFURGAS.MAINELEC = -20
+  # Flows of BF outputs into other sectors: BLFURGAS.MAINELEC = -20
   # BF inputs: OVENCOKE.TBLASTFUR = -90, COKCOAL.TBLASTFUR = -10
-  # BF outputs are attributed to inputs via input shares:
-  # New BF outputs:
+  # Flows of BF outputs are attributed to inputs via input shares:
+  # New BF output flows
   # OVENCOKE.MAINELEC = -20 * (90 / 100) = -18
   # COKCOAL.MAINELEC = -20 * (10 / 100) = -2
 
@@ -307,13 +307,13 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
     summarise(value = sum(.data$value), .groups = 'drop')
 
-  ## 1.4 Replace CO outputs by inputs ----
+  ## 1.4 Replace flwos of CO outputs by inputs to CO ----
 
   # Example of how replacement routine works:
-  # CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
+  # Flow of CO outputs: COKEOVGS.TBLASTFUR = -10 (coke oven gas used in blast furnace)
   # CO inputs: COKCOAL.TCOKEOVS = -180, NATGAS.TCOKEOVS = -20
-  # CO outputs are attributed to inputs via input shares:
-  # New CO outputs:
+  # Flows of CO outputs are attributed to inputs via input shares:
+  # New Flows CO outputs:
   # COKCOAL.TBLASTFUR = -10 * (180 / 200) = -9
   # NATGAS.TBLASTFUR = -10 * (20 / 200) = -1
 
@@ -511,7 +511,10 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
     select('iso3c', 'year', 'product', 'flow', 'value')
 
   ## 1.8 Replace IEA data with steel sector adjustments ----
-  data_replace <- bind_rows(
+
+
+  # bind all data of coke oven and blast furnace adjustment routine together
+  df_CO_BF_adjustment <-  bind_rows(
     # filter already replaced data
     data_COKEOVS_replacement %>%
       filter(!.data$flow %in% c('EBLASTFUR', 'TBLASTFUR')),
@@ -526,50 +529,90 @@ tool_fix_IEA_data_for_Industry_subsectors <- function(data, threshold = 1e-2) {
       sum_total_('product', name = 'TOTAL')
   ) %>%
     group_by(!!!syms(setdiff(colnames(.), 'value'))) %>%
-    summarise(value = sum(.data$value), .groups = 'drop') %>%
-    arrange(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
-    as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
-
-  data_replace[is.na(data_replace)] <- 0
-
-  regions_keep <- sort(getRegions(data))
-  years_keep   <- sort(getYears(data))
+    summarise(value = sum(.data$value), .groups = 'drop')
 
 
-  # get unique combinations of products and flows from coke oven data to be replaced
-  product_flow_COKEOVS_to_replace <- data_COKEOVS_use %>%
-    select(.data$product, .data$flow) %>%
-    distinct() %>%
-    mutate(product_flow = paste(.data$product, .data$flow, sep = ".")) %>%
-    pull(.data$product_flow)
+  # take original IEA data and substract flows that contain CO or BF outputs
+  # these flows are now accounted for in the CO/BF adjusted data df_CO_BF_adjustment
+    df_data_fixed <- df_data %>%
+      left_join(
+        bind_rows(data_BLASTFUR_use,
+                  data_COKEOVS_use) %>%
+          group_by(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
+          summarise(value = sum(.data$value), .groups = 'drop') %>%
+          rename(value_use = 'value'),
+        by = c('iso3c', 'year', 'product', 'flow')
+      ) %>%
+      mutate(value = ifelse(is.na(.data$value_use),
+                            .data$value,
+                            .data$value - .data$value_use)) %>%
+      select(-'value_use')
 
-  # get unique combinations of products and flows from blast furnace data to be replaced
-  product_flow_BLASTFUR_to_replace <- data_BLASTFUR_use %>%
-    select(.data$product, .data$flow) %>%
-    distinct() %>%
-    mutate(product_flow = paste(.data$product, .data$flow, sep = ".")) %>%
-    pull(.data$product_flow)
 
-  names_keep   <- sort(setdiff(getNames(data),
-                               c(product_flow_COKEOVS_to_replace,
-                                 product_flow_BLASTFUR_to_replace)))
+    # add flows from CO/BF adjustment routine df_CO_BF_adjustment
+    df_data_fixed <- df_data_fixed %>%
+      left_join(df_CO_BF_adjustment,
+                by = c('iso3c', 'year', 'product', 'flow'),
+                suffix = c('', '.replace')) %>%
+      mutate(value = ifelse(is.na(.data$value.replace),
+                            .data$value,
+                            .data$value + .data$value.replace)) %>%
+      select(.data$iso3c, .data$year, .data$product, .data$flow, .data$value)
 
-  regions_replace <- sort(getRegions(data_replace))
-  years_replace   <- sort(getYears(data_replace))
-  names_replace   <- sort(getNames(data_replace))
 
-  data_fixed <- new.magpie(cells_and_regions = regions_keep, years = years_keep,
-                           names = unique(c(names_keep, names_replace)),
-                           fill = 0)
+    # set coke oven and blast furnace flows to zero
+    # as the energy is already accounted for in others flows
+    df_data_fixed <- df_data_fixed %>%
+      mutate(value = ifelse(.data$flow %in% c('ECOKEOVS', 'TCOKEOVS',
+                                              'EBLASTFUR', 'TBLASTFUR'),
+                            0,
+                            .data$value))
 
-  data_fixed[regions_keep,years_keep,names_keep] <- data %>%
-    `[`(regions_keep, years_keep, names_keep)
 
-  data_fixed[regions_replace,years_replace,names_replace] <- (
-    data_fixed[regions_replace,years_replace,names_replace]
-    + data_replace[regions_replace,years_replace,names_replace]
+
+
+  # recalculate summary flows after CO+BF adjustment
+  # define additional summary flows to be recalculated
+  additional_summary_flows <- tribble(
+    ~summary.flow,   ~flow,
+    # Manufacturing Industry
+    'MANUFACT',          'IRONSTL',    # iron and steel
+    'MANUFACT',          'CHEMICAL',   # chemical and petrochemical
+    'MANUFACT',          'NONFERR',    # non-ferrous metals
+    'MANUFACT',          'NONMET',     # non-metallic minerals
+    'MANUFACT',          'TRANSEQ',    # transport equipment
+    'MANUFACT',          'MACHINE',    # machinery
+    'MANUFACT',          'FOODPRO',    # food production
+    'MANUFACT',          'PAPERPRO',   # paper, pulp, and print
+    'MANUFACT',          'WOODPRO',    # wood and wood products
+    'MANUFACT',          'TEXTILES'   # textiles
   )
 
+  # sum all flows after CO+BF adjustment to get summary flows as defined in IEA_flows table above
+  df_sum_flows <- df_data_fixed %>%
+    # join IEA flow definitions to get summary flows
+    inner_join(IEA_flows %>%
+                 filter(!is.na(.data$summary.flow)) %>%
+                 rbind(additional_summary_flows),
+               by = 'flow') %>%
+    group_by(!!!syms(c('iso3c', 'year', 'product', 'summary.flow'))) %>%
+    summarise(value = sum(.data$value), .groups = 'drop') %>%
+    ungroup() %>%
+    rename(flow = 'summary.flow')
+
+  # replace summary flows with sums of adjusted CO+BF data
+  df_data_fixed <- df_data_fixed %>%
+    anti_join(df_sum_flows,
+              by = c('iso3c', 'year', 'product', 'flow')) %>%
+    bind_rows(df_sum_flows)
+
+
+  # convert CO+BF adjusted IEA data into magclass object via as.magpie
+  data_fixed <- df_data_fixed %>%
+      arrange(!!!syms(c('iso3c', 'year', 'product', 'flow'))) %>%
+      as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
+
+  # final data after CO+BF adjustment
   data <- data_fixed
 
   # 2. Prepare Industry Subsector Time Series ----
