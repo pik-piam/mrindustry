@@ -1,12 +1,13 @@
 #' Calculate Energy Balances Output to Industry
-#' Additional corrections are applied to the IEA data in [`mrindustry::tool_fix_IEA_data_for_Industry_subsectors`].
 #'
 #' @author Michaja Pehl, Falk Benke
+#' @importFrom mrcommonsenergy toolFixIeaDataForIndustrySubsectors
+#'
 calcEnergyBalancesOutputToIndustry <- function() {
 
   ieamatch <- toolGetMapping(type = "sectoral",
                              name = "structuremappingIO_outputs.csv",
-                             where = "mrcommons",
+                             where = "mrcommonsenergy",
                              returnPathOnly = FALSE)
 
   target <- c("REMINDitems_in", "REMINDitems_out", "REMINDitems_tech")
@@ -20,7 +21,7 @@ calcEnergyBalancesOutputToIndustry <- function() {
   data <- readSource("IEA", subtype = "EnergyBalances") * 4.1868e-5
 
   # apply corrections to IEA data to cope with fragmentary time series
-  data <- toolFixIEAdataForIndustrySubsectors(data)
+  data <- toolFixIeaDataForIndustrySubsectors(data)
 
   reminditems <-  do.call(
     mbind,
