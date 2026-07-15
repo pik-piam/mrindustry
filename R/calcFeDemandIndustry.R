@@ -822,6 +822,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     ungroup()
 
   ### combine historic and future industry FE shares ----
+
   industry_subsectors_en_shares <- inner_join(
     industry_subsectors_en_shares %>%
       mutate(scenario = first(IEA_ETP_Ind_FE_shares$scenario)) %>%

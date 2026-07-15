@@ -6,7 +6,6 @@
 #'     subsectors `cement`, `chemicals`, `steel_primary`, `steel_secondary`,
 #'     and `otherInd`.  Trends for `chemicals` and `otherInd` are averages of
 #'     the other three trends, which are provided by NTNU.
-#' @param smooth Smooth REMIND_industry_trends (default) or not.
 #'
 #' @return A [`magpie`][magclass::magclass] object.
 #'
@@ -20,7 +19,7 @@
 #' @importFrom tibble tribble
 #' @export
 #' @rdname ODYM_RECC
-readODYM_RECC <- function(subtype, smooth = TRUE) {
+readODYM_RECC <- function(subtype) {
   # file path (for easier debugging)
   path <- './'
   # path <- '~/PIK/swap/inputdata/sources/ODYM_RECC/'
@@ -48,6 +47,7 @@ readODYM_RECC <- function(subtype, smooth = TRUE) {
 
 #' @export
 #' @rdname ODYM_RECC
+#' @param smooth Smooth REMIND_industry_trends (default) or not.
 calcODYM_RECC <- function(subtype, smooth = TRUE) {
   # subtype switchboard ----
   switchboard <- list(
