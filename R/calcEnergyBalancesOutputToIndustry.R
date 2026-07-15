@@ -1,7 +1,6 @@
 #' Calculate Energy Balances Output to Industry
 #'
 #' @author Michaja Pehl, Falk Benke
-#' @importFrom mrcommonsenergy toolFixIeaDataForIndustrySubsectors
 #'
 calcEnergyBalancesOutputToIndustry <- function() {
 
@@ -18,10 +17,7 @@ calcEnergyBalancesOutputToIndustry <- function() {
     tidyr::unite("target", tidyselect::all_of(target), sep = ".", remove = FALSE) %>%
     tidyr::unite("product.flow", c("iea_product", "iea_flows"), sep = ".")
 
-  data <- readSource("IEA", subtype = "EnergyBalances") * 4.1868e-5
-
-  # apply corrections to IEA data to cope with fragmentary time series
-  data <- toolFixIeaDataForIndustrySubsectors(data)
+  data <- calcOutput("IeaEnergyBalances", ieaVersion = "default", aggregate = FALSE)
 
   reminditems <-  do.call(
     mbind,

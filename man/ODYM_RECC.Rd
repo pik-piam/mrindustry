@@ -5,7 +5,7 @@
 \alias{calcODYM_RECC}
 \title{Read ODYM_RECC data from the SHAPE Project}
 \usage{
-readODYM_RECC(subtype, smooth = TRUE)
+readODYM_RECC(subtype)
 
 calcODYM_RECC(subtype, smooth = TRUE)
 }
