@@ -1,8 +1,6 @@
 #' Calculates FE demand in industry as REMIND variables
 #'
 #' @md
-#' @param use_ODYM_RECC per-capita pathways for `SDP_xx` scenarios?  (Defaults
-#'   to `FALSE`.)
 #' @param last_empirical_year Last year for which empirical data is available.
 #'   Defaults to 2020.
 #' @param scenarios Vector of strings designating the scenario. !!Currently it acts as a filter only, with the actual
@@ -23,7 +21,7 @@
 #' @importFrom tidyselect all_of
 #' @author Michaja Pehl
 #'
-calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirical_year = 2020) {
+calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
 
   # The scenarios argument is currently only used to filter at the end.
   ## Replace any calls to scenario groups such as "SSPs" and "SSP2IndiaDEAs", with calls to the individual scenarios.
@@ -162,12 +160,6 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     pivot_wider() %>%
     mutate(subsector = paste0("ue_", .data$subsector))
 
-  if (use_ODYM_RECC) {
-    industry_subsectors_material_relative <- industry_subsectors_material_relative %>%
-      filter(!.data$scenario %in% c("SDP_EI", "SDP_MC", "SDP_RC"))
-  }
-
-
   industry_subsectors_material_relative_change <- calcOutput(
     type = "industry_subsectors_specific",
     subtype = "material_relative_change",
@@ -182,23 +174,6 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     character.data.frame() %>%
     pivot_wider() %>%
     mutate(subsector = paste0("ue_", .data$subsector))
-
-  if (use_ODYM_RECC) {
-    industry_subsectors_material_percapita <- calcOutput(
-      type = "ODYM_RECC",
-      subtype = "REMIND_industry_trends",
-      aggregate = FALSE) %>%
-      magclass_to_tibble() %>%
-      filter(!.data$scenario %in% c(
-        unique(industry_subsectors_material_alpha$scenario),
-        unique(industry_subsectors_material_relative$scenario),
-        unique(industry_subsectors_material_relative_change$scenario))) %>%
-      interpolate_missing_periods_(
-        periods = list(
-          year = unique(pmax(remind_years,
-                             min(.$year)))),
-        expand.values = TRUE)
-  }
 
   bind_rows(
     industry_subsectors_material_alpha %>% select("scenario", "region", "subsector"),
@@ -425,67 +400,13 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       select("scenario", "iso3c", "subsector", "year", "value", "GDP")
   )
 
+
   ### per-capita projections ----
   . <- NULL
 
-  if (use_ODYM_RECC) {
-    foo4 <- bind_rows(
-      foo3 %>% select(-"GDP"),
-
-      foo3 %>%
-        filter(
-          "SSP2" == .data$scenario,
-          min(industry_subsectors_material_percapita$year) > .data$year) %>%
-        select(-"GDP") %>%
-        complete(
-          nesting(!!!syms(c("iso3c", "year", "subsector", "value"))),
-          scenario = unique(industry_subsectors_material_percapita$scenario)
-        ) %>%
-        filter("SSP2" != .data$scenario),
-
-      foo3 %>%
-        filter(
-          "SSP2" == .data$scenario,
-          min(industry_subsectors_material_percapita$year) == .data$year
-        ) %>%
-        select(-"scenario", -"GDP", -"year") %>%
-        inner_join(
-          calcOutput("Population", scenario = gdpPopScen, aggregate = FALSE, years = remind_years) %>%
-            magclass_to_tibble() %>%
-            select("iso3c", "scenario" = "variable", "year", "population" = "value") %>%
-            filter(
-              min(industry_subsectors_material_percapita$year) <= .data$year,
-              .data$scenario %in%
-                unique(industry_subsectors_material_percapita$scenario)
-            ) %>%
-            group_by(.data$iso3c, .data$scenario) %>%
-            mutate(
-              population = .data$population
-              / first(.data$population, order_by = .data$year)) %>%
-            ungroup(),
-
-          "iso3c") %>%
-        inner_join(
-          industry_subsectors_material_percapita %>%
-            mutate(subsector = paste0("ue_", .data$subsector)) %>%
-            interpolate_missing_periods_(
-              periods = list(year = seq_range(range(.$year)))) %>%
-            rename(activity = "value"),
-
-          c("iso3c", "subsector", "year", "scenario")
-        ) %>%
-        mutate(value = .data$value * .data$population * .data$activity) %>%
-        select("iso3c", "scenario", "subsector", "year", "value")
-    )
-
-    industry_subsectors_ue <- foo4 %>%
-      select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
-      as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
-  } else {
-    industry_subsectors_ue <- foo3 %>%
-      select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
-      as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
-  }
+  industry_subsectors_ue <- foo3 %>%
+    select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
+    as.magpie(spatial = 1, temporal = 2, datacol = 5)
 
   ## subsector FE shares ----
   ### get 1993-2020 industry FE ----
@@ -1348,10 +1269,10 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   industry_subsectors_en <- industry_subsectors_en %>%
     as.magpie(spatial = 2, temporal = 3, datacol = 5)
 
-
   remind <- mbind(
     industry_subsectors_en[,remind_years,],
-    industry_subsectors_ue[,remind_years,])
+    industry_subsectors_ue[,remind_years,]
+  )
 
   # Add SSP2_NAV_all as duplicate of SSP2, if required.
   if ("SSP2_NAV_all" %in% scenarios) remind <- mbind(remind, setItems(remind[, , "SSP2"], 3.1, "SSP2_NAV_all"))
