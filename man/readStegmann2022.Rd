@@ -4,7 +4,12 @@
 \alias{readStegmann2022}
 \title{Read PlasticsEoL}
 \usage{
-readStegmann2022()
+readStegmann2022(subtype)
+}
+\arguments{
+\item{subtype}{Character. "FEweighted" disaggregates all variables based on
+FE; "PopWeighted" disaggregates all variables based on Population 
+(case distinction in convertStegmann2022)}
 }
 \value{
 a magpie object of the data
@@ -19,5 +24,5 @@ Link to SI:
 https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-022-05422-5/MediaObjects/41586_2022_5422_MOESM1_ESM.xlsx #nolint
 }
 \author{
-Falk Benke, Simón Moreno
+Falk Benke, Simón Moreno, Leonie Schweiger
 }
