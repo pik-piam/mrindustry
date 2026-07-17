@@ -400,29 +400,27 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
       select("scenario", "iso3c", "subsector", "year", "value", "GDP")
   )
 
-
-  ### per-capita projections ----
-  . <- NULL
-
   industry_subsectors_ue <- foo3 %>%
     select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
     as.magpie(spatial = 1, temporal = 2, datacol = 5)
 
+  ### per-capita projections ----
+  . <- NULL
+
   ## subsector FE shares ----
   ### get 1993-2020 industry FE ----
+
   industry_subsectors_en <- calcOutput("EnergyBalancesOutputToIndustry", aggregate = FALSE) %>%
     # convert to data frame
     as.data.frame() %>%
     as_tibble() %>%
-    select(iso3c = "Region", year = "Year", pf = "Data2",
-           value = "Value") %>%
+    select(iso3c = "Region", year = "Year", pf = "Data2", value = "Value") %>%
     character.data.frame() %>%
     mutate(year = as.integer(as.character(.data$year))) %>%
     # get 1993-2020 industry FE data
     filter(grepl("^fe.*_(cement|chemicals|steel|otherInd)", .data$pf),
            between(.data$year, 1993, last_empirical_year)) %>%
-    # sum up fossil and bio SE (which produce the same FE), aggregate
-    # regions
+    # sum up fossil and bio SE (which produce the same FE), aggregate regions
     full_join(region_mapping_21, "iso3c") %>%
     group_by(!!!syms(c("year", "region", "pf"))) %>%
     summarise(value = sum(.data$value), .groups = "drop") %>%
@@ -477,8 +475,6 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
     mutate(pf = sub("^feelwlth_", "feel_", .data$pf))
 
 
-  FE_alpha_mod <- 1
-
   ### calculate 1993-2020 industry subsector FE shares ----
   industry_subsectors_en_shares <- industry_subsectors_en %>%
     mutate(subsector = sub("^[^_]+_", "", .data$pf),
@@ -498,16 +494,14 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
     stop("industry_subsectors_en_shares don't add up to 1.")
   }
 
+  ieaETP <- readSource("IEA_ETP", "industry", convert = FALSE)
+
   ### future subsector FE shares from IEA ETP 2017 ----
-  IEA_ETP_Ind_FE_shares <- readSource("IEA_ETP", "industry",
-                                      convert = FALSE) %>%
-    # filter for OECD and Non-OECD regions and RTS scenario
-    `[`(c("OECD", "Non-OECD"), , "RTS", pmatch = "left") %>%
+  IEA_ETP_Ind_FE_shares <- ieaETP[c("OECD", "Non-OECD"), , "RTS"] %>%
     # convert to data frame
     as.data.frame() %>%
     as_tibble() %>%
-    select(region = "Region", year = "Year", variable = "Data2",
-           value = "Value") %>%
+    select(region = "Region", year = "Year", variable = "Data2", value = "Value") %>%
     character.data.frame() %>%
     mutate(year = as.integer(as.character(.data$year))) %>%
     # filter for future data
@@ -900,8 +894,7 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
     select(scenario = "Data1", region = "Data2", subsector = "Data3",
            name = "Data4", value = "Value") %>%
     character.data.frame() %>%
-    pivot_wider() %>%
-    mutate(alpha = .data$alpha * FE_alpha_mod)
+    pivot_wider()
 
   industry_subsectors_specific_energy <- inner_join(
     industry_subsectors_en %>%
