@@ -7,7 +7,7 @@
 convertMueller(x, subtype)
 }
 \arguments{
-\item{x}{A \code{\link[magclass:magclass-package]{magpie}} object returned from
+\item{x}{A \code{\link[magclass:magclass]{magpie}} object returned from
 \code{\link[=readMueller]{readMueller()}}.}
 
 \item{subtype}{One of:
@@ -19,7 +19,7 @@ Müller et al. 2013 SI2
 }}
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Convert Mueller data

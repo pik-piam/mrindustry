@@ -43,14 +43,14 @@ expert guesses from input data in the sources folder.}
 \item{INDSTAT}{Gets passed to \code{\link[=readUNIDO]{readUNIDO()}} as \code{subtype} argument.}
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x}, \code{weight},
 \code{unit}, \code{description}, \code{min}, and \code{max}.
 }
 \description{
 Function for calculating industry activity trajectories.
 }
 \seealso{
-\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
+\code{\link[madrat:calcOutput]{calcOutput()}}
 }
 \author{
 Michaja Pehl

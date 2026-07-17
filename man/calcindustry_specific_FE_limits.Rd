@@ -7,7 +7,7 @@
 calcindustry_specific_FE_limits()
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Return \code{readindustry_subsectors_specific('industry_specific_FE_limits')} in a

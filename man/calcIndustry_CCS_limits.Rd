@@ -38,7 +38,7 @@ the regional resolution on which data should be extrapolated.  If \code{NULL}
 (the default), extrapolation is done at the country level.}
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x}, \code{weight},
 \code{unit}, \code{description}, and \code{min}.
 }
 \description{

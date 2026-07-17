@@ -35,7 +35,7 @@ demand \emph{change} relative to baseline scenarios
 directly instead of from file.}
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Change factors of specific FE and material demand for the

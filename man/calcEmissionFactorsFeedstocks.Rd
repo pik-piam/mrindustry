@@ -8,7 +8,7 @@ using emissions from UNFCCC and energy demands from IEA Energy Balances}
 calcEmissionFactorsFeedstocks()
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x}, \code{weight},
 \code{unit}, \code{description}.
 }
 \description{
@@ -16,7 +16,7 @@ Calculate emission factors for feedstocks in the chemicals industry
 using emissions from UNFCCC and energy demands from IEA Energy Balances
 }
 \seealso{
-\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
+\code{\link[madrat:calcOutput]{calcOutput()}}
 }
 \author{
 Falk Benke, Renato Rodrigues, Simón Moreno Leiva

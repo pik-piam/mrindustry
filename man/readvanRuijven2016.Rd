@@ -7,7 +7,7 @@
 readvanRuijven2016()
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Read data from van Ruijven et al. 2016,
@@ -17,7 +17,7 @@ through personal communication (e-mail to Michaja Pehl).  Units are tonnes
 per year.
 }
 \seealso{
-\code{\link[madrat:readSource]{madrat::readSource()}}
+\code{\link[madrat:readSource]{readSource()}}
 }
 \author{
 Michaja Pehl

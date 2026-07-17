@@ -16,13 +16,13 @@ developments in IAM models - A Modeling Guide for the Cement Industry}
 }}
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Read ADVANCE WP2 Data
 }
 \seealso{
-\code{\link[madrat:readSource]{madrat::readSource()}}, \code{\link[=convertADVANCE_WP2]{convertADVANCE_WP2()}}
+\code{\link[madrat:readSource]{readSource()}}, \code{\link[=convertADVANCE_WP2]{convertADVANCE_WP2()}}
 }
 \author{
 Michaja Pehl

@@ -21,7 +21,7 @@ the other three trends, which are provided by NTNU.
 \item{smooth}{Smooth REMIND_industry_trends (default) or not.}
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Read ODYM_RECC data from the SHAPE Project

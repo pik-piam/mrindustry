@@ -7,7 +7,7 @@
 calcCementShare()
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x}, \code{weight},
 \code{unit}, \code{description}, \code{min}, and \code{max}.
 }
 \description{
@@ -16,7 +16,7 @@ Non-OECD figures from IEA 2017 \href{https://www.zotero.org/groups/52011/rd3/ite
 by GDP for aggregation and converge towards global values by 2100.
 }
 \seealso{
-\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
+\code{\link[madrat:calcOutput]{calcOutput()}}
 }
 \author{
 Michaja Pehl

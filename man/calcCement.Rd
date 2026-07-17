@@ -7,7 +7,7 @@
 calcCement()
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x} with
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x} with
 country-level cement production in tonnes, \code{weight}, \code{unit}, \code{description},
 and \code{min} fields.
 }
@@ -17,7 +17,7 @@ Combines cement production data from \code{\link[=readvanRuijven2016]{readvanRui
 2005 on.
 }
 \seealso{
-\link[madrat:calcOutput]{madrat::calcOutput}
+\link[madrat:calcOutput]{calcOutput}
 }
 \author{
 Michaja Pehl

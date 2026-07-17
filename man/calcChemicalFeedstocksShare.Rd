@@ -7,7 +7,7 @@
 calcChemicalFeedstocksShare()
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x}, \code{weight},
 \code{unit}, \code{description}, \code{min}, and \code{max}.
 }
 \description{
@@ -15,7 +15,7 @@ Calculates the share of \code{CHEMICAL} in \code{CHEMICAL = NECHEM} and converge
 towards the maximum value of either OECD or non-OECD countries by 2050.
 }
 \seealso{
-\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
+\code{\link[madrat:calcOutput]{calcOutput()}}
 }
 \author{
 Michaja Pehl

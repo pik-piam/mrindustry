@@ -20,7 +20,7 @@ convertUSGS(x, subtype = "cement")
 \item{x}{Data returned by \code{\link[=readUSGS]{readUSGS()}}.}
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 }
 \description{
 Read U.S. Geological Survey data

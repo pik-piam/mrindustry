@@ -14,16 +14,18 @@ calcUNIDO(subtype = "INDSTAT3")
 }
 \arguments{
 \item{subtype}{one of
-- \code{INDSTAT2}: read INDSTAT 2 data
-- \code{INDSTAT3}: read INDSTAT 3 data from https://stat.unido.org/data/download?dataset=indstat&revision=3
-- \code{INDSTAT4}: read INDSTAT 4 data from https://stat.unido.org/data/download?dataset=indstat&revision=4
+\itemize{
+\item \code{INDSTAT2}: read INDSTAT 2 data
+\item \code{INDSTAT3}: read INDSTAT 3 data from https://stat.unido.org/data/download?dataset=indstat&revision=3
+\item \code{INDSTAT4}: read INDSTAT 4 data from https://stat.unido.org/data/download?dataset=indstat&revision=4
 INDSTAT 4 data quality has not been vetted and should not be used for
-production.}
+production.
+}}
 
 \item{x}{result from \code{readUNIDO()} as passed to \code{convertUNIDO()}}
 }
 \value{
-A \code{\link[magclass:magclass-package]{magpie}} object.
+A \code{\link[magclass:magclass]{magpie}} object.
 
 \code{readUNIDO} returns raw INDSTAT data.  \code{convertUNIDO} converts to iso3c
 country codes, selects industry subsectors value added data according to this
@@ -75,13 +77,13 @@ regressions according to this table\tabular{lll}{
 
 \code{calcUNIDO()} calculates \code{otherInd} subsector values as the difference
 between \code{manufacturing} and \code{cement}, \code{chemicals}, and \code{steel} values and is
-intended to be called through \code{\link[madrat:calcOutput]{madrat::calcOutput()}}, which will aggregate regions.
+intended to be called through \code{\link[madrat:calcOutput]{calcOutput()}}, which will aggregate regions.
 }
 \description{
 Read and convert data from United Nations Industrial Organisation.
 }
 \seealso{
-\code{\link[madrat:readSource]{madrat::readSource()}}, \code{\link[madrat:calcOutput]{madrat::calcOutput()}}
+\code{\link[madrat:readSource]{readSource()}}, \code{\link[madrat:calcOutput]{calcOutput()}}
 }
 \author{
 Michaja Pehl

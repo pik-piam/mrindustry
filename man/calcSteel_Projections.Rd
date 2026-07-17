@@ -44,14 +44,14 @@ expert guesses from input data in the sources folder (for China),
 and exempt India from IEA_ETP scaling, if applied}
 }
 \value{
-A list with a \code{\link[magclass:magclass-package]{magpie}} object \code{x}, \code{weight},
+A list with a \code{\link[magclass:magclass]{magpie}} object \code{x}, \code{weight},
 \code{unit}, \code{description}, \code{min}, and \code{max}.
 }
 \description{
 Function for calculating industry activity trajectories.
 }
 \seealso{
-\code{\link[madrat:calcOutput]{madrat::calcOutput()}}
+\code{\link[madrat:calcOutput]{calcOutput()}}
 }
 \author{
 Michaja Pehl
