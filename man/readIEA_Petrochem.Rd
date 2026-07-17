@@ -14,6 +14,7 @@ readIEA_Petrochem(subtype)
     \item RouteCTS: Fig 5.10 Petro Prod Route CTS (Clean Technology Scenario) for HVCs, Ammonia, Methanol
     \item production3type: Fig 4.1 Petrochem Production for HVCs, Ammonia, Methanol
     \item production5type: Fig A.1 Petrochem Prod Region for Ethylene, Propylene, BTX, Ammonia, Methanol
+    \item plastics: Fig 4.2 Production of key thermoplastics in the RTS
   }
 
 Different products to read. Available types are:
