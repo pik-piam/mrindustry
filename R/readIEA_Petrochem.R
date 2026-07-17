@@ -14,6 +14,7 @@
 #'     \item RouteCTS: Fig 5.10 Petro Prod Route CTS (Clean Technology Scenario) for HVCs, Ammonia, Methanol
 #'     \item production3type: Fig 4.1 Petrochem Production for HVCs, Ammonia, Methanol
 #'     \item production5type: Fig A.1 Petrochem Prod Region for Ethylene, Propylene, BTX, Ammonia, Methanol
+#'     \item plastics: Fig 4.2 Production of key thermoplastics in the RTS
 #'   }
 #'
 #' Different products to read. Available types are:
@@ -99,6 +100,12 @@ readIEA_Petrochem <- function(subtype) {
                    ColumnsName = "Route",
                    ColumnsRange = c(3:7)
                  ),
+                 "plastics" = list(
+                   sheet_name = "Fig 4.2 Prod Thermoplastics RTS",
+                   ranges = c(All = "A1:I16"),
+                   ColumnsName = "Year",
+                   ColumnsRange = c(2:16)
+                 ),
                  stop("Invalid subtype combination")
   )
 
@@ -128,11 +135,10 @@ readIEA_Petrochem <- function(subtype) {
   # ---------------------------------------------------------------------------
   # Set Column Names and Clean Data
   #    - Use the first row as column names, ensure they are unique and syntactically valid,
-  #      and rename the first column to "Country". Remove the first row afterwards.
+  #      Remove the first row afterwards.
   # ---------------------------------------------------------------------------
   colnames(data) <- as.character(unlist(data[1, ]))
   colnames(data) <- make.names(colnames(data), unique = TRUE)
-  colnames(data)[1] <- "Country"
   data <- data[-1, ]
 
   # ---------------------------------------------------------------------------
@@ -150,7 +156,13 @@ readIEA_Petrochem <- function(subtype) {
   #    - Replace NA values with 0.
   #    - Add the concatenated subtype string as a comment to the object.
   # ---------------------------------------------------------------------------
-  data <- as.magpie(data, spatial = 1, temporal = 2)
+  if (subtype[1] == "plastics") {
+    colnames(data)[1] <- "type"
+    data <- as.magpie(data, temporal = 2)
+  } else {
+    colnames(data)[1] <- "Country"
+    data <- as.magpie(data, spatial = 1, temporal = 2)
+    }
   data[is.na(data)] <- 0
   subtype <- paste(subtype, collapse = "_")
   getComment(data) <- subtype

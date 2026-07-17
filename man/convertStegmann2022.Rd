@@ -4,10 +4,13 @@
 \alias{convertStegmann2022}
 \title{convertStegmann2022}
 \usage{
-convertStegmann2022(x)
+convertStegmann2022(x, subtype)
 }
 \arguments{
 \item{x}{unconverted magpie object from read-script}
+
+\item{subtype}{Character. "FEweighted" disaggregates all variables based on
+FE; "PopWeighted" disaggregates all variables based on Population.}
 }
 \value{
 magpie object with a completed dataset.
