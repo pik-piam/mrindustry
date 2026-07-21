@@ -4,14 +4,14 @@
 \alias{calcFeDemandIndustry}
 \title{Calculates FE demand in industry as REMIND variables}
 \usage{
-calcFeDemandIndustry(scenarios, last_empirical_year = 2020)
+calcFeDemandIndustry(scenarios, last_empirical_year = 2022)
 }
 \arguments{
 \item{scenarios}{Vector of strings designating the scenario. !!Currently it acts as a filter only, with the actual
 scenarios computed within the function hard-coded into remind_scenarios.}
 
 \item{last_empirical_year}{Last year for which empirical data is available.
-Defaults to 2020.}
+Defaults to 2022.}
 }
 \description{
 Calculates FE demand in industry as REMIND variables
