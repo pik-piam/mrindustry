@@ -2,18 +2,16 @@
 #'
 #' @md
 #' @param last_empirical_year Last year for which empirical data is available.
-#'   Defaults to 2020.
+#'   Defaults to 2022.
 #' @param scenarios Vector of strings designating the scenario. !!Currently it acts as a filter only, with the actual
 #'  scenarios computed within the function hard-coded into remind_scenarios.
 #' @importFrom assertr assert not_na verify
 #' @importFrom dplyr anti_join arrange as_tibble between bind_rows case_when
 #'   distinct filter first full_join group_by inner_join left_join
 #'   matches mutate n pull rename right_join select semi_join summarise ungroup
-#' @importFrom magrittr %>%
 #' @importFrom quitte as.quitte cartesian character.data.frame
 #'   interpolate_missing_periods interpolate_missing_periods_ madrat_mule
 #'   magclass_to_tibble overwrite seq_range
-#' @importFrom rlang .data sym syms !!! !!
 #' @importFrom tibble tribble
 #' @importFrom tidyr complete expand_grid extract nesting pivot_longer
 #'   pivot_wider replace_na separate unite
@@ -21,7 +19,7 @@
 #' @importFrom tidyselect all_of
 #' @author Michaja Pehl
 #'
-calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
+calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
 
   # The scenarios argument is currently only used to filter at the end.
   ## Replace any calls to scenario groups such as "SSPs" and "SSP2IndiaDEAs", with calls to the individual scenarios.
@@ -378,7 +376,7 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
         # modified change of target scenarios
         # If base change is below (above) 1, i.e. material efficiency is
         # improving (deteriorating), efficiency gains (losses) are halved
-        # (doubled).  Changes of historic values (i.e. before 2015) are
+        # (doubled).  Changes of historic values (i.e. before last_empirical_year) are
         # identical to base scenario.  Not finite changes (e.g. division by
         # zero) lead to constant values.
         change = case_when(
@@ -737,6 +735,9 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
     ungroup()
 
   ### combine historic and future industry FE shares ----
+  # until last_empirical_year, the historic FE share is used
+  # after last_empirical_year, transition to IEA ETP shares by shifting weight in favor
+  # of IEA ETP shares for years further in the future
 
   industry_subsectors_en_shares <- inner_join(
     industry_subsectors_en_shares %>%
@@ -766,15 +767,15 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
 
     c("scenario", "year", "region", "pf", "subsector")
   ) %>%
-    mutate(foo = pmin(1, pmax(0, (.data$year - 2015) / (2100 - 2015))),
-           share = .data$share.hist * (1 - .data$foo)
-           + .data$share.future * .data$foo,
-           subsector = ifelse("steel" == .data$subsector,
-                              "steel_primary", .data$subsector)) %>%
+    mutate(
+      weight.future = pmin(1, pmax(0, (.data$year - last_empirical_year) / (2100 - last_empirical_year))),
+      share = .data$share.hist * (1 - .data$weight.future) + .data$share.future * .data$weight.future,
+      subsector = ifelse("steel" == .data$subsector, "steel_primary", .data$subsector)
+    ) %>%
     verify(expr = is.finite(.data$share),
            description = paste("Finite industry FE shares after combining",
                                "historic and future values")) %>%
-    select(-"foo", -"share.hist", -"share.future")
+    select(-"weight.future", -"share.hist", -"share.future")
 
   failed_share_sum <- industry_subsectors_en_shares %>%
     group_by(!!!syms(c("scenario", "year", "region", "subsector"))) %>%
