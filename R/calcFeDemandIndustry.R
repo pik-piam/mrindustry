@@ -406,22 +406,37 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
   . <- NULL
 
   ## subsector FE shares ----
-  ### get 1993-2020 industry FE ----
+  ### get 1993-last_empirical_year industry FE ----
 
-  industry_subsectors_en <- calcOutput("EnergyBalancesOutputToIndustry", aggregate = FALSE) %>%
+  iea <- calcOutput("EnergyBalancesOutputToIndustry", aggregate = FALSE) %>%
     # convert to data frame
     as.data.frame() %>%
     as_tibble() %>%
     select(iso3c = "Region", year = "Year", pf = "Data2", value = "Value") %>%
     character.data.frame() %>%
     mutate(year = as.integer(as.character(.data$year))) %>%
-    # get 1993-2020 industry FE data
+    # get 1993-last_empirical_year industry FE data
     filter(grepl("^fe.*_(cement|chemicals|steel|otherInd)", .data$pf),
            between(.data$year, 1993, last_empirical_year)) %>%
     # sum up fossil and bio SE (which produce the same FE), aggregate regions
     full_join(region_mapping_21, "iso3c") %>%
     group_by(!!!syms(c("year", "region", "pf"))) %>%
-    summarise(value = sum(.data$value), .groups = "drop") %>%
+    summarise(value = sum(.data$value), .groups = "drop")
+
+  ### Apply five-year moving average ----
+
+  # iea <- iea %>%
+  #   group_by(.data$region, .data$pf) %>%
+  #   arrange(.data$year) %>%
+  #   mutate(value = zoo::rollapply(
+  #     # pad data with two leading and trailing NAs
+  #     data = c(NA, NA, .data$value, NA, NA),
+  #     width = 5,
+  #     # ignoring NAs in mean() stumps the mean on the edges to four/three years
+  #     FUN = function(x) { mean(x, na.rm = TRUE) })) %>%
+  #   ungroup()
+
+  industry_subsectors_en <- iea %>%
     # split feel steel into primary and secondary production
     left_join(
       industry_subsectors_ue[, , "ue_steel", pmatch = TRUE] %>%
@@ -467,13 +482,12 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
     select(-"feel_steel") %>%
     pivot_longer(matches("^fe.*"), names_to = "pf", values_drop_na = TRUE)
 
-  # can be removed once feelwlth is replaced by feel in all mappings for
-  # calcIO()
+  # can be removed once feelwlth is replaced by feel in all mappings for calcIO()
   industry_subsectors_en <- industry_subsectors_en %>%
     mutate(pf = sub("^feelwlth_", "feel_", .data$pf))
 
 
-  ### calculate 1993-2020 industry subsector FE shares ----
+  ### calculate 1993-last_empirical_year industry subsector FE shares ----
   industry_subsectors_en_shares <- industry_subsectors_en %>%
     mutate(subsector = sub("^[^_]+_", "", .data$pf),
            subsector = ifelse("steel" == .data$subsector, "steel_primary",
@@ -645,8 +659,7 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
       filter("feel" == .data$fety, "steel" == .data$subsector) %>%
       select(-"fety", -"subsector") %>%
       inner_join(
-        industry_subsectors_ue %>%
-          `[`(, , "ue_steel_", pmatch = TRUE) %>%
+        industry_subsectors_ue[, , "ue_steel_", pmatch = TRUE] %>%
           as.data.frame() %>%
           as_tibble() %>%
           select(iso3c = "Region", year = "Year", scenario = "Data1",
@@ -911,8 +924,7 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
       group_by(!!!syms(c("scenario", "region", "year", "subsector"))) %>%
       summarise(value = sum(.data$value), .groups = "drop"),
 
-    # TODO: track down differences between SDP and SSP scenarios on historical
-    # data
+    # TODO: track down differences between SDP and SSP scenarios on historical data
     industry_subsectors_ue %>%
       as.data.frame() %>%
       as_tibble() %>%
@@ -935,6 +947,7 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
     select("scenario", "region", "year", "subsector", "specific.energy")
 
   # replace 0 specific energy (e.g. primary steel NEN) with global averages
+  # no longer relevant, as there are none
   industry_subsectors_specific_energy <-
     industry_subsectors_specific_energy %>%
     anti_join(
@@ -964,8 +977,9 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
   # replace absurdly high specific energy (e.g. primary steel NEN after IEA
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
   # CHE, GRL, ISL, LIE, NOR, SJM).
+
   industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
-    filter("steel_primary" == .data$subsector, 100 < .data$specific.energy) %>%
+    filter(.data$subsector == "steel_primary", .data$specific.energy > 100, region == "NEN") %>%
     select(-"specific.energy") %>%
     left_join(
       industry_subsectors_specific_energy %>%
@@ -986,6 +1000,7 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
       value = "specific.energy", expand.values = TRUE)
 
   # correct lower-then-thermodynamic limit projections
+  # no longer relevant, as there are none
   too_low_projections <- industry_subsectors_specific_energy %>%
     left_join(
       specific_FE_limits %>%
@@ -1264,8 +1279,8 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
     as.magpie(spatial = 2, temporal = 3, datacol = 5)
 
   remind <- mbind(
-    industry_subsectors_en[,remind_years,],
-    industry_subsectors_ue[,remind_years,]
+    industry_subsectors_en[, remind_years, ],
+    industry_subsectors_ue[, remind_years, ]
   )
 
   # Add SSP2_NAV_all as duplicate of SSP2, if required.
@@ -1274,11 +1289,13 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
   remind <-  mselect(remind, scenario = scenarios)
 
   # ---- _ prepare output ----
-  list(x = remind,
-       weight = NULL,
-       unit = paste0("EJ, except ue_cement (Gt), ue_primary_steel and ",
-                     "ue_secondary_steel (Gt) and ue_chemicals and ",
-                     "ue_otherInd ($tn)"),
-       description = "demand pathways for final energy demand in industry",
-       structure.data = "^(SSP[1-5].*|SDP.*)\\.(fe|ue)")
+  list(
+    x = remind,
+    weight = NULL,
+    unit = glue::glue("EJ, except ue_cement (Gt), ue_primary_steel and \\
+                          ue_secondary_steel (Gt) and ue_chemicals and \\
+                          ue_otherInd ($tn)"),
+    description = "demand pathways for final energy demand in industry",
+    structure.data = "^(SSP[1-5].*|SDP.*)\\.(fe|ue)"
+  )
 }
