@@ -2,7 +2,7 @@
 #'
 #' @md
 #' @param last_empirical_year Last year for which empirical data is available.
-#'   Defaults to 2022.
+#'   Defaults to 2020.
 #' @param scenarios Vector of strings designating the scenario. !!Currently it acts as a filter only, with the actual
 #'  scenarios computed within the function hard-coded into remind_scenarios.
 #' @importFrom assertr assert not_na verify
@@ -19,7 +19,7 @@
 #' @importFrom tidyselect all_of
 #' @author Michaja Pehl
 #'
-calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2022) {
+calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
 
   # The scenarios argument is currently only used to filter at the end.
   ## Replace any calls to scenario groups such as "SSPs" and "SSP2IndiaDEAs", with calls to the individual scenarios.

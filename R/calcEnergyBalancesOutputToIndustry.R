@@ -14,6 +14,7 @@ calcEnergyBalancesOutputToIndustry <- function() {
   ieamatch <- ieamatch %>%
     select(tidyselect::all_of(c("iea_product", "iea_flows", "Weight", target))) %>%
     stats::na.omit() %>%
+    filter(!grepl("^rep_", .data$REMINDitems_in)) %>%
     tidyr::unite("target", tidyselect::all_of(target), sep = ".", remove = FALSE) %>%
     tidyr::unite("product.flow", c("iea_product", "iea_flows"), sep = ".")
 
