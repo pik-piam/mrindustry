@@ -978,18 +978,33 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
   # CHE, GRL, ISL, LIE, NOR, SJM).
 
+  industry_subsectors_specific_energy_eu_average <- industry_subsectors_specific_energy %>%
+    filter("steel_primary" == .data$subsector,
+           .data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
+    group_by(.data$scenario, .data$year, .data$subsector) %>%
+    summarise(specific.energy = mean(.data$specific.energy), .groups = "drop")
+
   industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
-    filter(.data$subsector == "steel_primary", .data$specific.energy > 100, region == "NEN") %>%
+    filter(.data$subsector == "steel_primary", .data$specific.energy > 100, .data$region == "NEN") %>%
+    select(-"specific.energy") %>%
+    left_join(industry_subsectors_specific_energy_eu_average, c("scenario", "year", "subsector")) %>%
+    overwrite(industry_subsectors_specific_energy, except = "specific.energy")
+
+  # replace high specific energy for primary steel in SSA with values slightly higher than EU
+  # averages. this is a crude correction of the sparse data points from SSA that are dominated
+  # by South Africa which uses a lot of coal for steel production. the correction assumes that
+  # SSA will follow a trajectory closer to Europe, but with slightly lower energy efficiency
+  # represented by 'correction_factor'
+
+  correction_factor <- 1.6
+
+  industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
+    filter(.data$subsector == "steel_primary", .data$specific.energy > 90, .data$region == "SSA") %>%
     select(-"specific.energy") %>%
     left_join(
-      industry_subsectors_specific_energy %>%
-        filter("steel_primary" == .data$subsector,
-               .data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
-        group_by(.data$scenario, .data$year, .data$subsector) %>%
-        summarise(specific.energy = mean(.data$specific.energy), .groups = "drop"),
-
-      c("scenario", "year", "subsector")
-    ) %>%
+      industry_subsectors_specific_energy_eu_average %>%
+        mutate("specific.energy" = .data$specific.energy * correction_factor),
+      c("scenario", "year", "subsector")) %>%
     overwrite(industry_subsectors_specific_energy, except = "specific.energy")
 
   # extend time horizon
