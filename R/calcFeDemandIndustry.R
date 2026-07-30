@@ -87,6 +87,18 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       supplementary = FALSE)
   )
 
+  ## HOTFIX: Reduce EUR UE across all sectors to reflect recent reductions in
+  ## industrial output not reflected in historical data ----
+
+  eu_countries <- region_mapping_21 %>%
+    filter(.data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
+    pull(.data$iso3c)
+
+  industry_subsectors_ue[eu_countries, 2025, ] <- industry_subsectors_ue[eu_countries, 2025, ] * 0.8
+
+  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2030]
+  industry_subsectors_ue[eu_countries, y, ] <- industry_subsectors_ue[eu_countries, y, ] * 0.85
+
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
                     scenario = gdpPopScen,
