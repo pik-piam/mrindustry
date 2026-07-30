@@ -7,11 +7,12 @@ calcEnergyBalancesOutputToIndustry <- function() {
   ieamatch <- toolGetMapping(type = "sectoral",
                              name = "structuremappingIO_outputs.csv",
                              where = "mrcommonsenergy",
-                             returnPathOnly = FALSE)
+                             returnPathOnly = TRUE)
 
   target <- c("REMINDitems_in", "REMINDitems_out", "REMINDitems_tech")
 
   ieamatch <- ieamatch %>%
+    read.csv2(stringsAsFactors = FALSE, na.strings = "") %>%
     select(tidyselect::all_of(c("iea_product", "iea_flows", "Weight", target))) %>%
     stats::na.omit() %>%
     filter(!grepl("^rep_", .data$REMINDitems_in)) %>%
