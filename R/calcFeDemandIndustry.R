@@ -415,7 +415,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
         # modified change of target scenarios
         # If base change is below (above) 1, i.e. material efficiency is
         # improving (deteriorating), efficiency gains (losses) are halved
-        # (doubled).  Changes of historic values (i.e. before 2015) are
+        # (doubled).  Changes of historic values (i.e. before last_empirical_year) are
         # identical to base scenario.  Not finite changes (e.g. division by
         # zero) lead to constant values.
         change = case_when(
@@ -862,7 +862,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
 
     c("scenario", "year", "region", "pf", "subsector")
   ) %>%
-    mutate(foo = pmin(1, pmax(0, (.data$year - 2015) / (2100 - 2015))),
+    mutate(foo = pmin(1, pmax(0, (.data$year - last_empirical_year) / (2100 - last_empirical_year))),
            share = .data$share.hist * (1 - .data$foo)
            + .data$share.future * .data$foo,
            subsector = ifelse("steel" == .data$subsector,
