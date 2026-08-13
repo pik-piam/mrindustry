@@ -10,7 +10,8 @@
 convertStegmann2022 <- function(x, subtype) {
   x <- x[c("World"), , , invert = TRUE]
 
-  regmapping <- toolGetMapping("regionmapping_IMAGE_PBL_Stegmann2022.csv", where = "mrremind", type = "regional")
+  regmapping <- toolGetMapping("regionmapping_IMAGE_PBL_Stegmann2022.csv",
+                               where = "mrindustry", type = "regional")
 
   if (subtype == "PopWeighted") {
     weight <- calcOutput("Population", scenario = "SSP2", aggregate = FALSE)[unique(regmapping$CountryCode), getYears(x), ]
