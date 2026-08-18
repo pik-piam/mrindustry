@@ -105,6 +105,8 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] <-
     industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] * 0.98
 
+## end HOTFIX
+
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
                     scenario = gdpPopScen,
