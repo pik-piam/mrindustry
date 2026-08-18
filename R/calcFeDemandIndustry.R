@@ -94,10 +94,16 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     filter(.data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
     pull(.data$iso3c)
 
-  industry_subsectors_ue[eu_countries, 2025, ] <- industry_subsectors_ue[eu_countries, 2025, ] * 0.8
+  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2025]
 
-  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2030]
-  industry_subsectors_ue[eu_countries, y, ] <- industry_subsectors_ue[eu_countries, y, ] * 0.85
+  industry_subsectors_ue[eu_countries, y, "ue_cement"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_cement"] * 0.84
+  industry_subsectors_ue[eu_countries, y, "ue_chemicals"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_chemicals"] * 0.73
+  industry_subsectors_ue[eu_countries, y, "ue_otherInd"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_otherInd"] * 0.87
+  industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] <-
+    industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] * 0.98
 
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
