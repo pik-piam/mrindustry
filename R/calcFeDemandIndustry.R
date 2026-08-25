@@ -87,6 +87,26 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       supplementary = FALSE)
   )
 
+  ## HOTFIX: Reduce EUR UE across all sectors to reflect recent reductions in
+  ## industrial output not reflected in historical data ----
+
+  eu_countries <- region_mapping_21 %>%
+    filter(.data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
+    pull(.data$iso3c)
+
+  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2025]
+
+  industry_subsectors_ue[eu_countries, y, "ue_cement"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_cement"] * 0.84
+  industry_subsectors_ue[eu_countries, y, "ue_chemicals"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_chemicals"] * 0.73
+  industry_subsectors_ue[eu_countries, y, "ue_otherInd"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_otherInd"] * 0.87
+  industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] <-
+    industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] * 0.98
+
+  ## end HOTFIX
+
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
                     scenario = gdpPopScen,
@@ -403,7 +423,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
         # modified change of target scenarios
         # If base change is below (above) 1, i.e. material efficiency is
         # improving (deteriorating), efficiency gains (losses) are halved
-        # (doubled).  Changes of historic values (i.e. before 2015) are
+        # (doubled).  Changes of historic values (i.e. before last_empirical_year) are
         # identical to base scenario.  Not finite changes (e.g. division by
         # zero) lead to constant values.
         change = case_when(
@@ -850,7 +870,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
 
     c("scenario", "year", "region", "pf", "subsector")
   ) %>%
-    mutate(foo = pmin(1, pmax(0, (.data$year - 2015) / (2100 - 2015))),
+    mutate(foo = pmin(1, pmax(0, (.data$year - last_empirical_year) / (2100 - last_empirical_year))),
            share = .data$share.hist * (1 - .data$foo)
            + .data$share.future * .data$foo,
            subsector = ifelse("steel" == .data$subsector,
