@@ -3,16 +3,16 @@
 \name{calcAllChemicalMat2Ue_2020to2150}
 \alias{calcAllChemicalMat2Ue_2020to2150}
 \title{Calculates mat2ue conversion factors of ammoFinal, methFinal, HVC and fertilizer
-for 2020-2150 based on the mat2ue conversion factors in 2020 and the 
-projected relative increases in production (IEA The Future of Petrochemicals) and 
+for 2020-2150 based on the mat2ue conversion factors in 2020 and the
+projected relative increases in production (IEA The Future of Petrochemicals) and
 total chemical UE (FeDemandIndustry)}
 \usage{
 calcAllChemicalMat2Ue_2020to2150()
 }
 \description{
 Calculates mat2ue conversion factors of ammoFinal, methFinal, HVC and fertilizer
-for 2020-2150 based on the mat2ue conversion factors in 2020 and the 
-projected relative increases in production (IEA The Future of Petrochemicals) and 
+for 2020-2150 based on the mat2ue conversion factors in 2020 and the
+projected relative increases in production (IEA The Future of Petrochemicals) and
 total chemical UE (FeDemandIndustry)
 }
 \author{

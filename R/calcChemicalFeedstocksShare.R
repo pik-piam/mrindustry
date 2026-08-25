@@ -14,7 +14,6 @@
 #' @importFrom assertr assert not_na
 #' @importFrom dplyr filter group_by inner_join mutate pull select summarise
 #' @importFrom quitte character.data.frame interpolate_missing_periods_
-#' @importFrom rlang .data sym
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr complete everything nesting
 #' @importFrom magclass collapseDim

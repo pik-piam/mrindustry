@@ -14,12 +14,10 @@
 #' @seealso [`calcOutput()`]
 #'
 #' @importFrom dplyr bind_rows left_join select filter mutate pull
-#' @importFrom rlang sym
 #' @importFrom tibble tribble as_tibble
 #' @importFrom tidyr pivot_longer complete nesting
 #' @importFrom magclass dimSums
-
-#' @export
+#'
 calcCementShare <- function() {
   cement_NONMET_share <- tribble(
     ~fety,           ~OECD,   ~`Non-OECD`,   ~World,

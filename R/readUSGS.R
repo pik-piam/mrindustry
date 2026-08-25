@@ -97,7 +97,7 @@ readUSGS <- function(subtype = 'cement') {
 
         # filter cases in which 'Total' is directly follow by a 'See footnotes'
         # note
-        ends <- setdiff(ends, ends[na.omit(match((ends + 1), ends))])
+        ends <- setdiff(ends, ends[stats::na.omit(match((ends + 1), ends))])
 
         # there should be as many 'starts' as 'ends'
         if (length(starts) != length(ends)) {

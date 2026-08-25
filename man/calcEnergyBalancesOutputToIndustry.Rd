@@ -2,14 +2,12 @@
 % Please edit documentation in R/calcEnergyBalancesOutputToIndustry.R
 \name{calcEnergyBalancesOutputToIndustry}
 \alias{calcEnergyBalancesOutputToIndustry}
-\title{Calculate Energy Balances Output to Industry
-Additional corrections are applied to the IEA data in [`mrindustry::tool_fix_IEA_data_for_Industry_subsectors`].}
+\title{Calculate Energy Balances Output to Industry}
 \usage{
 calcEnergyBalancesOutputToIndustry()
 }
 \description{
 Calculate Energy Balances Output to Industry
-Additional corrections are applied to the IEA data in [`mrindustry::tool_fix_IEA_data_for_Industry_subsectors`].
 }
 \author{
 Michaja Pehl, Falk Benke

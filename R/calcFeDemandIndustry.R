@@ -1,8 +1,6 @@
 #' Calculates FE demand in industry as REMIND variables
 #'
 #' @md
-#' @param use_ODYM_RECC per-capita pathways for `SDP_xx` scenarios?  (Defaults
-#'   to `FALSE`.)
 #' @param last_empirical_year Last year for which empirical data is available.
 #'   Defaults to 2020.
 #' @param scenarios Vector of strings designating the scenario. !!Currently it acts as a filter only, with the actual
@@ -11,11 +9,9 @@
 #' @importFrom dplyr anti_join arrange as_tibble between bind_rows case_when
 #'   distinct filter first full_join group_by inner_join left_join
 #'   matches mutate n pull rename right_join select semi_join summarise ungroup
-#' @importFrom magrittr %>%
 #' @importFrom quitte as.quitte cartesian character.data.frame
 #'   interpolate_missing_periods interpolate_missing_periods_ madrat_mule
 #'   magclass_to_tibble overwrite seq_range
-#' @importFrom rlang .data sym syms !!! !!
 #' @importFrom tibble tribble
 #' @importFrom tidyr complete expand_grid extract nesting pivot_longer
 #'   pivot_wider replace_na separate unite
@@ -23,7 +19,7 @@
 #' @importFrom tidyselect all_of
 #' @author Michaja Pehl
 #'
-calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirical_year = 2020) {
+calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
 
   # The scenarios argument is currently only used to filter at the end.
   ## Replace any calls to scenario groups such as "SSPs" and "SSP2IndiaDEAs", with calls to the individual scenarios.
@@ -182,12 +178,6 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     pivot_wider() %>%
     mutate(subsector = paste0("ue_", .data$subsector))
 
-  if (use_ODYM_RECC) {
-    industry_subsectors_material_relative <- industry_subsectors_material_relative %>%
-      filter(!.data$scenario %in% c("SDP_EI", "SDP_MC", "SDP_RC"))
-  }
-
-
   industry_subsectors_material_relative_change <- calcOutput(
     type = "industry_subsectors_specific",
     subtype = "material_relative_change",
@@ -202,23 +192,6 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     character.data.frame() %>%
     pivot_wider() %>%
     mutate(subsector = paste0("ue_", .data$subsector))
-
-  if (use_ODYM_RECC) {
-    industry_subsectors_material_percapita <- calcOutput(
-      type = "ODYM_RECC",
-      subtype = "REMIND_industry_trends",
-      aggregate = FALSE) %>%
-      magclass_to_tibble() %>%
-      filter(!.data$scenario %in% c(
-        unique(industry_subsectors_material_alpha$scenario),
-        unique(industry_subsectors_material_relative$scenario),
-        unique(industry_subsectors_material_relative_change$scenario))) %>%
-      interpolate_missing_periods_(
-        periods = list(
-          year = unique(pmax(remind_years,
-                             min(.$year)))),
-        expand.values = TRUE)
-  }
 
   bind_rows(
     industry_subsectors_material_alpha %>% select("scenario", "region", "subsector"),
@@ -445,86 +418,45 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       select("scenario", "iso3c", "subsector", "year", "value", "GDP")
   )
 
+  industry_subsectors_ue <- foo3 %>%
+    select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
+    as.magpie(spatial = 1, temporal = 2, datacol = 5)
+
   ### per-capita projections ----
   . <- NULL
 
-  if (use_ODYM_RECC) {
-    foo4 <- bind_rows(
-      foo3 %>% select(-"GDP"),
-
-      foo3 %>%
-        filter(
-          "SSP2" == .data$scenario,
-          min(industry_subsectors_material_percapita$year) > .data$year) %>%
-        select(-"GDP") %>%
-        complete(
-          nesting(!!!syms(c("iso3c", "year", "subsector", "value"))),
-          scenario = unique(industry_subsectors_material_percapita$scenario)
-        ) %>%
-        filter("SSP2" != .data$scenario),
-
-      foo3 %>%
-        filter(
-          "SSP2" == .data$scenario,
-          min(industry_subsectors_material_percapita$year) == .data$year
-        ) %>%
-        select(-"scenario", -"GDP", -"year") %>%
-        inner_join(
-          calcOutput("Population", scenario = gdpPopScen, aggregate = FALSE, years = remind_years) %>%
-            magclass_to_tibble() %>%
-            select("iso3c", "scenario" = "variable", "year", "population" = "value") %>%
-            filter(
-              min(industry_subsectors_material_percapita$year) <= .data$year,
-              .data$scenario %in%
-                unique(industry_subsectors_material_percapita$scenario)
-            ) %>%
-            group_by(.data$iso3c, .data$scenario) %>%
-            mutate(
-              population = .data$population
-              / first(.data$population, order_by = .data$year)) %>%
-            ungroup(),
-
-          "iso3c") %>%
-        inner_join(
-          industry_subsectors_material_percapita %>%
-            mutate(subsector = paste0("ue_", .data$subsector)) %>%
-            interpolate_missing_periods_(
-              periods = list(year = seq_range(range(.$year)))) %>%
-            rename(activity = "value"),
-
-          c("iso3c", "subsector", "year", "scenario")
-        ) %>%
-        mutate(value = .data$value * .data$population * .data$activity) %>%
-        select("iso3c", "scenario", "subsector", "year", "value")
-    )
-
-    industry_subsectors_ue <- foo4 %>%
-      select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
-      as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
-  } else {
-    industry_subsectors_ue <- foo3 %>%
-      select("iso3c", "year", "scenario", pf = "subsector", "value") %>%
-      as.magpie(spatial = 1, temporal = 2, datacol = ncol(.))
-  }
-
   ## subsector FE shares ----
-  ### get 1993-2020 industry FE ----
-  industry_subsectors_en <- calcOutput("EnergyBalancesOutputToIndustry", aggregate = FALSE) %>%
+  ### get 1993-last_empirical_year industry FE ----
+
+  iea <- calcOutput("EnergyBalancesOutputToIndustry", aggregate = FALSE) %>%
     # convert to data frame
     as.data.frame() %>%
     as_tibble() %>%
-    select(iso3c = "Region", year = "Year", pf = "Data2",
-           value = "Value") %>%
+    select(iso3c = "Region", year = "Year", pf = "Data2", value = "Value") %>%
     character.data.frame() %>%
     mutate(year = as.integer(as.character(.data$year))) %>%
-    # get 1993-2020 industry FE data
+    # get 1993-last_empirical_year industry FE data
     filter(grepl("^fe.*_(cement|chemicals|steel|otherInd)", .data$pf),
            between(.data$year, 1993, last_empirical_year)) %>%
-    # sum up fossil and bio SE (which produce the same FE), aggregate
-    # regions
+    # sum up fossil and bio SE (which produce the same FE), aggregate regions
     full_join(region_mapping_21, "iso3c") %>%
     group_by(!!!syms(c("year", "region", "pf"))) %>%
-    summarise(value = sum(.data$value), .groups = "drop") %>%
+    summarise(value = sum(.data$value), .groups = "drop")
+
+  ### Apply five-year moving average ----
+
+  # iea <- iea %>%
+  #   group_by(.data$region, .data$pf) %>%
+  #   arrange(.data$year) %>%
+  #   mutate(value = zoo::rollapply(
+  #     # pad data with two leading and trailing NAs
+  #     data = c(NA, NA, .data$value, NA, NA),
+  #     width = 5,
+  #     # ignoring NAs in mean() stumps the mean on the edges to four/three years
+  #     FUN = function(x) { mean(x, na.rm = TRUE) })) %>%
+  #   ungroup()
+
+  industry_subsectors_en <- iea %>%
     # split feel steel into primary and secondary production
     left_join(
       industry_subsectors_ue[, , "ue_steel", pmatch = TRUE] %>%
@@ -570,15 +502,12 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     select(-"feel_steel") %>%
     pivot_longer(matches("^fe.*"), names_to = "pf", values_drop_na = TRUE)
 
-  # can be removed once feelwlth is replaced by feel in all mappings for
-  # calcIO()
+  # can be removed once feelwlth is replaced by feel in all mappings for calcIO()
   industry_subsectors_en <- industry_subsectors_en %>%
     mutate(pf = sub("^feelwlth_", "feel_", .data$pf))
 
 
-  FE_alpha_mod <- 1
-
-  ### calculate 1993-2020 industry subsector FE shares ----
+  ### calculate 1993-last_empirical_year industry subsector FE shares ----
   industry_subsectors_en_shares <- industry_subsectors_en %>%
     mutate(subsector = sub("^[^_]+_", "", .data$pf),
            subsector = ifelse("steel" == .data$subsector, "steel_primary",
@@ -597,16 +526,14 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     stop("industry_subsectors_en_shares don't add up to 1.")
   }
 
+  ieaETP <- readSource("IEA_ETP", "industry", convert = FALSE)
+
   ### future subsector FE shares from IEA ETP 2017 ----
-  IEA_ETP_Ind_FE_shares <- readSource("IEA_ETP", "industry",
-                                      convert = FALSE) %>%
-    # filter for OECD and Non-OECD regions and RTS scenario
-    `[`(c("OECD", "Non-OECD"), , "RTS", pmatch = "left") %>%
+  IEA_ETP_Ind_FE_shares <- ieaETP[c("OECD", "Non-OECD"), , "RTS"] %>%
     # convert to data frame
     as.data.frame() %>%
     as_tibble() %>%
-    select(region = "Region", year = "Year", variable = "Data2",
-           value = "Value") %>%
+    select(region = "Region", year = "Year", variable = "Data2", value = "Value") %>%
     character.data.frame() %>%
     mutate(year = as.integer(as.character(.data$year))) %>%
     # filter for future data
@@ -752,8 +679,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       filter("feel" == .data$fety, "steel" == .data$subsector) %>%
       select(-"fety", -"subsector") %>%
       inner_join(
-        industry_subsectors_ue %>%
-          `[`(, , "ue_steel_", pmatch = TRUE) %>%
+        industry_subsectors_ue[, , "ue_steel_", pmatch = TRUE] %>%
           as.data.frame() %>%
           as_tibble() %>%
           select(iso3c = "Region", year = "Year", scenario = "Data1",
@@ -842,6 +768,10 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     ungroup()
 
   ### combine historic and future industry FE shares ----
+  # until last_empirical_year, the historic FE share is used
+  # after last_empirical_year, transition to IEA ETP shares by shifting weight in favor
+  # of IEA ETP shares for years further in the future
+
   industry_subsectors_en_shares <- inner_join(
     industry_subsectors_en_shares %>%
       mutate(scenario = first(IEA_ETP_Ind_FE_shares$scenario)) %>%
@@ -870,15 +800,15 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
 
     c("scenario", "year", "region", "pf", "subsector")
   ) %>%
-    mutate(foo = pmin(1, pmax(0, (.data$year - last_empirical_year) / (2100 - last_empirical_year))),
-           share = .data$share.hist * (1 - .data$foo)
-           + .data$share.future * .data$foo,
-           subsector = ifelse("steel" == .data$subsector,
-                              "steel_primary", .data$subsector)) %>%
+    mutate(
+      weight.future = pmin(1, pmax(0, (.data$year - last_empirical_year) / (2100 - last_empirical_year))),
+      share = .data$share.hist * (1 - .data$weight.future) + .data$share.future * .data$weight.future,
+      subsector = ifelse("steel" == .data$subsector, "steel_primary", .data$subsector)
+    ) %>%
     verify(expr = is.finite(.data$share),
            description = paste("Finite industry FE shares after combining",
                                "historic and future values")) %>%
-    select(-"foo", -"share.hist", -"share.future")
+    select(-"weight.future", -"share.hist", -"share.future")
 
   failed_share_sum <- industry_subsectors_en_shares %>%
     group_by(!!!syms(c("scenario", "year", "region", "subsector"))) %>%
@@ -998,8 +928,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     select(scenario = "Data1", region = "Data2", subsector = "Data3",
            name = "Data4", value = "Value") %>%
     character.data.frame() %>%
-    pivot_wider() %>%
-    mutate(alpha = .data$alpha * FE_alpha_mod)
+    pivot_wider()
 
   industry_subsectors_specific_energy <- inner_join(
     industry_subsectors_en %>%
@@ -1015,8 +944,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       group_by(!!!syms(c("scenario", "region", "year", "subsector"))) %>%
       summarise(value = sum(.data$value), .groups = "drop"),
 
-    # TODO: track down differences between SDP and SSP scenarios on historical
-    # data
+    # TODO: track down differences between SDP and SSP scenarios on historical data
     industry_subsectors_ue %>%
       as.data.frame() %>%
       as_tibble() %>%
@@ -1039,6 +967,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     select("scenario", "region", "year", "subsector", "specific.energy")
 
   # replace 0 specific energy (e.g. primary steel NEN) with global averages
+  # no longer relevant, as there are none
   industry_subsectors_specific_energy <-
     industry_subsectors_specific_energy %>%
     anti_join(
@@ -1068,18 +997,34 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   # replace absurdly high specific energy (e.g. primary steel NEN after IEA
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
   # CHE, GRL, ISL, LIE, NOR, SJM).
+
+  industry_subsectors_specific_energy_eu_average <- industry_subsectors_specific_energy %>%
+    filter("steel_primary" == .data$subsector,
+           .data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
+    group_by(.data$scenario, .data$year, .data$subsector) %>%
+    summarise(specific.energy = mean(.data$specific.energy), .groups = "drop")
+
   industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
-    filter("steel_primary" == .data$subsector, 100 < .data$specific.energy) %>%
+    filter(.data$subsector == "steel_primary", .data$specific.energy > 100, .data$region == "NEN") %>%
+    select(-"specific.energy") %>%
+    left_join(industry_subsectors_specific_energy_eu_average, c("scenario", "year", "subsector")) %>%
+    overwrite(industry_subsectors_specific_energy, except = "specific.energy")
+
+  # replace high specific energy for primary steel in SSA with values slightly higher than EU
+  # averages. this is a crude correction of the sparse data points from SSA that are dominated
+  # by South Africa which uses a lot of coal for steel production. the correction assumes that
+  # SSA will follow a trajectory closer to Europe, but with slightly lower energy efficiency
+  # represented by 'correction_factor'
+
+  correction_factor <- 1.6
+
+  industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
+    filter(.data$subsector == "steel_primary", .data$specific.energy > 90, .data$region == "SSA") %>%
     select(-"specific.energy") %>%
     left_join(
-      industry_subsectors_specific_energy %>%
-        filter("steel_primary" == .data$subsector,
-               .data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
-        group_by(.data$scenario, .data$year, .data$subsector) %>%
-        summarise(specific.energy = mean(.data$specific.energy), .groups = "drop"),
-
-      c("scenario", "year", "subsector")
-    ) %>%
+      industry_subsectors_specific_energy_eu_average %>%
+        mutate("specific.energy" = .data$specific.energy * correction_factor),
+      c("scenario", "year", "subsector")) %>%
     overwrite(industry_subsectors_specific_energy, except = "specific.energy")
 
   # extend time horizon
@@ -1090,6 +1035,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       value = "specific.energy", expand.values = TRUE)
 
   # correct lower-then-thermodynamic limit projections
+  # no longer relevant, as there are none
   too_low_projections <- industry_subsectors_specific_energy %>%
     left_join(
       specific_FE_limits %>%
@@ -1367,10 +1313,10 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   industry_subsectors_en <- industry_subsectors_en %>%
     as.magpie(spatial = 2, temporal = 3, datacol = 5)
 
-
   remind <- mbind(
-    industry_subsectors_en[,remind_years,],
-    industry_subsectors_ue[,remind_years,])
+    industry_subsectors_en[, remind_years, ],
+    industry_subsectors_ue[, remind_years, ]
+  )
 
   # Add SSP2_NAV_all as duplicate of SSP2, if required.
   if ("SSP2_NAV_all" %in% scenarios) remind <- mbind(remind, setItems(remind[, , "SSP2"], 3.1, "SSP2_NAV_all"))
@@ -1378,11 +1324,13 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   remind <-  mselect(remind, scenario = scenarios)
 
   # ---- _ prepare output ----
-  list(x = remind,
-       weight = NULL,
-       unit = paste0("EJ, except ue_cement (Gt), ue_primary_steel and ",
-                     "ue_secondary_steel (Gt) and ue_chemicals and ",
-                     "ue_otherInd ($tn)"),
-       description = "demand pathways for final energy demand in industry",
-       structure.data = "^(SSP[1-5].*|SDP.*)\\.(fe|ue)")
+  list(
+    x = remind,
+    weight = NULL,
+    unit = glue::glue("EJ, except ue_cement (Gt), ue_primary_steel and \\
+                          ue_secondary_steel (Gt) and ue_chemicals and \\
+                          ue_otherInd ($tn)"),
+    description = "demand pathways for final energy demand in industry",
+    structure.data = "^(SSP[1-5].*|SDP.*)\\.(fe|ue)"
+  )
 }
