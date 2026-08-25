@@ -83,6 +83,26 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
       supplementary = FALSE)
   )
 
+  ## HOTFIX: Reduce EUR UE across all sectors to reflect recent reductions in
+  ## industrial output not reflected in historical data ----
+
+  eu_countries <- region_mapping_21 %>%
+    filter(.data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
+    pull(.data$iso3c)
+
+  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2025]
+
+  industry_subsectors_ue[eu_countries, y, "ue_cement"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_cement"] * 0.84
+  industry_subsectors_ue[eu_countries, y, "ue_chemicals"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_chemicals"] * 0.73
+  industry_subsectors_ue[eu_countries, y, "ue_otherInd"] <-
+    industry_subsectors_ue[eu_countries, y, "ue_otherInd"] * 0.87
+  industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] <-
+    industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] * 0.98
+
+  ## end HOTFIX
+
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
                     scenario = gdpPopScen,
