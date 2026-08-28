@@ -87,23 +87,28 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       supplementary = FALSE)
   )
 
-  ## HOTFIX: Reduce EUR UE across all sectors to reflect recent reductions in
-  ## industrial output not reflected in historical data ----
+  # HOTFIX  ----
+  # We correct 2025 industry UE to match the most recent global trends.
+  # The following values are the actual 2023/2019 FE ratio divided by the projected 2025/2020 FE ratio.
+  # We assume that the differences in development (real vs projected) are not due to other efficiency
+  # improvements, but due to UE changes. So we multiply UE for all values >=2025 with them (and not FE).
+  # But since specific FE demand is calculated before, FE values are scaled by the same factor.
 
-  eu_countries <- region_mapping_21 %>%
-    filter(.data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
-    pull(.data$iso3c)
+  # read correction factors
+  corrections <- toolGetMapping("ueCorrectionFactors.csv", type = "sectoral", where = "mrindustry")
 
-  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2025]
+  # map to ISO countries (country value equals region value)
+  corrections <- toolAggregate(as.magpie(corrections), dim = 1, rel = region_mapping_21)
 
-  industry_subsectors_ue[eu_countries, y, "ue_cement"] <-
-    industry_subsectors_ue[eu_countries, y, "ue_cement"] * 0.84
-  industry_subsectors_ue[eu_countries, y, "ue_chemicals"] <-
-    industry_subsectors_ue[eu_countries, y, "ue_chemicals"] * 0.73
-  industry_subsectors_ue[eu_countries, y, "ue_otherInd"] <-
-    industry_subsectors_ue[eu_countries, y, "ue_otherInd"] * 0.87
-  industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] <-
-    industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] * 0.98
+  # expand factors object to match UE magclass
+  corrections <- magpie_expand(corrections, industry_subsectors_ue)
+
+  # use 1 as factor for years before 2025
+  yBefore205 <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) < 2025]
+  corrections[, yBefore205, ] <- 1
+
+  # apply factors
+  industry_subsectors_ue <- industry_subsectors_ue * corrections
 
   ## end HOTFIX
 
