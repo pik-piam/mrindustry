@@ -21,6 +21,7 @@
 #'   pivot_wider replace_na separate unite
 #' @importFrom magclass getNames<- getItems getSets mselect add_dimension
 #' @importFrom tidyselect all_of
+#' @importFrom mrcommonsenergy toolGetIEAYear
 #' @author Michaja Pehl
 #'
 calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirical_year = 2020) {
@@ -95,10 +96,11 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   # But since specific FE demand is calculated before, FE values are scaled by the same factor.
 
   # read correction factors
-  corrections <- toolGetMapping("ueCorrectionFactors.csv", type = "sectoral", where = "mrindustry")
+  corrections <- toolGetMapping("ueCorrectionFactors.csv", where = "mrindustry") %>%
+    as.magpie()
 
   # map to ISO countries (country value equals region value)
-  corrections <- toolAggregate(as.magpie(corrections), dim = 1, rel = region_mapping_21)
+  corrections <- toolAggregate(corrections, dim = 1, rel = region_mapping_21)
 
   # expand factors object to match UE magclass
   corrections <- magpie_expand(corrections, industry_subsectors_ue)
@@ -1042,6 +1044,37 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
            specific.energy = ifelse(is.finite(.data$specific.energy),
                                     .data$specific.energy, 0)) %>%
     select("scenario", "region", "year", "subsector", "specific.energy")
+
+
+  # Hotfix ----
+
+  if (toolGetIEAYear(ieaVersion = "default") == 2024) {
+    factors <- tribble(
+      ~region, ~subsector, ~factor,
+      "IND", "steel_primary", 0.645292,
+      "SSA", "steel_primary", 0.54574,
+      "NES", "steel_primary", 1.720838,
+      "NEN", "steel_primary", 0.266231,
+      "IND", "steel_secondary", 0.645292,
+      "SSA", "steel_secondary", 0.54574,
+      "NES", "steel_secondary", 1.720838,
+      "NEN", "steel_secondary", 0.266231
+    ) %>%
+      complete(
+        region = unique(region_mapping_21$region),
+        subsector = unique(industry_subsectors_specific_energy$subsector),
+        fill = list(factor = 1)
+      )
+
+
+    industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
+      left_join(factors, by = c("region", "subsector")) %>%
+      mutate(specific.energy = .data$specific.energy * factor) %>%
+      select(-"factor")
+  }
+
+  # End Hotfix
+
 
   # replace 0 specific energy (e.g. primary steel NEN) with global averages
   industry_subsectors_specific_energy <-
