@@ -88,7 +88,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       supplementary = FALSE)
   )
 
-  # HOTFIX  ----
+  # HOTFIX: recent FE trends scale UE ----
   # We correct 2025 industry UE to match the most recent global trends.
   # The following values are the actual 2023/2019 FE ratio divided by the projected 2025/2020 FE ratio.
   # We assume that the differences in development (real vs projected) are not due to other efficiency
@@ -112,7 +112,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
   # apply factors
   industry_subsectors_ue <- industry_subsectors_ue * corrections
 
-  ## end HOTFIX
+  ## end HOTFIX: recent FE trends scale UE
 
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
@@ -1046,7 +1046,10 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
     select("scenario", "region", "year", "subsector", "specific.energy")
 
 
-  # Hotfix ----
+  # HOTFIX: recent FE trends scale spec FE ----
+  # The hotfix "recent FE trends scale UE" above applies factors on UE to account for recent developments in FE not yet incorporated in the historical data we use. 
+  # For steel in some regions, we rather assume that these recent changes are due to changed energy efficiency values.
+  # We therefore set the UE factors in these regions to 1, and apply the factors on energy intensity instead. 
 
   if (toolGetIEAYear(ieaVersion = "default") == 2024) {
     factors <- tribble(
@@ -1074,7 +1077,7 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
       select(-"factor")
   }
 
-  # End Hotfix
+  # End Hotfix: recent FE trends scale spec FE
 
   # replace absurdly high specific energy (e.g. primary steel NEN after IEA
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
