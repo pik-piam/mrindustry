@@ -21,6 +21,7 @@ calcindustry_max_secondary_steel_share <- function(scenarios = NULL,
     stop('Region definitions missing.')
   }
 
+  . <- NULL
 
   x <- toolGetSecondarySteelShare() %>%
     tool_expand_tibble(scenarios, regions) %>%
@@ -28,11 +29,7 @@ calcindustry_max_secondary_steel_share <- function(scenarios = NULL,
       !all_of(names(which('character' == unlist(lapply(., typeof)))))) %>%
     as.magpie(spatial = 0, temporal = 0, datacol = ncol(.))
 
-  . <- NULL
-
-  return(list(
-    x = x,
-    weight = NULL, unit = '', description = ''))
+  return(list(x = x, weight = NULL, unit = '', description = ''))
 }
 
 #' Maximum share of secondary steel production in total steel production and
