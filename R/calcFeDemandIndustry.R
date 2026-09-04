@@ -1066,42 +1066,15 @@ calcFeDemandIndustry <- function(scenarios, use_ODYM_RECC = FALSE, last_empirica
         fill = list(factor = 1)
       )
 
-
     industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
       left_join(factors, by = c("region", "subsector")) %>%
-      mutate(specific.energy = .data$specific.energy * factor) %>%
+      mutate(specific.energy = ifelse(.data$year == 2020,
+        .data$specific.energy * factor, .data$specific.energy
+      )) %>%
       select(-"factor")
   }
 
   # End Hotfix
-
-
-  # replace 0 specific energy (e.g. primary steel NEN) with global averages
-  industry_subsectors_specific_energy <-
-    industry_subsectors_specific_energy %>%
-    anti_join(
-      industry_subsectors_specific_energy %>%
-        filter(0 == .data$specific.energy),
-
-      c("scenario", "region", "year", "subsector")
-    ) %>%
-    bind_rows(
-      left_join(
-        industry_subsectors_specific_energy %>%
-          filter(0 == .data$specific.energy) %>%
-          select(-"specific.energy"),
-
-        industry_subsectors_specific_energy %>%
-          filter(0 != .data$specific.energy) %>%
-          group_by(!!!syms(c("scenario", "year", "subsector"))) %>%
-          summarise(specific.energy = mean(.data$specific.energy),
-                    .groups = "drop"),
-
-        c("scenario", "year", "subsector")
-      )
-    ) %>%
-    verify(expr = 0 < .data$specific.energy,
-           description = "All specific energy factors above 0")
 
   # replace absurdly high specific energy (e.g. primary steel NEN after IEA
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
