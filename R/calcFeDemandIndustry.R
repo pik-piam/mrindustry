@@ -17,6 +17,7 @@
 #'   pivot_wider replace_na separate unite
 #' @importFrom magclass getNames<- getItems getSets mselect add_dimension
 #' @importFrom tidyselect all_of
+#' @importFrom mrcommonsenergy toolGetIEAYear
 #' @author Michaja Pehl
 #'
 calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
@@ -83,25 +84,31 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
       supplementary = FALSE)
   )
 
-  ## HOTFIX: Reduce EUR UE across all sectors to reflect recent reductions in
-  ## industrial output not reflected in historical data ----
+  # HOTFIX: recent FE trends scale UE ----
+  # We correct 2025 industry UE to match the most recent global trends.
+  # The following values are the actual 2023/2019 FE ratio divided by the projected 2025/2020 FE ratio.
+  # We assume that the differences in development (real vs projected) are not due to other efficiency
+  # improvements, but due to UE changes. So we multiply UE for all values >=2025 with them (and not FE).
+  # But since specific FE demand is calculated before, FE values are scaled by the same factor.
 
-  eu_countries <- region_mapping_21 %>%
-    filter(.data$region %in% c("DEU", "ECE", "ECS", "ENC", "ESC", "ESW", "EWN", "FRA", "UKI")) %>%
-    pull(.data$iso3c)
+  # read correction factors
+  corrections <- toolGetMapping("ueCorrectionFactors.csv", where = "mrindustry") %>%
+    as.magpie()
 
-  y <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) >= 2025]
+  # map to ISO countries (country value equals region value)
+  corrections <- toolAggregate(corrections, dim = 1, rel = region_mapping_21)
 
-  industry_subsectors_ue[eu_countries, y, "ue_cement"] <-
-    industry_subsectors_ue[eu_countries, y, "ue_cement"] * 0.84
-  industry_subsectors_ue[eu_countries, y, "ue_chemicals"] <-
-    industry_subsectors_ue[eu_countries, y, "ue_chemicals"] * 0.73
-  industry_subsectors_ue[eu_countries, y, "ue_otherInd"] <-
-    industry_subsectors_ue[eu_countries, y, "ue_otherInd"] * 0.87
-  industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] <-
-    industry_subsectors_ue[eu_countries, y, c("ue_steel_primary", "ue_steel_secondary")] * 0.98
+  # expand factors object to match UE magclass
+  corrections <- magpie_expand(corrections, industry_subsectors_ue)
 
-  ## end HOTFIX
+  # use 1 as factor for years before 2025
+  yBefore205 <- getYears(industry_subsectors_ue)[getYears(industry_subsectors_ue, as.integer = TRUE) < 2025]
+  corrections[, yBefore205, ] <- 1
+
+  # apply factors
+  industry_subsectors_ue <- industry_subsectors_ue * corrections
+
+  ## end HOTFIX: recent FE trends scale UE
 
   ## re-curve specific industry activity per unit GDP ----
   GDP <- calcOutput("GDP",
@@ -966,33 +973,38 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
                                     .data$specific.energy, 0)) %>%
     select("scenario", "region", "year", "subsector", "specific.energy")
 
-  # replace 0 specific energy (e.g. primary steel NEN) with global averages
-  # no longer relevant, as there are none
-  industry_subsectors_specific_energy <-
-    industry_subsectors_specific_energy %>%
-    anti_join(
-      industry_subsectors_specific_energy %>%
-        filter(0 == .data$specific.energy),
+  # HOTFIX: recent FE trends scale spec FE ----
+  # The hotfix "recent FE trends scale UE" above applies factors on UE to account for recent developments in FE not yet incorporated in the historical data we use.
+  # For steel in some regions, we rather assume that these recent changes are due to changed energy efficiency values.
+  # We therefore set the UE factors in these regions to 1, and apply the factors on energy intensity instead.
 
-      c("scenario", "region", "year", "subsector")
+  if (toolGetIEAYear(ieaVersion = "default") == 2024) {
+    factors <- tribble(
+      ~region, ~subsector, ~factor,
+      "IND", "steel_primary", 0.645292,
+      "SSA", "steel_primary", 0.54574,
+      "NES", "steel_primary", 1.720838,
+      "NEN", "steel_primary", 0.266231,
+      "IND", "steel_secondary", 0.645292,
+      "SSA", "steel_secondary", 0.54574,
+      "NES", "steel_secondary", 1.720838,
+      "NEN", "steel_secondary", 0.266231
     ) %>%
-    bind_rows(
-      left_join(
-        industry_subsectors_specific_energy %>%
-          filter(0 == .data$specific.energy) %>%
-          select(-"specific.energy"),
-
-        industry_subsectors_specific_energy %>%
-          filter(0 != .data$specific.energy) %>%
-          group_by(!!!syms(c("scenario", "year", "subsector"))) %>%
-          summarise(specific.energy = mean(.data$specific.energy),
-                    .groups = "drop"),
-
-        c("scenario", "year", "subsector")
+      complete(
+        region = unique(region_mapping_21$region),
+        subsector = unique(industry_subsectors_specific_energy$subsector),
+        fill = list(factor = 1)
       )
-    ) %>%
-    verify(expr = 0 < .data$specific.energy,
-           description = "All specific energy factors above 0")
+
+    industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
+      left_join(factors, by = c("region", "subsector")) %>%
+      mutate(specific.energy = ifelse(.data$year == 2020,
+        .data$specific.energy * factor, .data$specific.energy
+      )) %>%
+      select(-"factor")
+  }
+
+  # End Hotfix: recent FE trends scale spec FE
 
   # replace absurdly high specific energy (e.g. primary steel NEN after IEA
   # 2021 data update) with EUR averages (considered peer-countries to NEN –
