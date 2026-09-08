@@ -450,19 +450,6 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
     group_by(!!!syms(c("year", "region", "pf"))) %>%
     summarise(value = sum(.data$value), .groups = "drop")
 
-  ### Apply five-year moving average ----
-
-  # iea <- iea %>%
-  #   group_by(.data$region, .data$pf) %>%
-  #   arrange(.data$year) %>%
-  #   mutate(value = zoo::rollapply(
-  #     # pad data with two leading and trailing NAs
-  #     data = c(NA, NA, .data$value, NA, NA),
-  #     width = 5,
-  #     # ignoring NAs in mean() stumps the mean on the edges to four/three years
-  #     FUN = function(x) { mean(x, na.rm = TRUE) })) %>%
-  #   ungroup()
-
   industry_subsectors_en <- iea %>%
     # split feel steel into primary and secondary production
     left_join(
@@ -1020,23 +1007,6 @@ calcFeDemandIndustry <- function(scenarios, last_empirical_year = 2020) {
     filter(.data$subsector == "steel_primary", .data$specific.energy > 100, .data$region == "NEN") %>%
     select(-"specific.energy") %>%
     left_join(industry_subsectors_specific_energy_eu_average, c("scenario", "year", "subsector")) %>%
-    overwrite(industry_subsectors_specific_energy, except = "specific.energy")
-
-  # replace high specific energy for primary steel in SSA with values slightly higher than EU
-  # averages. this is a crude correction of the sparse data points from SSA that are dominated
-  # by South Africa which uses a lot of coal for steel production. the correction assumes that
-  # SSA will follow a trajectory closer to Europe, but with slightly lower energy efficiency
-  # represented by 'correction_factor'
-
-  correction_factor <- 1.6
-
-  industry_subsectors_specific_energy <- industry_subsectors_specific_energy %>%
-    filter(.data$subsector == "steel_primary", .data$specific.energy > 90, .data$region == "SSA") %>%
-    select(-"specific.energy") %>%
-    left_join(
-      industry_subsectors_specific_energy_eu_average %>%
-        mutate("specific.energy" = .data$specific.energy * correction_factor),
-      c("scenario", "year", "subsector")) %>%
     overwrite(industry_subsectors_specific_energy, except = "specific.energy")
 
   # extend time horizon
