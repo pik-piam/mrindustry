@@ -2,13 +2,13 @@
 % Please edit documentation in R/calcFertilizerRoute.R
 \name{calcFertilizerRoute}
 \alias{calcFertilizerRoute}
-\title{Calculates the total fertilizer production (MtN, as the sum of urea, AN, CAN and AS) per country 
+\title{Calculates the total fertilizer production (MtN, as the sum of urea, AN, CAN and AS) per country
 and the fraction of ammonia production (MtN/MtN) used for fertilizer production based on IFA data.}
 \usage{
 calcFertilizerRoute()
 }
 \description{
-Calculates the total fertilizer production (MtN, as the sum of urea, AN, CAN and AS) per country 
+Calculates the total fertilizer production (MtN, as the sum of urea, AN, CAN and AS) per country
 and the fraction of ammonia production (MtN/MtN) used for fertilizer production based on IFA data.
 }
 \author{

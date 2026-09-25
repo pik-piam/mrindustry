@@ -9,22 +9,25 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   # Get IFA ammonia production volumes in Kt, convert to Mt and select the years 2015-2020.
   # ============================================================================
-  ammonia_production <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = TRUE) / 1000)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  ammonia_production <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE) / 1000)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame()
 
   # ============================================================================
   # Get IEA shares for different ammonia production routes for the Base Year 2020 (IEA_Ammonia)
   # ============================================================================
-  ammonia_share_iea <- calcOutput("IEA_Ammonia", subtype = "BaseYear_2020", aggregate = TRUE)[, "y2020", ] %>%
+  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
+
+  ammonia_share_iea <- calcOutput("IEA_Ammonia", subtype = "BaseYear_2020", aggregate = FALSE)[, "y2020", ] %>%
     as.data.frame() %>%
+    merge(map, by.x = "Region", by.y = "CountryCode") %>%
     # Exclude regions: China (CHA), Japan (JPN), and OAS
     # There is no data on the Asia Pacific Region in IEA_Ammonia, therefore Japan and OAS are taken from IEA_Petrochem (see below); for China there is more specific data (RMI_China)
-    filter(!.data$Region %in% c("CHA", "JPN", "OAS"))
+    filter(!.data$RegionCode %in% c("CHA", "JPN", "OAS"))
 
   # Map Data1 values to REMIND categories
   ammonia_share_iea$Category <- case_when(
     ammonia_share_iea$Data1 %in% c("Coal", "CCU") ~ "amSyCoal",
-    ammonia_share_iea$Data1 %in% c("Coal_with_CCS") ~ "amSyCoal_cc", 
+    ammonia_share_iea$Data1 %in% c("Coal_with_CCS") ~ "amSyCoal_cc",
     ammonia_share_iea$Data1 %in% c("Gas", "Gas_with_CCU", "Pyrolysis") ~ "amSyNG", # Methane pyrolysis: H2 is produced for ammonia production and black carbon for other potential uses
     ammonia_share_iea$Data1 %in% c("Gas_with_CCS") ~ "amSyNG_cc",
     ammonia_share_iea$Data1 %in% c("Oil") ~ "amSyLiq",
@@ -47,8 +50,10 @@ calcAmmoniaRoute <- function() {
   #   - the output of IEA_Petrochem (subtype="RouteRTS_Ammonia") is Mt of ammonia output per production route
   #   - set amSyCoal to 0 for Japan and OAS because all ammonia production from coal comes from China, by the disaggregation it is falsely allocated to Japan&OAS
   # ============================================================================
-  ammonia_share_ieapetro <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Ammonia", aggregate = TRUE)[c("JPN", "OAS"), "y2017", ] %>%
+  ammonia_share_ieapetro <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Ammonia", aggregate = FALSE)[, "y2017", ] %>%
     as.data.frame()
+  ammonia_share_ieapetro <- merge(ammonia_share_ieapetro, map, by.x = "Region", by.y = "CountryCode") %>%
+    filter(.data$RegionCode %in% c("OAS","JPN"))
 
   # Map Data1 values to REMIND categories for petrochemical routes
   ammonia_share_ieapetro$Category <- case_when(
@@ -72,7 +77,7 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   # Get China-specific ammonia data (Base Year 2020)
   # ============================================================================
-  ammonia_share_china <- calcOutput("RMI_China", subtype = "ChemStructure_Ammonia", aggregate = TRUE)["CHA", "y2020", ] %>%
+  ammonia_share_china <- calcOutput("RMI_China", subtype = "ChemStructure_Ammonia", aggregate = FALSE)["CHN", "y2020", ] %>%
     as.data.frame()
 
   # Map Data1 values to REMIND categories for China data
@@ -109,32 +114,11 @@ calcAmmoniaRoute <- function() {
     select(-"Value", -"Cell", -"Data1", -"normalized_value")
 
   # ============================================================================
-  # Load non-aggregated ammonia production data (for weighting purposes)
-  # ============================================================================
-  ammonia_production_all <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ]
-
-  # ============================================================================
-  # Load regional mapping for aggregation from regions to countries
-  # ============================================================================
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-
-  # ============================================================================
   # Convert ammonia route data to a magpie object for spatial and temporal analysis
   # ============================================================================
   x <- as.magpie(ammonia_route_value, spatial = 1, temporal = 3)
-
-  # ============================================================================
-  # Aggregate regional data to the country level using the mapping and production weights
-  # ============================================================================
-  x <- toolAggregate(
-    x,
-    rel = map,
-    dim = 1,
-    from = "RegionCode",
-    to = "CountryCode",
-    weight = ammonia_production_all[unique(map$CountryCode), , ]
-  )
   x[is.na(x)] <- 0 # Replace any NA values with 0
+  # TODO AFG, ASM, ATF missing
 
   # ============================================================================
   # Return the final object along with metadata
@@ -143,7 +127,6 @@ calcAmmoniaRoute <- function() {
     x = x,
     weight = NULL,
     unit = "MtNH3",
-    description = "Ammonia production distribution by production route, derived from IEA, petrochemical, and China-specific data. 
-    The data is regionally mapped, weighted by production values, and formatted as a magpie object for energy system modeling."
+    description = "Ammonia production distribution by production route, derived from IEA, petrochemical, and China-specific data."
   ))
 }

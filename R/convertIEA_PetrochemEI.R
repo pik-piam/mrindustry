@@ -15,21 +15,15 @@
 
 convertIEA_PetrochemEI <- function(x) {
   # ---------------------------------------------------------------------------
-  # Load and Apply Initial Mapping
-  #    - Load the mapping file "regionmappingIEA_PetrochemEI.csv" to convert 
-  #      from IEA-specific country codes ("IEACountry") to a regional classification ("RegionCode").
+  # IEA Petrochem EI data is only given for specific countries (e.g. Brazil, Saudi Arabia),
+  # which are assumed to be representative for their H12 Region. Data is therefore first mapped
+  # to H12 regions and then further disaggregated to the ISO country level
   # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingIEA_PetrochemEI.csv", type = "regional", where = "mrindustry")
   x <- toolAggregate(x, rel = map, dim = 1, from = "IEACountry", to = "RegionCode")
-  
-  # ---------------------------------------------------------------------------
-  # Further Aggregate to ISO Country Level
-  #    - Load a broader mapping file "regionmappingH12.csv" to aggregate the data 
-  #      from the regional level ("RegionCode") to the country level ("CountryCode").
-  # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
-  
+
   # ---------------------------------------------------------------------------
   # Return the Final MagPIE Object
   # ---------------------------------------------------------------------------

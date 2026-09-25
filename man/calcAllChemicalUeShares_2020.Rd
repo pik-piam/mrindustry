@@ -2,18 +2,16 @@
 % Please edit documentation in R/calcAllChemicalUeShares_2020.R
 \name{calcAllChemicalUeShares_2020}
 \alias{calcAllChemicalUeShares_2020}
-\title{Calculates UE shares for all chemicals (including OtherChem) in 2020 from 
-final product flows (methFinal, ammoFinal, HVC, fertilizer), 
-material prices (mat2ue) and the total UE of chemicals (from FeDemandIndustry).
-Shares are aggregated to the country level.}
+\title{Calculates UE shares for all chemicals (including OtherChem) in 2020 from
+final product flows (methFinal, ammoFinal, HVC, fertilizer),
+material prices (mat2ue) and the total UE of chemicals (from FeDemandIndustry).}
 \usage{
 calcAllChemicalUeShares_2020()
 }
 \description{
-Calculates UE shares for all chemicals (including OtherChem) in 2020 from 
-final product flows (methFinal, ammoFinal, HVC, fertilizer), 
+Calculates UE shares for all chemicals (including OtherChem) in 2020 from
+final product flows (methFinal, ammoFinal, HVC, fertilizer),
 material prices (mat2ue) and the total UE of chemicals (from FeDemandIndustry).
-Shares are aggregated to the country level.
 }
 \author{
 Qianzhi Zhang
