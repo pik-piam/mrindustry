@@ -20,7 +20,7 @@
 - Define helpers inside the `calc`/`read` body, or as a `tool*` function; otherwise they will not be part of the cache key and changes to them will not invalidate caches.
 - Read functions run with the working directory set to `<mainfolder>/sources/<Type>/`, so use
   relative paths (`'./file.xlsx'`).
-- Prefer the *switchboard* pattern for subtypes (see `readworldsteel.R`): a named list of
+- Prefer the *switchboard* pattern if there are subtypes (see `readworldsteel.R`): a named list of
   closures, then `stop('Invalid subtype -- supported subtypes are: ...')`. Document every subtype in `@param subtype` as a markdown list.
 - Currently, no tests are defined. New tests are welcome but must not need source data
 (use fixtures in `tests/testthat/fixtures/`).
