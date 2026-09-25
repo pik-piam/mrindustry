@@ -19,8 +19,9 @@ Authors@R: c(
     person(given = "Bennet", family = "Weiss",
            email = "bennet.weiss@pik-potsdam.de", role = "aut")
     )
-Description: The mrindustry packages contains data preprocessing for the
-    REMIND model.
+Description: The `mrindustry` package contains data preprocessing for the
+    REMIND model. It turns raw source data (World Steel, USGS, UNIDO, IEA, IFA, ...) into REMIND input parameters for the industry
+    module (steel, cement, chemicals, final-energy demand). It is consumed by `mrremind`.
 License: LGPL-3
 URL: https://github.com/pik-piam/mrindustry
 Depends:
