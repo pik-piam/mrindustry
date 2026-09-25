@@ -6,3 +6,5 @@
 mrindustry.Rproj
 .vscode
 .positai
+.Renviron
+.Rlib/
