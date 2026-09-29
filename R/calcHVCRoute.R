@@ -65,7 +65,7 @@ calcHVCRoute <- function() {
                           ifelse(.data$Region == "CHN", sum(.data$Value[.data$Data1 == "MTO_MTA"], na.rm = TRUE), 0),
                           .data$Value)) %>%  # Assign total MTO_MTA to CHN only
     ungroup() %>%
-    filter(.data$Region == "CHA")
+    filter(.data$Region == "CHN")
 
   # Map Data1 to custom categories
   HVC_share_iea$Category <- case_when(
@@ -89,7 +89,7 @@ calcHVCRoute <- function() {
   #    - Map feedstock types to custom categories, normalize the data, and
   #      add zero entries for the "mtoMta" category where needed.
   # ----------------------------------------------------------
-  HVC_Feedstockshare_iea <- calcOutput("IEA_Petrochem", subtype = "Feedstock_HVCs", aggregate = TRUE)[, "y2017", ] %>%
+  HVC_Feedstockshare_iea <- calcOutput("IEA_Petrochem", subtype = "Feedstock_HVCs", aggregate = FALSE)[, "y2017", ] %>%
     as.data.frame() %>%
     filter(.data$Region != "CHN")  # Exclude China
 

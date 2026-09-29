@@ -20,9 +20,11 @@ calcAmmoniaRoute <- function() {
   ammonia_share_iea <- calcOutput("IEA_Ammonia", subtype = "BaseYear_2020", aggregate = FALSE)[, "y2020", ] %>%
     as.data.frame() %>%
     merge(map, by.x = "Region", by.y = "CountryCode") %>%
-    # Exclude regions: China (CHA), Japan (JPN), and OAS
-    # There is no data on the Asia Pacific Region in IEA_Ammonia, therefore Japan and OAS are taken from IEA_Petrochem (see below); for China there is more specific data (RMI_China)
-    filter(!.data$RegionCode %in% c("CHA", "JPN", "OAS"))
+    # Exclude regions:Japan (JPN), and OAS
+    # There is no data on the Asia Pacific Region in IEA_Ammonia, therefore Japan and OAS are taken from IEA_Petrochem (see below)
+    filter(!.data$RegionCode %in% c("JPN", "OAS")) %>%
+    # for China there is more specific data (RMI_China)
+    filter(!.data$Region %in% c("CHN"))
 
   # Map Data1 values to REMIND categories
   ammonia_share_iea$Category <- case_when(
@@ -118,7 +120,6 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   x <- as.magpie(ammonia_route_value, spatial = 1, temporal = 3)
   x[is.na(x)] <- 0 # Replace any NA values with 0
-  # TODO AFG, ASM, ATF missing
 
   # ============================================================================
   # Return the final object along with metadata

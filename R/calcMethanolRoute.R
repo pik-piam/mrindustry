@@ -29,7 +29,7 @@ calcMethanolRoute <- function() {
   #    - Retrieve route data for 2017 from "IEA_Petrochem".
   #    - Exclude China ("CHA") and map technology types to custom categories.
   # ---------------------------------------------------------------------------
-  methanol_share_iea <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Methanol", aggregate = TRUE)[, "y2017", ] %>%
+  methanol_share_iea <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Methanol", aggregate = FALSE)[, "y2017", ] %>%
     as.data.frame() %>%
     filter(!.data$Region %in% c("CHN"))
 
