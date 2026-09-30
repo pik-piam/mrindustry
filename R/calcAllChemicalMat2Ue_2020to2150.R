@@ -27,7 +27,9 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
   # and calculate change compared to baseline year
   # ---------------------------------------------------------------------------
 
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, aggregate = FALSE)[,, "SSP2.ue_chemicals"] %>%
+  ueChemicals <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, aggregate = FALSE)[,, "SSP2.ue_chemicals"]
+
+  feIndustry <- ueChemicals %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     mutate(Year = as.numeric(as.character(.data$Year))) %>%   # Convert factor to character then numeric
@@ -116,14 +118,17 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
   # ---------------------------------------------------------------------------
   merged_data <- rbind(IEA_Petrochem_methanol, IEA_Petrochem_ammonia, IEA_Petrochem_hvc, MagPie_Fert) %>%
     dplyr::left_join(feIndustry, by = c("Region", "Year"), suffix = c("", ".fe")) %>%
-    dplyr::mutate(fe_change = ifelse(is.nan(.data$Ratio / .data$Ratio.fe), 1, .data$Ratio / .data$Ratio.fe)) %>%
+    # countries whose chemical UE demand vanishes (Ratio.fe = 0) would give Inf here, keep them constant instead
+    dplyr::mutate(fe_change = ifelse(is.finite(.data$Ratio / .data$Ratio.fe), .data$Ratio / .data$Ratio.fe, 1)) %>%
     mutate(Data1 = case_when(
       .data$Data1 == "ammonia" ~ "ammoFinal",
       .data$Data1 == "methanol" ~ "methFinal",
       TRUE ~ .data$Data1
     ))%>%
     dplyr::left_join(p37_mat2ue, by = c("Data1" = "Product")) %>%
-    dplyr::mutate(new_mat2ue = .data$mat2ue / .data$fe_change)
+    # a country whose production of this chemical vanishes (fe_change = 0) would give Inf,
+    # keep the baseline conversion factor for those instead
+    dplyr::mutate(new_mat2ue = ifelse(.data$fe_change > 0, .data$mat2ue / .data$fe_change, .data$mat2ue))
 
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
   years <- merged_data %>% select("Year") %>% distinct() %>% filter(.data$Year>2050)
@@ -133,18 +138,24 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     rbind(extended_years) %>%
     filter(.data$Year >= 2020) %>%
     mutate(all_in = "ue_chemicals"
-    ) %>%
-    select("Region","Year","Data1","all_in","new_mat2ue")
+    )
 
-  x <- as.magpie(final_data, spatial = 1, temporal = 2)
+  x <- as.magpie(final_data %>% select("Region","Year","Data1","all_in","new_mat2ue"),
+                 spatial = 1, temporal = 2)
 
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
-  #    - Create a weight object with the same dimensions as 'x' (all values set to 1).
-  #    - Return the aggregated magpie object along with metadata.
+  #    - mat2ue converts a material mass into UE value, so the regional factor is the mean
+  #      over countries weighted by the projected production of that material:
+  #      sum(mat2ue * production) / sum(production).
   # ---------------------------------------------------------------------------
-  weight <- x  # Copy dimensions from x
-  weight[, , ] <- 1
+  materialProduction <- final_data %>%
+    mutate(Value = ifelse(is.finite(.data$Value) & .data$Value > 0, .data$Value, 0)) %>%
+    select("Region","Year","Data1","all_in","Value")
+
+  weight <- as.magpie(materialProduction, spatial = 1, temporal = 2)
+  weight[is.na(weight)] <- 0
+  weight <- weight[getItems(x, dim = 1), getItems(x, dim = 2), getItems(x, dim = 3)] + 1e-10
 
   return(list(
     x = x,

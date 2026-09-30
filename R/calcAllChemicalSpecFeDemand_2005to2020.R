@@ -212,8 +212,26 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   x <- as.magpie(AllChem_SpecFeDem, spatial = 1, temporal = 2)
   x[is.na(x)] <- 0
-  weight <- x # get the same dimensions of the data
-  weight[, , ] <- 1
+
+  # ---------------------------------------------------------------------------
+  # Weighting
+  #    - specFeDem is an intensive variable and has to be aggregated as a mean weighted
+  #      by the flow through the respective route, so that the regional value equals
+  #      sum(energy demand) / sum(flow) and stays consistent with AllChemicalEnergyDemand.
+  #    - a small floor keeps the weight sum positive for routes that are unused in a whole
+  #      region; those then fall back to the mean of the country values.
+  #    - the chemOld flow is a residual and is negative in a few countries (GEO, IRN, KGZ, LTU,
+  #      SYR, TJK, TKM, TTO, UKR, UZB), where the explicit routes already exceed total chemical
+  #      demand. Negative weights are meaningless for a weighted mean, so they are floored at 0.
+  # ---------------------------------------------------------------------------
+  AllChem_Weight <- AllChem_SpecFeDem %>%
+    left_join(AllChemicalRoutes_2005to2020, by = c("Region", "Year", "tePrc", "opmoPrc")) %>%
+    mutate(ChemFlow = ifelse(is.na(.data$ChemFlow), 0, pmax(.data$ChemFlow, 0))) %>%
+    select("Region", "Year", "tePrc", "opmoPrc", "entyFe", "ChemFlow")
+
+  weight <- as.magpie(AllChem_Weight, spatial = 1, temporal = 2)
+  weight[is.na(weight)] <- 0
+  weight <- weight[getItems(x, dim = 1), getItems(x, dim = 2), getItems(x, dim = 3)] + 1e-10
 
   # ---------------------------------------------------------------------------
   # Return Final Aggregated Object with Metadata

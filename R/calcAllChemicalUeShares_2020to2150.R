@@ -23,7 +23,9 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   # and calculate change compared to baseline year
   # ---------------------------------------------------------------------------
 
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, aggregate = FALSE)[,, "SSP2.ue_chemicals"] %>%
+  ueChemicals <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, aggregate = FALSE)[,, "SSP2.ue_chemicals"]
+
+  feIndustry <- ueChemicals %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     mutate(Year = as.numeric(as.character(.data$Year))) %>%   # Convert factor to character then numeric
@@ -113,7 +115,8 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   # ---------------------------------------------------------------------------
   merged_data <- rbind(IEA_Petrochem_methanol, IEA_Petrochem_ammonia, IEA_Petrochem_hvc, MagPie_Fert) %>%
     dplyr::left_join(feIndustry, by = c("Region", "Year"), suffix = c("", ".fe")) %>%
-    dplyr::mutate(fe_change = ifelse(is.nan(.data$Ratio / .data$Ratio.fe), 1, .data$Ratio / .data$Ratio.fe)) %>%
+    # countries whose chemical UE demand vanishes (Ratio.fe = 0) would give Inf here, keep them constant instead
+    dplyr::mutate(fe_change = ifelse(is.finite(.data$Ratio / .data$Ratio.fe), .data$Ratio / .data$Ratio.fe, 1)) %>%
     mutate(Data1 = case_when(
       .data$Data1 == "ammonia" ~ "ammoFinal",
       .data$Data1 == "methanol" ~ "methFinal",
@@ -154,11 +157,12 @@ calcAllChemicalUeShares_2020to2150 <- function() {
 
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
-  #    - Create a weight object with the same dimensions as 'x' (all values set to 1).
-  #    - Return the aggregated magpie object along with metadata.
+  #    - ue_share is an intensive variable and has to be aggregated as a mean weighted
+  #      by total chemical UE demand, so that the regional share equals
+  #      sum(ue_material) / sum(ue_chemicals) instead of an unweighted country mean.
   # ---------------------------------------------------------------------------
   weight <- x  # Copy dimensions from x
-  weight[, , ] <- 1
+  weight[, , ] <- ueChemicals[getItems(x, dim = 1), getItems(x, dim = 2), ]
 
   return(list(
     x = x,

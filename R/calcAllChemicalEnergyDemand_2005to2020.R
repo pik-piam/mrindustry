@@ -25,7 +25,7 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
     select(-"Cell")%>%
     rename(tePrc = "Data1", opmoPrc = "Data2", ChemFlow = "Value")
 
-  IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", aggregate = TRUE) %>%
+  IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", aggregate = FALSE) %>%
     as.data.frame() %>%
     select(-"Cell", -"Year")
 

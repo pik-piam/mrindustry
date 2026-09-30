@@ -43,7 +43,9 @@ calcAllChemicalUeShares_2020 <- function() {
   # Retrieve Industrial Demand Data for Chemicals
   #    - Get the feIndustry data from the FeDemandIndustry output for 2020.
   # ---------------------------------------------------------------------------
-  feIndustry <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = FALSE, scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"] %>%
+  ueChemicals <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = FALSE, scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"]
+
+  feIndustry <- ueChemicals %>%
     as.data.frame() %>%
     select(-"Cell")
 
@@ -52,10 +54,11 @@ calcAllChemicalUeShares_2020 <- function() {
   # Calculate UE Share for Each Chemical Product
   #    - Join the chemical flow data with industry demand data (by Region).
   #    - Compute the share (ue_share) by dividing the ue_material by the corresponding industry demand.
+  #    - Countries without any chemical UE demand get a share of 0 instead of Inf/NaN.
   # ---------------------------------------------------------------------------
   AllChemicalUEShares_2020 <- ChemicalFlows_2020 %>%
     left_join(feIndustry, by = "Region") %>%
-    mutate(ue_share = .data$ue_material / .data$Value.y) %>%   # 'Value.y' from feIndustry
+    mutate(ue_share = ifelse(.data$Value.y > 0, .data$ue_material / .data$Value.y, 0)) %>%   # 'Value.y' from feIndustry
     select("Region", "Year.x", "Data1.x", "ue_share")
 
 
@@ -90,11 +93,13 @@ calcAllChemicalUeShares_2020 <- function() {
 
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
-  #    - Create a weight object with the same dimensions as 'x' (all values set to 1).
-  #    - Return the aggregated magpie object along with metadata.
+  #    - ue_share is an intensive variable, so it has to be aggregated as a mean weighted
+  #      by total chemical UE demand. The regional share then equals
+  #      sum(ue_material) / sum(ue_chemicals), which stays bounded even where individual
+  #      countries have (near-)zero UE demand but non-zero chemical flows.
   # ---------------------------------------------------------------------------
   weight <- x  # Copy dimensions from x
-  weight[, , ] <- 1
+  weight[, , ] <- ueChemicals[getItems(x, dim = 1), , ]
 
   return(list(
     x = x,

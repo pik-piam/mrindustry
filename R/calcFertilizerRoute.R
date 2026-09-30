@@ -91,12 +91,30 @@ calcFertilizerRoute <- function() {
   x[is.na(x)] <- 0  # Replace NA values with 0
 
   # ---------------------------------------------------------------------------
+  # Weighting
+  #    - NFert_production is extensive and has to be summed (weight NA), while
+  #      NFert_ratio is a fraction and has to be averaged weighted by ammonia production.
+  #      Without mixed aggregation, calcOutput(aggregate = TRUE) would sum the ratios and
+  #      return values far above 1, which turns (1 - NFert_ratio) negative downstream.
+  #    - the small floor keeps the weight sum positive for regions without ammonia production.
+  # ---------------------------------------------------------------------------
+  ammoniaProduction <- Ammonia_IFA %>%
+    select("Region", "Year", "NAmmonia_production") %>%
+    as.magpie(spatial = 1, temporal = 2)
+  ammoniaProduction[is.na(ammoniaProduction)] <- 0
+
+  weight <- x
+  weight[, , "NFert_production"] <- NA
+  weight[, , "NFert_ratio"] <- ammoniaProduction[getItems(x, dim = 1), getItems(x, dim = 2), ] + 1e-10
+
+  # ---------------------------------------------------------------------------
   # Return Final Aggregated Object and Metadata
   # ---------------------------------------------------------------------------
 
   return(list(
     x = x,
-    weight = NULL,
+    weight = weight,
+    mixed_aggregation = TRUE,
     unit = "MtN Fert",
     description = "fertilizer conversion ratio derived from IFA chemical data, representing the fraction of ammonia production converted to fertilizer production"
   ))
