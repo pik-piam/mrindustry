@@ -9,22 +9,31 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   # Get IFA ammonia production volumes in Kt, convert to Mt and select the years 2015-2020.
   # ============================================================================
-  ammonia_production <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE) / 1000)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  ammoniaProduction <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production",
+                                   aggregate = FALSE) / 1000)[, c("y2015", "y2016", "y2017",
+                                                                  "y2018", "y2019", "y2020"), ]
+
+  # countries that actually produce ammonia and therefore need a route mix
+  producers <- getItems(ammoniaProduction, dim = 1)[as.vector(dimSums(ammoniaProduction, dim = c(2, 3))) > 0]
+
+  ammonia_production <- ammoniaProduction %>%
     as.data.frame()
 
   # ============================================================================
   # Get IEA shares for different ammonia production routes for the Base Year 2020 (IEA_Ammonia)
+  #   - IEA_Ammonia reports no Asia Pacific region, so a number of producing countries carry no
+  #     data at all (currently BGD, PAK, IDN, JPN, MYS, MMR, VNM, AUS, NZL) and are taken from
+  #     IEA_Petrochem below. Which countries those are is derived from the actual data coverage
+  #     rather than from region codes, so this stays independent of the regionmapping set in the
+  #     config and cannot silently drop a producer that happens to sit in an unlisted region.
   # ============================================================================
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
+  ieaAmmonia <- calcOutput("IEA_Ammonia", subtype = "BaseYear_2020", aggregate = FALSE)[, "y2020", ]
+  ieaAmmoniaCountries <- getItems(ieaAmmonia, dim = 1)[as.vector(dimSums(ieaAmmonia, dim = 3)) > 0]
 
-  ammonia_share_iea <- calcOutput("IEA_Ammonia", subtype = "BaseYear_2020", aggregate = FALSE)[, "y2020", ] %>%
+  ammonia_share_iea <- ieaAmmonia %>%
     as.data.frame() %>%
-    merge(map, by.x = "Region", by.y = "CountryCode") %>%
-    # Exclude regions:Japan (JPN), and OAS
-    # There is no data on the Asia Pacific Region in IEA_Ammonia, therefore Japan and OAS are taken from IEA_Petrochem (see below)
-    filter(!.data$RegionCode %in% c("JPN", "OAS")) %>%
     # for China there is more specific data (RMI_China)
-    filter(!.data$Region %in% c("CHN"))
+    filter(.data$Region %in% setdiff(ieaAmmoniaCountries, "CHN"))
 
   # Map Data1 values to REMIND categories
   ammonia_share_iea$Category <- case_when(
@@ -48,14 +57,19 @@ calcAmmoniaRoute <- function() {
     select(-"Value", -"Year")
 
   # ============================================================================
-  # Get IEA shares for different ammonia production routes for Japan and OAS in 2017 (IEA_Petrochem)
+  # Fall back to IEA shares from IEA_Petrochem (2017) for producers without IEA_Ammonia data
   #   - the output of IEA_Petrochem (subtype="RouteRTS_Ammonia") is Mt of ammonia output per production route
-  #   - set amSyCoal to 0 for Japan and OAS because all ammonia production from coal comes from China, by the disaggregation it is falsely allocated to Japan&OAS
+  #   - all ammonia production from coal comes from China, but IEA_Petrochem reports it for the
+  #     whole region China sits in, so the disaggregation falsely hands it to the other countries
+  #     of that region. amSyCoal is therefore set to 0 for those (China itself takes RMI_China
+  #     data below, so it is not affected).
   # ============================================================================
+  petroMap <- toolGetMapping("regionmappingIEA_Petrochem_5region.csv", type = "regional", where = "mrindustry")
+  coalLeakage <- petroMap$CountryCode[petroMap$IFAReg %in% petroMap$IFAReg[petroMap$CountryCode == "CHN"]]
+
   ammonia_share_ieapetro <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Ammonia", aggregate = FALSE)[, "y2017", ] %>%
-    as.data.frame()
-  ammonia_share_ieapetro <- merge(ammonia_share_ieapetro, map, by.x = "Region", by.y = "CountryCode") %>%
-    filter(.data$RegionCode %in% c("OAS","JPN"))
+    as.data.frame() %>%
+    filter(.data$Region %in% setdiff(producers, c(ieaAmmoniaCountries, "CHN")))
 
   # Map Data1 values to REMIND categories for petrochemical routes
   ammonia_share_ieapetro$Category <- case_when(
@@ -65,12 +79,13 @@ calcAmmoniaRoute <- function() {
   )
 
   # Group by Region, Year, and Category:
-  #    - Sum the values, then set amSyCoal values to 0.
+  #    - Sum the values, then drop the coal route where it only reflects Chinese production.
   #    - calculate the share per production route for each region-year group.
   ammonia_share_ieapetro <- ammonia_share_ieapetro %>%
     group_by(.data$Region, .data$Year, .data$Category) %>%
     summarise(Value = sum(.data$Value, na.rm = TRUE), .groups = "drop") %>% # Sum values by group
-    mutate(Value = ifelse(.data$Category == "amSyCoal", 0, .data$Value)) %>% # Set amSyCoal values to 0
+    mutate(Value = ifelse(.data$Category == "amSyCoal" & .data$Region %in% coalLeakage,
+                          0, .data$Value)) %>%
     group_by(.data$Region, .data$Year) %>%
     mutate(normalized_value = (.data$Value / sum(.data$Value, na.rm = TRUE)) * 100) %>% # Normalize
     ungroup() %>%
@@ -106,6 +121,17 @@ calcAmmoniaRoute <- function() {
   ammonia_share_all <- rbind(ammonia_share_iea, ammonia_share_ieapetro, ammonia_share_china)
 
   # ============================================================================
+  # Guard: a producer without a route mix loses its production silently
+  # ============================================================================
+  uncovered <- setdiff(producers, unique(ammonia_share_all$Region[ammonia_share_all$normalized_value > 0]))
+  if (length(uncovered) > 0) {
+    warning("No ammonia production route shares available for ", paste(uncovered, collapse = ", "),
+            " (", signif(sum(ammoniaProduction[uncovered, , ]), 3), " Mt over ",
+            paste(range(getYears(ammoniaProduction, as.integer = TRUE)), collapse = "-"),
+            "). Their ammonia production is dropped from the route data.")
+  }
+
+  # ============================================================================
   # Calculate actual ammonia route values
   #   - Join the combined share data with production data.
   #   - Compute the actual value using the normalized share.
@@ -117,9 +143,12 @@ calcAmmoniaRoute <- function() {
 
   # ============================================================================
   # Convert ammonia route data to a magpie object for spatial and temporal analysis
+  #   - only countries with route shares are in the data frame, so the remaining ISO countries
+  #     (which do not produce ammonia) are filled with 0
   # ============================================================================
   x <- as.magpie(ammonia_route_value, spatial = 1, temporal = 3)
   x[is.na(x)] <- 0 # Replace any NA values with 0
+  x <- toolCountryFill(x, fill = 0, verbosity = 2)
 
   # ============================================================================
   # Return the final object along with metadata
