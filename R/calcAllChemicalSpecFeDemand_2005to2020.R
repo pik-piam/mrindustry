@@ -1,7 +1,7 @@
 #' Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020) 
 #' and specific energy consumption for the different routes (retrieved from IEA_PetrochemEI and other literature sources).
 #' The energy demand for OtherChem is calculated as the remaining share of total chemical industry energy demand. 
-#' Results are aggregated to the country level.
+#' Results are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.
 #' 
 #' @author Qianzhi Zhang, Leonie Schweiger
 #'
@@ -21,12 +21,13 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   #    b) Load regional historical energy intensity data for overall methanol&ammonia synthesis and steam crakcing (IEA_PetrochemEI)
   #    c) Collect specific BAT energy intensity data (target energy demand)
   # ---------------------------------------------------------------------------
-  AllChemicalRoutes_2005to2020 <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = TRUE, CCS=CCS) %>% 
+  AllChemicalRoutes_2005to2020 <- toolAggregateToEU21(calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = FALSE,
+                                                                CCS = CCS, supplementary = TRUE)) %>% 
     as.data.frame() %>% 
     select(-"Cell") %>%
     rename(tePrc = "Data1", opmoPrc = "Data2", ChemFlow = "Value")
   
-  IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", aggregate = TRUE) %>% 
+  IEA_PetrochemEI <- toolAggregateToEU21(calcOutput("IEA_PetrochemEI", aggregate = FALSE, supplementary = TRUE)) %>% 
     as.data.frame() %>% 
     select(-"Cell", -"Year")
   
@@ -162,12 +163,12 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   # Load Industry Demand Data for Chemicals and map FE types
   # ---------------------------------------------------------------------------
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), signif = 4, warnNA = FALSE, aggregate = TRUE)[, 
+  feIndustry <- toolAggregateToEU21(calcOutput("FeDemandIndustry", scenarios=c("SSP2"), signif = 4, warnNA = FALSE, aggregate = FALSE)[, 
                                                                                                                   c("y2005", "y2010", "y2015", "y2020"),
                                                                                                                   c("SSP2.feelhth_chemicals", "SSP2.feelwlth_chemicals", 
                                                                                                                     "SSP2.feh2_chemicals", "SSP2.fega_chemicals", 
                                                                                                                     "SSP2.feli_chemicals", "SSP2.feso_chemicals")
-  ] %>%
+  ]) %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     mutate(
@@ -209,23 +210,33 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
     select("Region","Year","tePrc", "opmoPrc", "entyFe", "specFeDem")
     
   # ---------------------------------------------------------------------------
-  # Aggregate Data to Country Level
+  # Disaggregate Data to Country Level
+  #    - specFeDem is an intensive variable, the regional (EU21) values are therefore copied to the countries.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-  
   x <- as.magpie(AllChem_SpecFeDem, spatial = 1, temporal = 2)
-  x <- toolAggregate(
-    x,
-    rel = map,
-    dim = 1,
-    from = "RegionCode",
-    to = "CountryCode",
-    weight = NULL
-  )
   x[is.na(x)] <- 0
-  weight <- x # get the same dimensions of the data
-  weight[, , ] <- 1
-  
+  x <- toolDisaggregateFromEU21(x)
+
+  # ---------------------------------------------------------------------------
+  # Weighting
+  #    - specFeDem is aggregated as a mean weighted by the flow through the respective route, so that
+  #      the aggregated value equals sum(energy demand) / sum(flow) 
+  #    - Negative flows of the residual chemOld are floored at 0, and a small floor keeps the weight sum
+  #      positive for routes that are unused in a whole region.
+  # ---------------------------------------------------------------------------
+  routesCountry <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = FALSE, CCS = CCS) %>%
+    as.data.frame() %>%
+    select(-"Cell") %>%
+    mutate(across(c("Region", "Year", "Data1", "Data2"), as.character))
+
+  weight <- as.data.frame(x) %>%
+    select(-"Cell", -"Value") %>%
+    mutate(across(c("Region", "Year", "Data1", "Data2"), as.character)) %>%
+    left_join(routesCountry, by = c("Region", "Year", "Data1", "Data2")) %>%
+    mutate(Value = ifelse(is.na(.data$Value), 0, pmax(.data$Value, 0)) + 1e-10) %>%
+    as.magpie(spatial = "Region", temporal = "Year", datacol = "Value")
+  weight <- weight[getItems(x, dim = 1), getYears(x), getNames(x)]
+
   # ---------------------------------------------------------------------------
   # Return Final Aggregated Object with Metadata
   # ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #' Calculates chemical route flows (including OtherChem) from 2005 to 2020 
 #' from total chemical flows based on 2020 route shares.
-#' Flows are aggregated to the country level.
+#' Flows are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.
 #' 
 #' @author Qianzhi Zhang
 #'
@@ -13,7 +13,7 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   #    - Retrieve AllChemicalFlows_2005to2020 data, remove unnecessary columns,
   #      and rename "Data1" to "Product" for consistency.
   # ---------------------------------------------------------------------------
-  AllChemicalFlows_2005to2020 <- calcOutput("AllChemicalFlows_2005to2020", warnNA = FALSE, aggregate = TRUE) %>% 
+  AllChemicalFlows_2005to2020 <- toolAggregateToEU21(calcOutput("AllChemicalFlows_2005to2020", warnNA = FALSE, aggregate = FALSE, supplementary = TRUE)) %>% 
     as.data.frame() %>%
     select(-"Cell") %>%
     rename(Product = .data$Data1)
@@ -24,7 +24,7 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   #    - Remove extra columns and recategorize "Data1" into broader product groups,
   #      creating a new "Product" column.
   # ---------------------------------------------------------------------------
-  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE)[, "y2020", ] %>% 
+  ChemicalRoutes_2020 <- toolAggregateToEU21(calcOutput("ChemicalRoutes_2020", aggregate = FALSE, supplementary = TRUE))[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-"Cell", -"Data2", -"Year") %>%
     mutate(
@@ -96,18 +96,15 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   }
   
   # ---------------------------------------------------------------------------
-  # Aggregate Data to Country Level
+  # Disaggregate Data to Country Level
   #    - Retrieve ChemicalTotal data for weighting.
-  #    - Get regional mapping and convert the combined data to a magpie object.
-  #    - Aggregate from regions to country level using the mapping and weights.
+  #    - Convert the combined data to a magpie object.
+  #    - Disaggregate from regions (EU21) to country level using the weights.
   # ---------------------------------------------------------------------------
   Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), ]
   
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-  
   x <- as.magpie(AllChemicalRoutes_2005to2020, spatial = 1, temporal = 2)
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 
-                     weight = Chemical_Total[unique(map$CountryCode), , ])
+  x <- toolDisaggregateFromEU21(x, weight = Chemical_Total)
   x[is.na(x)] <- 0
   
   # ---------------------------------------------------------------------------
