@@ -10,7 +10,7 @@
 - Query magclass and madrat docs via Context7 `query-docs`: library IDs `/pik-piam/magclass` and
   `/pik-piam/madrat`.
 - Big files (`calcFeDemandIndustry.R`, `calcIndustry_Value_Added.R`, `calcSteel_Projections.R`) are organised with `# section ----` comments; navigate by those instead of reading top to bottom.
-- Madrat source files are located in `MADRAT_MAINFOLDER` (either specified by env variable or in `.Renviron`). The data in this folder is strictly **read-only**, do not modify it.
+- Madrat source files are located in `MADRAT_MAINFOLDER`, `madrat_wd`, or similar (either specified by env variable or in `.Renviron`). The data in this folder is strictly **read-only**, do not modify it.
 
 # Conventions
 
