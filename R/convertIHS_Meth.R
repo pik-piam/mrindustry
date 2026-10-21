@@ -7,7 +7,7 @@
 #' @return MagPIE object of the IHS_Meth data disaggregated to country level.
 #' @author Qianzhi Zhang
 #'
-convertIHS_Meth <- function(x) {
+convertIHS_Meth <- function(x, subtype) {
 
   subtype <- unlist(strsplit(subtype, "_"))
 
