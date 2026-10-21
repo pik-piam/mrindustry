@@ -25,35 +25,12 @@ convertIFA_ChemAppend <- function(x, subtype = x) {
     # Retrieve weighting data from urea capacities
     urea <- calcOutput("IFA_Chem", subtype = "urea_capacities_capacities", aggregate = FALSE)
 
-    # Determine available years from both datasets
-    x_years <- as.numeric(sub("y", "", colnames(x)[grepl("^y\\d{4}$", colnames(x))]))
-    urea_years <- as.numeric(sub("y", "", colnames(urea)[grepl("^y\\d{4}$", colnames(urea))]))
-    start_year <- min(x_years, na.rm = TRUE)
-    end_year   <- max(x_years, na.rm = TRUE)
-    last_available_year <- max(urea_years, na.rm = TRUE)
+    # Weights for all years of x: years after the last available weight year use the
+    # last available year (constant extrapolation)
+    weight <- time_interpolate(urea[unique(map$CountryCode), , ], getYears(x),
+                               extrapolation_type = "constant")
 
-    # Loop over each year and perform aggregation using appropriate weights
-    for (year in start_year:end_year) {
-      year_col <- paste0("y", year)
-      weight_col <- if (year <= last_available_year) paste0("y", year) else paste0("y", last_available_year)
-
-      if (weight_col %in% colnames(urea)) {
-        aggregated_result <- toolAggregate(
-          x[, year_col, drop = FALSE],
-          rel = map,
-          from = "IFAReg",
-          to = "CountryCode",
-          weight = urea[, weight_col, drop = FALSE][unique(map$CountryCode), , drop = FALSE]
-        )
-        if (year == start_year) {
-          xNew <- aggregated_result
-        } else {
-          xNew <- mbind(xNew, aggregated_result)
-        }
-      } else {
-        warning(paste("Weight column", weight_col, "is missing in urea data. Skipping aggregation for year", year, "."))
-      }
-    }
+    xNew <- toolAggregate(x, rel = map, from = "IFAReg", to = "CountryCode", weight = weight)
   } else if (subtype[2] == "statistics") {
     # ------------------------------
     # Statistics Subtype Processing
@@ -68,42 +45,18 @@ convertIFA_ChemAppend <- function(x, subtype = x) {
                             aggregate = FALSE)
     ureaN <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen = TRUE,
                         aggregate = FALSE)
-    ammoniaN <- toolCountryFill(ammoniaN, fill = 0, verbosity = 2)
-    ureaN <- toolCountryFill(ureaN, fill = 0, verbosity = 2)
-    years <- intersect(getYears(ammoniaN), getYears(ureaN))
-    weightData <- ammoniaN[, years, ] - setNames(ureaN[getItems(ammoniaN, dim = 1), years, ], getNames(ammoniaN))
+    getNames(ammoniaN) <- NULL  
+    getNames(ureaN) <- NULL  
+    weightData <- ammoniaN - ureaN 
     weightData[is.na(weightData) | weightData < 0] <- 0
 
-    # Determine available years from both datasets
-    x_years <- as.numeric(sub("y", "", colnames(x)[grepl("^y\\d{4}$", colnames(x))]))
-    weight_years <- as.numeric(sub("y", "", colnames(weightData)[grepl("^y\\d{4}$", colnames(weightData))]))
-    start_year <- min(x_years, na.rm = TRUE)
-    end_year   <- max(x_years, na.rm = TRUE)
-    last_available_year <- max(weight_years, na.rm = TRUE)
+    # Weights for all years of x: years after the last available weight year use the
+    # last available year (constant extrapolation)
+    weight <- time_interpolate(weightData[unique(map$CountryCode), , ], getYears(x),
+                               extrapolation_type = "constant")
 
-    # Loop over each year and perform aggregation using appropriate weights
-    for (year in start_year:end_year) {
-      year_col <- paste0("y", year)
-      weight_col <- if (year <= last_available_year) paste0("y", year) else paste0("y", last_available_year)
-
-      if (weight_col %in% colnames(weightData)) {
-        aggregated_result <- toolAggregate(
-          x[, year_col, drop = FALSE],
-          rel = map,
-          from = "IFAReg",
-          to = "CountryCode",
-          weight = weightData[, weight_col, drop = FALSE][unique(map$CountryCode), , drop = FALSE],
-          zeroWeight = "allow" # production of countries mapped to "Total Various" is 0, therefore the weight sum is zero; but so is the fertilizer production
-        )
-        if (year == start_year) {
-          xNew <- aggregated_result
-        } else {
-          xNew <- mbind(xNew, aggregated_result)
-        }
-      } else {
-        warning(paste("Weight column", weight_col, "is missing in weighting data. Skipping aggregation for year", year, "."))
-      }
-    }
+    xNew <- toolAggregate(x, rel = map, from = "IFAReg", to = "CountryCode", weight = weight,
+                          zeroWeight = "allow") # production of countries mapped to "Total Various" is 0, therefore the weight sum is zero; but so is the fertilizer production
 
   } else {
     stop("Invalid subtype combination")
