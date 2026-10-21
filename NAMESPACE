@@ -117,10 +117,8 @@ importFrom(magclass,
   mbind,
   mselect,
   new.magpie,
-  setNames,
-  where
+  setNames
 )
-importFrom(magpiesets,findset)
 importFrom(magrittr,"%>%")
 importFrom(mrcommonsenergy,toolGetIEAYear)
 importFrom(quitte,

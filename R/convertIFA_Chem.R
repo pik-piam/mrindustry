@@ -5,13 +5,7 @@
 #' @param x MagPIE object containing IFA data at region resolution.
 #' @return MagPIE object of the IFA data disaggregated to country level.
 #' @author Qianzhi Zhang
-#' @examples
-#' \dontrun{
-#'   a <- convertIFA_Chem(x)
-#' }
 #'
-#' @importFrom magclass where
-#' @importFrom magpiesets findset
 convertIFA_Chem <- function(x) {
   # ---------------------------------------------------------------------------
   # Extract Subtype Information

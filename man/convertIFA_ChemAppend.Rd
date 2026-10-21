@@ -4,22 +4,25 @@
 \alias{convertIFA_ChemAppend}
 \title{Convert IFA_Chem}
 \usage{
-convertIFA_ChemAppend(x)
+convertIFA_ChemAppend(x, subtype = x)
 }
 \arguments{
 \item{x}{MagPIE object containing IFA data at regional resolution.}
+
+\item{subtype}{Character string indicating the IFA product and data type to read.
+Available combinations include:
+\itemize{
+  \item AN_statistics_production
+  \item AS_statistics_production
+  \item CAN_statistics_production
+  \item AN_capacities_capacities, AS_capacities_capacities, UAN_capacities_capacities
+}}
 }
 \value{
 MagPIE object of the IFA data disaggregated to country level.
 }
 \description{
 Convert IFA_Chem data to ISO country level.
-}
-\examples{
-\dontrun{
-  a <- convertIFA_ChemAppend(x)
-}
-
 }
 \author{
 Qianzhi Zhang
