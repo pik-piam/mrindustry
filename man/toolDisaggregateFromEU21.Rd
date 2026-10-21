@@ -17,7 +17,8 @@ toolDisaggregateFromEU21(x, weight = NULL, zeroWeight = "warn")
 magpie object at ISO country level
 }
 \description{
-Counterpart of [toolAggregateToEU21()]. Extensive variables are split to the
+Disaggregates data calculated at the resolution of regionmapping_21_EU11 (obtained via
+`calcOutput(..., regionmapping = "regionmapping_21_EU11.csv")`) to ISO countries. Extensive variables are split to the
 countries of each region proportional to `weight`. Intensive variables (ratios, shares,
 specific values) are disaggregated without weight, which copies the regional value to all
 countries of the region; the calc function then has to return a matching aggregation weight.

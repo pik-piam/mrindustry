@@ -26,12 +26,12 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #    - Join these datasets and calculate Material_Flow as:
   #         Material_Flow = (Value.x from AllChemicalUeShare_2020 * Value.y from feIndustry) / mat2ue
   # ---------------------------------------------------------------------------
-  AllChemicalUeShares_2020 <- toolAggregateToEU21(calcOutput("AllChemicalUeShares_2020", round = 8, aggregate = FALSE, supplementary = TRUE)) %>% 
+  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", round = 8, regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>%
     select(-"Cell", -"Year")
   
-  feIndustry <- toolAggregateToEU21(calcOutput("FeDemandIndustry", scenarios="SSP2",signif = 4, warnNA = FALSE,
-                                               aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), "SSP2.ue_chemicals"]) %>%
+  feIndustry <- calcOutput("FeDemandIndustry", scenarios="SSP2",signif = 4, warnNA = FALSE,
+                           regionmapping = "regionmapping_21_EU11.csv")[, c("y2005", "y2010", "y2015", "y2020"), "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
     select(-"Cell")
   
@@ -48,7 +48,7 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #      and rename Data1.x to "ammonia".
   #    - Bind these adjusted rows back with the original dataset and remove temporary NFert_ratio.
   # ---------------------------------------------------------------------------
-  nfert_ratio <- toolAggregateToEU21(calcOutput("FertilizerRoute", aggregate = FALSE, supplementary = TRUE))[, "y2020", ] %>% 
+  nfert_ratio <- calcOutput("FertilizerRoute", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-"Cell", -"Year") %>%
     filter(.data$Data1 == "NFert_ratio")
@@ -77,7 +77,7 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #    - Calculate MeFinalratio as:
   #         if meToFinal is 0 then 1(to avoid dividing by 0 later), else meToFinal / (mtoMta * 2.62 + meToFinal)
   # ---------------------------------------------------------------------------
-  ChemicalRoutes_2020 <- toolAggregateToEU21(calcOutput("ChemicalRoutes_2020", aggregate = FALSE, supplementary = TRUE))[, "y2020", ] %>% 
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-"Cell", -"Data2", -"Year")
   

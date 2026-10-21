@@ -1,6 +1,7 @@
 #' Disaggregate data from the 21 REMIND regions (regionmapping_21_EU11) to ISO countries
 #'
-#' @description Counterpart of [toolAggregateToEU21()]. Extensive variables are split to the
+#' @description Disaggregates data calculated at the resolution of regionmapping_21_EU11 (obtained via
+#' `calcOutput(..., regionmapping = "regionmapping_21_EU11.csv")`) to ISO countries. Extensive variables are split to the
 #' countries of each region proportional to `weight`. Intensive variables (ratios, shares,
 #' specific values) are disaggregated without weight, which copies the regional value to all
 #' countries of the region; the calc function then has to return a matching aggregation weight.

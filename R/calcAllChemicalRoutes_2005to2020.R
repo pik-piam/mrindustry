@@ -13,7 +13,7 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   #    - Retrieve AllChemicalFlows_2005to2020 data, remove unnecessary columns,
   #      and rename "Data1" to "Product" for consistency.
   # ---------------------------------------------------------------------------
-  AllChemicalFlows_2005to2020 <- toolAggregateToEU21(calcOutput("AllChemicalFlows_2005to2020", warnNA = FALSE, aggregate = FALSE, supplementary = TRUE)) %>% 
+  AllChemicalFlows_2005to2020 <- calcOutput("AllChemicalFlows_2005to2020", warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>%
     select(-"Cell") %>%
     rename(Product = .data$Data1)
@@ -24,7 +24,7 @@ calcAllChemicalRoutes_2005to2020 <- function(CCS=FALSE) {
   #    - Remove extra columns and recategorize "Data1" into broader product groups,
   #      creating a new "Product" column.
   # ---------------------------------------------------------------------------
-  ChemicalRoutes_2020 <- toolAggregateToEU21(calcOutput("ChemicalRoutes_2020", aggregate = FALSE, supplementary = TRUE))[, "y2020", ] %>% 
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-"Cell", -"Data2", -"Year") %>%
     mutate(

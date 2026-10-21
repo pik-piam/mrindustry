@@ -13,26 +13,26 @@ calcFertilizerRoute <- function() {
   # ---------------------------------------------------------------------------
   
   # Urea production data from IFA_Chem
-  Urea_IFA <- toolAggregateToEU21(calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen = TRUE,
-                                            aggregate = FALSE, supplementary = TRUE))[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  Urea_IFA <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)  # Scale down values
   
   # Ammonium Nitrate (AN) production data from IFA_ChemAppend
-  AN_IFA <- toolAggregateToEU21(calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen = TRUE,
-                                            aggregate = FALSE, supplementary = TRUE))[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  AN_IFA <- calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)
   
   # Calcium Ammonium Nitrate (CAN) production data from IFA_ChemAppend
-  CAN_IFA <- toolAggregateToEU21(calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen = TRUE,
-                                            aggregate = FALSE, supplementary = TRUE))[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  CAN_IFA <- calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)
   
   # Ammonium Sulfate (AS) production data from IFA_ChemAppend
-  AS_IFA <- toolAggregateToEU21(calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen = TRUE,
-                                            aggregate = FALSE, supplementary = TRUE))[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  AS_IFA <- calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)
   
@@ -43,8 +43,8 @@ calcFertilizerRoute <- function() {
   #    - Convert the production value and change the 'Year' column to numeric.
   # ---------------------------------------------------------------------------
   
-  Ammonia_IFA <- toolAggregateToEU21(calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen = TRUE,
-                                            aggregate = FALSE, supplementary = TRUE))[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  Ammonia_IFA <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(
       NAmmonia_production = .data$Value / 1000,             # Scale down ammonia production values

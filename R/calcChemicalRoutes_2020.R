@@ -11,19 +11,19 @@ calcChemicalRoutes_2020<- function() {
   # Load Route Data for Individual Chemicals
   #    - Retrieve ammonia, methanol, hvcs, and overall fertilizer data.
   # ---------------------------------------------------------------------------
-  ammonia_route <- toolAggregateToEU21(calcOutput("AmmoniaRoute", aggregate = FALSE, supplementary = TRUE)) %>%
+  ammonia_route <- calcOutput("AmmoniaRoute", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell")
   
-  methanol_route <- toolAggregateToEU21(calcOutput("MethanolRoute", aggregate = FALSE, supplementary = TRUE)) %>%
+  methanol_route <- calcOutput("MethanolRoute", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell")
   
-  hvc_route <- toolAggregateToEU21(calcOutput("HVCRoute", aggregate = FALSE, supplementary = TRUE)) %>%
+  hvc_route <- calcOutput("HVCRoute", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell")
   
-  nfert_all <- toolAggregateToEU21(calcOutput("FertilizerRoute", aggregate = FALSE, supplementary = TRUE)) %>% 
+  nfert_all <- calcOutput("FertilizerRoute", regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>%
     select(-"Cell")
   

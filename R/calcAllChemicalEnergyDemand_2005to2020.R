@@ -21,13 +21,13 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   #    b) Load regional historical energy intensity data for overall methanol&ammonia synthesis and steam crakcing (IEA_PetrochemEI)
   #    c) Collect specific BAT energy intensity data (target energy demand)
   # ---------------------------------------------------------------------------
-  AllChemicalRoutes_2005to2020 <- toolAggregateToEU21(calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = FALSE,
-                                                                CCS = CCS, supplementary = TRUE)) %>% 
+  AllChemicalRoutes_2005to2020 <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv",
+                                            CCS = CCS) %>% 
     as.data.frame() %>% 
     select(-"Cell")%>%
     rename(tePrc = "Data1", opmoPrc = "Data2", ChemFlow = "Value")
   
-  IEA_PetrochemEI <- toolAggregateToEU21(calcOutput("IEA_PetrochemEI", aggregate = FALSE, supplementary = TRUE)) %>% 
+  IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>% 
     select(-"Cell", -"Year")
   
@@ -166,12 +166,12 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   # Load Industry Demand Data for Chemicals and map FE types
   # ---------------------------------------------------------------------------
-  feIndustry <- toolAggregateToEU21(calcOutput("FeDemandIndustry", scenarios=c("SSP2"), signif = 4, warnNA = FALSE, aggregate = FALSE)[, 
-                                                                                                                  c("y2005", "y2010", "y2015", "y2020"),
-                                                                                                                  c("SSP2.feelhth_chemicals", "SSP2.feelwlth_chemicals", 
-                                                                                                                    "SSP2.feh2_chemicals", "SSP2.fega_chemicals", 
-                                                                                                                    "SSP2.feli_chemicals", "SSP2.feso_chemicals")
-  ]) %>%
+  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), signif = 4, warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv")[, 
+                                                                                              c("y2005", "y2010", "y2015", "y2020"),
+                                                                                              c("SSP2.feelhth_chemicals", "SSP2.feelwlth_chemicals", 
+                                                                                                "SSP2.feh2_chemicals", "SSP2.fega_chemicals", 
+                                                                                                "SSP2.feli_chemicals", "SSP2.feso_chemicals")
+  ] %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     mutate(

@@ -10,16 +10,16 @@ calcHVCRoute <- function() {
   # Load IEA Petrochemical Production Data for BTX, Propylene, and Ethylene
   #    - Retrieve production data for selected years.
   # ----------------------------------------------------------
-  BTX_IEA <- toolAggregateToEU21(calcOutput("IEA_Petrochem", subtype = "production5type_BTX",
-                                            aggregate = FALSE, supplementary = TRUE))[, c("X2015", "X2017", "X2025"), ] %>%
+  BTX_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_BTX",
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("X2015", "X2017", "X2025"), ] %>%
     as.data.frame()
   
-  Propylene_IEA <- toolAggregateToEU21(calcOutput("IEA_Petrochem", subtype = "production5type_Propylene",
-                                            aggregate = FALSE, supplementary = TRUE))[, c("X2015", "X2017", "X2025"), ] %>%
+  Propylene_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_Propylene",
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("X2015", "X2017", "X2025"), ] %>%
     as.data.frame()
   
-  Ethylene_IEA <- toolAggregateToEU21(calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene",
-                                            aggregate = FALSE, supplementary = TRUE))[, c("X2015", "X2017", "X2025"), ] %>%
+  Ethylene_IEA <- calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene",
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("X2015", "X2017", "X2025"), ] %>%
     as.data.frame()
   
   # ----------------------------------------------------------
@@ -61,8 +61,8 @@ calcHVCRoute <- function() {
   #    - For rows with Data1 "MTO_MTA", assign the total to China (CHA) and zero for others.
   #    - Filter for China (CHA) and map the technology types to custom categories.
   # ----------------------------------------------------------
-  HVC_share_iea <- toolAggregateToEU21(calcOutput("IEA_Petrochem", subtype = "RouteRTS_HVCs",
-                                                  aggregate = FALSE, supplementary = TRUE))[, "y2017", ] %>%
+  HVC_share_iea <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_HVCs",
+                              regionmapping = "regionmapping_21_EU11.csv")[, "y2017", ] %>%
     as.data.frame() %>%
     group_by(.data$Year) %>%  
     mutate(Value = ifelse(.data$Data1 == "MTO_MTA",
@@ -93,8 +93,8 @@ calcHVCRoute <- function() {
   #    - Map feedstock types to custom categories, normalize the data, and
   #      add zero entries for the "mtoMta" category where needed.
   # ----------------------------------------------------------
-  HVC_Feedstockshare_iea <- toolAggregateToEU21(calcOutput("IEA_Petrochem", subtype = "Feedstock_HVCs",
-                                                  aggregate = FALSE, supplementary = TRUE))[, "y2017", ] %>%
+  HVC_Feedstockshare_iea <- calcOutput("IEA_Petrochem", subtype = "Feedstock_HVCs",
+                              regionmapping = "regionmapping_21_EU11.csv")[, "y2017", ] %>%
     as.data.frame() %>%
     filter(.data$Region != "CHA")  # Exclude China
   

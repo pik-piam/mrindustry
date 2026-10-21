@@ -32,7 +32,7 @@ calcAllChemicalUeShares_2020 <- function() {
   #      rows for 'ammonia' and 'methanol' (since these are not processed here).
   #    - Join with the conversion factors and calculate the material-to-UE value.
   # ---------------------------------------------------------------------------
-  ChemicalFlows_2020 <- toolAggregateToEU21(calcOutput("ChemicalFlows_2020", aggregate = FALSE, supplementary = TRUE))[, "y2020", ] %>%
+  ChemicalFlows_2020 <- calcOutput("ChemicalFlows_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     filter(!.data$Data1 %in% c("ammonia", "methanol")) %>%
@@ -46,7 +46,7 @@ calcAllChemicalUeShares_2020 <- function() {
   # ---------------------------------------------------------------------------
   ueChemicals <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = FALSE, scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"]
 
-  feIndustry <- toolAggregateToEU21(ueChemicals) %>%
+  feIndustry <- calcOutput("FeDemandIndustry", warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv", scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
     select(-"Cell")
   

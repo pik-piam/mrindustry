@@ -10,7 +10,7 @@ calcChemicalFlows_2020 <- function() {
   #    - Retrieve the aggregated ChemicalRoutes_2020 data.
   #    - Remove the unwanted columns 'Cell' and 'Data2'.
   # ---------------------------------------------------------------------------
-  ChemicalRoutes_2020 <- toolAggregateToEU21(calcOutput("ChemicalRoutes_2020", aggregate = FALSE, supplementary = TRUE)) %>%
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell", -"Data2")
   
