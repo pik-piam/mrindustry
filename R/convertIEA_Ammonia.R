@@ -6,15 +6,9 @@
 #' @param x MagPIE object containing IEA Ammonia data at regional resolution.
 #' @return MagPIE object of the IEA Ammonia data disaggregated to country level.
 #' @author Qianzhi Zhang
-#' @examples
-#' \dontrun{
-#'   a <- convertIEA_Ammonia(x)
-#' }
 #'
-#' @importFrom magclass where
-#' @importFrom magpiesets findset
 convertIEA_Ammonia <- function(x) {
-  
+
   # ---------------------------------------------------------------------------
   # Define "Others" Regions
   #    - These regions represent aggregated regions from the dataset.
@@ -22,7 +16,7 @@ convertIEA_Ammonia <- function(x) {
   others <- c(
     "North America", "Europe", "Eurasia", "Middle East", "Africa", "Central and South America"
   )
-  
+
   # ---------------------------------------------------------------------------
   # Separate Regional and Country-level Data
   #    - xReg: Extract data corresponding to the aggregated "others" regions.
@@ -30,13 +24,13 @@ convertIEA_Ammonia <- function(x) {
   # ---------------------------------------------------------------------------
   xReg <- x[others, , ]
   xCtry <- x[others, , invert = TRUE]
-  
+
   # ---------------------------------------------------------------------------
   # Convert Country Names to ISO Codes
   #    - Convert the names in the country-level data (xCtry) to ISO codes.
   # ---------------------------------------------------------------------------
   getItems(xCtry, dim = 1) <- toolCountry2isocode(getItems(xCtry, dim = 1))
-  
+
   # ---------------------------------------------------------------------------
   # Load Regional-to-Country Mapping
   #    - Retrieve mapping that converts IFA region codes (IFAReg) to ISO country codes.
@@ -44,13 +38,13 @@ convertIEA_Ammonia <- function(x) {
   # ---------------------------------------------------------------------------
   map <- toolGetMapping("regionmappingIEA_Ammonia.csv", type = "regional", where = "mrindustry") %>%
     dplyr::filter(.data$IFAReg != "rest")
-  
+
   # ---------------------------------------------------------------------------
   # Retrieve Weighting Data
   #    - Get the ammonia production data (IFA_Chem ammonia statistics) for 2020 to be used as weights.
   # ---------------------------------------------------------------------------
   Ammonia <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, "y2020", ]
-  
+
   # ---------------------------------------------------------------------------
   # Aggregate Regional Data to Country Level
   #    - Aggregate the aggregated "others" regions (xReg) to country level using the mapping and weights.
@@ -63,18 +57,18 @@ convertIEA_Ammonia <- function(x) {
     to = "CountryCode",
     weight = Ammonia[unique(map$CountryCode), , ]
   )
-  
+
   # ---------------------------------------------------------------------------
   # Combine Aggregated Regional Data with Individual Country Data
   # ---------------------------------------------------------------------------
   x <- mbind(xReg, xCtry)
-  
+
   # ---------------------------------------------------------------------------
   # Fill Missing Country Data with 0
   #    - Ensure completeness by replacing any missing values with 0.
   # ---------------------------------------------------------------------------
   x <- toolCountryFill(x, fill = 0)
-  
+
   # ---------------------------------------------------------------------------
   # Return the Final Disaggregated MagPIE Object
   # ---------------------------------------------------------------------------

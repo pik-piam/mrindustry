@@ -12,7 +12,8 @@ calcMethanolRoute <- function() {
   #    - Get production data from "IHS_Meth" for years 2015-2020.
   #    - Exclude China ("CHA") and mark the data with a production identifier.
   # ---------------------------------------------------------------------------
-  methanol_production <- calcOutput("IHS_Meth", subtype = "Production_2010-2020", aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  methanol_production <- calcOutput("IHS_Meth", subtype = "Production_2010-2020",
+                                    regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     filter(!.data$Region %in% c("CHA")) %>% 
     mutate(Data1 = "Production")
@@ -21,7 +22,7 @@ calcMethanolRoute <- function() {
   # Load Methanol Production Data for China
   #    - Retrieve production data for China ("CHA") from the specified file.
   # ---------------------------------------------------------------------------
-  methanol_production_china <- calcOutput("ChinaBaogao", aggregate = TRUE)["CHA", c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), "Production"] %>%
+  methanol_production_china <- calcOutput("ChinaBaogao", regionmapping = "regionmapping_21_EU11.csv")["CHA", c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), "Production"] %>%
     as.data.frame()
   
   # ---------------------------------------------------------------------------
@@ -29,7 +30,8 @@ calcMethanolRoute <- function() {
   #    - Retrieve route data for 2017 from "IEA_Petrochem".
   #    - Exclude China ("CHA") and map technology types to custom categories.
   # ---------------------------------------------------------------------------
-  methanol_share_iea <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Methanol", aggregate = TRUE)[, "y2017", ] %>%
+  methanol_share_iea <- calcOutput("IEA_Petrochem", subtype = "RouteRTS_Methanol",
+                                   regionmapping = "regionmapping_21_EU11.csv")[, "y2017", ] %>%
     as.data.frame() %>%
     filter(!.data$Region %in% c("CHA"))
   
@@ -54,7 +56,8 @@ calcMethanolRoute <- function() {
   #    - Retrieve methanol share data for China ("CHA") from "RMI_China" for 2020.
   #    - Map technology types to custom categories.
   # ---------------------------------------------------------------------------
-  methanol_share_china <- calcOutput("RMI_China", subtype = "ChemStructure_Methanol", aggregate = TRUE)["CHA", "y2020", ] %>%
+  methanol_share_china <- calcOutput("RMI_China", subtype = "ChemStructure_Methanol",
+                                     regionmapping = "regionmapping_21_EU11.csv")["CHA", "y2020", ] %>%
     as.data.frame()
   
   # Map technology types to categories for China data
@@ -95,21 +98,13 @@ calcMethanolRoute <- function() {
   methanol_production_all <- calcOutput("IHS_Meth", subtype = "Production_2010-2020", aggregate = FALSE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ]
   
   # ---------------------------------------------------------------------------
-  # Load Regional Mapping and Aggregate Data to Country Level
+  # Disaggregate Regional (EU21) Data to Country Level
   #    - Convert the data to a magpie object.
-  #    - Aggregate regional data to country level using production weights.
+  #    - Disaggregate regional data to country level using production weights.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder") 
   x <- as.magpie(methanol_route_value, spatial = 1, temporal = 3)
-  x <- toolAggregate(
-    x,
-    rel = map,
-    dim = 1,
-    from = "RegionCode",
-    to = "CountryCode",
-    weight = methanol_production_all[unique(map$CountryCode), , ],
-    zeroWeight="allow" # methanol production in JPN is 0
-  )
+  x <- toolDisaggregateFromEU21(x, weight = methanol_production_all,
+                                zeroWeight = "allow") # methanol production in JPN is 0
   x[is.na(x)] <- 0  # Replace any NA values with 0
   
   # ---------------------------------------------------------------------------

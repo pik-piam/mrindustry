@@ -4,10 +4,30 @@
 \alias{convertIEA_Petrochem}
 \title{Convert IEA_Petrochem}
 \usage{
-convertIEA_Petrochem(x)
+convertIEA_Petrochem(x, subtype)
 }
 \arguments{
 \item{x}{MagPIE object containing IEA Petrochem data at regional resolution.}
+
+\item{subtype}{Different data sheets to read. Available types are:
+  \itemize{
+    \item Feedstock: Fig 4.5 Petrochem Feedstock for HVCs, Ammonia, Methanol
+    \item RouteRTS: Fig 4.9 Petro Prod Route RTS (Reference Technology Scenario) for HVCs, Ammonia, Methanol
+    \item RouteCTS: Fig 5.10 Petro Prod Route CTS (Clean Technology Scenario) for HVCs, Ammonia, Methanol
+    \item production3type: Fig 4.1 Petrochem Production for HVCs, Ammonia, Methanol
+    \item production5type: Fig A.1 Petrochem Prod Region for Ethylene, Propylene, BTX, Ammonia, Methanol
+    \item plastics: Fig 4.2 Production of key thermoplastics in the RTS
+  }
+
+Different products to read. Available types are:
+  \itemize{
+    \item HVCs
+    \item Ammonia
+    \item Methanol
+    \item Ethylene
+    \item Propylene
+    \item BTX
+  }}
 }
 \value{
 MagPIE object of the IEA Petrochem data disaggregated to country level.
@@ -17,12 +37,6 @@ Convert IEA The Future of Petrochemicals 2018 data (including several figures su
 "Fig 4.1 Petrochem Production", "Fig A.1 Petrochem Prod Region", "Fig 4.5 Petrochem Feedstock",
 "Fig 4.9 Petro Prod Route RTS", "Fig 5.10 Petro Prod Route CTS") into a MagPIE object
 aggregated to ISO country level.
-}
-\examples{
-\dontrun{
-  a <- convertIEA_Petrochem(x)
-}
-
 }
 \author{
 Qianzhi

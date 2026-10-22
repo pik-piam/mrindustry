@@ -145,7 +145,6 @@ readIFA_ChemAppend <- function(subtype) {
   # ---------------------------------------------------------------------------
   data <- as.magpie(data, spatial = 1, temporal = 2)
   data[is.na(data)] <- 0
-  getComment(data) <- paste(subtype[1], subtype[2], subtype[3], sep = "_")
 
   # ---------------------------------------------------------------------------
   # Return the Processed Data

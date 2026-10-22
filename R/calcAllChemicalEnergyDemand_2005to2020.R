@@ -1,7 +1,7 @@
 #' Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020) 
 #' and specific energy consumption for the different routes (retrieved from IEA_PetrochemEI and other literature sources).
 #' The energy demand for OtherChem is calculated as the remaining share of total chemical industry energy demand. 
-#' Results are aggregated to the country level.
+#' Results are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.
 #' 
 #' @author Qianzhi Zhang
 #'
@@ -21,12 +21,13 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   #    b) Load regional historical energy intensity data for overall methanol&ammonia synthesis and steam crakcing (IEA_PetrochemEI)
   #    c) Collect specific BAT energy intensity data (target energy demand)
   # ---------------------------------------------------------------------------
-  AllChemicalRoutes_2005to2020 <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = TRUE, CCS=CCS) %>% 
+  AllChemicalRoutes_2005to2020 <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv",
+                                            CCS = CCS) %>% 
     as.data.frame() %>% 
     select(-"Cell")%>%
     rename(tePrc = "Data1", opmoPrc = "Data2", ChemFlow = "Value")
   
-  IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", aggregate = TRUE) %>% 
+  IEA_PetrochemEI <- calcOutput("IEA_PetrochemEI", regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>% 
     select(-"Cell", -"Year")
   
@@ -165,11 +166,11 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   # Load Industry Demand Data for Chemicals and map FE types
   # ---------------------------------------------------------------------------
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), signif = 4, warnNA = FALSE, aggregate = TRUE)[, 
-                                                                                                                  c("y2005", "y2010", "y2015", "y2020"),
-                                                                                                                  c("SSP2.feelhth_chemicals", "SSP2.feelwlth_chemicals", 
-                                                                                                                    "SSP2.feh2_chemicals", "SSP2.fega_chemicals", 
-                                                                                                                    "SSP2.feli_chemicals", "SSP2.feso_chemicals")
+  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), signif = 4, warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv")[, 
+                                                                                              c("y2005", "y2010", "y2015", "y2020"),
+                                                                                              c("SSP2.feelhth_chemicals", "SSP2.feelwlth_chemicals", 
+                                                                                                "SSP2.feh2_chemicals", "SSP2.fega_chemicals", 
+                                                                                                "SSP2.feli_chemicals", "SSP2.feso_chemicals")
   ] %>%
     as.data.frame() %>%
     select(-"Cell") %>%
@@ -204,24 +205,14 @@ calcAllChemicalEnergyDemand_2005to2020 <- function(CCS=FALSE) {
   merged_result <- bind_rows(feChemical, OtherChem_FE) 
   
   # ---------------------------------------------------------------------------
-  # Aggregate Data to Country Level
+  # Disaggregate Data to Country Level
   #    - Load ChemicalTotal data for weighting.
-  #    - Retrieve regional mapping.
-  #    - Convert merged result to a magpie object and aggregate to country level.
+  #    - Convert merged result to a magpie object and disaggregate the regional (EU21) data to country level.
   # ---------------------------------------------------------------------------
   Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), ]
-  
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-  
+
   x <- as.magpie(merged_result, spatial = 1, temporal = 2)
-  x <- toolAggregate(
-    x,
-    rel = map,
-    dim = 1,
-    from = "RegionCode",
-    to = "CountryCode",
-    weight = Chemical_Total[unique(map$CountryCode), , ]
-  )
+  x <- toolDisaggregateFromEU21(x, weight = Chemical_Total)
   x[is.na(x)] <- 0
   
   # ---------------------------------------------------------------------------

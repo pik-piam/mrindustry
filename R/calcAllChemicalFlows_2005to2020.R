@@ -2,7 +2,7 @@
 #' and assuming constant UE shares of the final chemical flows;
 #' intermediate ammonia and methanol flows are calculated from the final flows and 
 #' ammonia-to-fertilizer and methanol-to-hvc ratios.
-#' Flows are aggregated to the country level.
+#' Flows are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.
 #' 
 #' @author Qianzhi Zhang
 #'
@@ -26,11 +26,12 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #    - Join these datasets and calculate Material_Flow as:
   #         Material_Flow = (Value.x from AllChemicalUeShare_2020 * Value.y from feIndustry) / mat2ue
   # ---------------------------------------------------------------------------
-  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", round = 8, aggregate = TRUE) %>% 
+  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", round = 8, regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>%
     select(-"Cell", -"Year")
   
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios="SSP2",signif = 4, warnNA = FALSE, aggregate = TRUE)[, c("y2005", "y2010", "y2015", "y2020"), "SSP2.ue_chemicals"] %>%
+  feIndustry <- calcOutput("FeDemandIndustry", scenarios="SSP2",signif = 4, warnNA = FALSE,
+                           regionmapping = "regionmapping_21_EU11.csv")[, c("y2005", "y2010", "y2015", "y2020"), "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
     select(-"Cell")
   
@@ -47,7 +48,7 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #      and rename Data1.x to "ammonia".
   #    - Bind these adjusted rows back with the original dataset and remove temporary NFert_ratio.
   # ---------------------------------------------------------------------------
-  nfert_ratio <- calcOutput("FertilizerRoute", aggregate = TRUE)[, "y2020", ] %>% 
+  nfert_ratio <- calcOutput("FertilizerRoute", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-"Cell", -"Year") %>%
     filter(.data$Data1 == "NFert_ratio")
@@ -76,7 +77,7 @@ calcAllChemicalFlows_2005to2020 <- function() {
   #    - Calculate MeFinalratio as:
   #         if meToFinal is 0 then 1(to avoid dividing by 0 later), else meToFinal / (mtoMta * 2.62 + meToFinal)
   # ---------------------------------------------------------------------------
-  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE)[, "y2020", ] %>% 
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>% 
     as.data.frame() %>%
     select(-"Cell", -"Data2", -"Year")
   
@@ -111,22 +112,19 @@ calcAllChemicalFlows_2005to2020 <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # Finalize Output and Aggregate Data to Country Level
+  # Finalize Output and Disaggregate Data to Country Level
   #    - Select the required columns (Region, Year, Data1.x, Material_Flow).
   #    - Retrieve ChemicalTotal data for weighting.
-  #    - Get the regional mapping and convert FinalOutput to a magpie object.
-  #    - Aggregate the regional data to country level using the mapping and ChemicalTotal weights.
+  #    - Convert FinalOutput to a magpie object and disaggregate the regional (EU21) data
+  #      to country level using ChemicalTotal weights.
   # ---------------------------------------------------------------------------
   FinalOutput <- AllChemicalFlow %>%
     select("Region", "Year", "Data1.x", "Material_Flow")
   
   Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, c("y2005", "y2010", "y2015", "y2020"), ]
   
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-  
   x <- as.magpie(FinalOutput, spatial = 1, temporal = 2)
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 
-                     weight = Chemical_Total[unique(map$CountryCode), , ])
+  x <- toolDisaggregateFromEU21(x, weight = Chemical_Total)
   x[is.na(x)] <- 0
   
   # ---------------------------------------------------------------------------
@@ -136,7 +134,7 @@ calcAllChemicalFlows_2005to2020 <- function() {
     x = x,
     weight = NULL,
     unit = "Gt Chemical Flows",
-    description = "Chemical material flows from 2005 to 2020 extrapolated from 2020 based on total chemical UE and constant UE shares aggregated to the country level."
+    description = "Chemical material flows from 2005 to 2020 extrapolated from 2020 based on total chemical UE and constant UE shares, disaggregated to the country level."
   ))
 }
 

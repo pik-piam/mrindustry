@@ -3,24 +3,13 @@
 #' Convert 9TH RUSSIA & CIS OIL & GAS EXECUTIVE SUMMIT 2019 METHANOL INS.xlsx data to ISO country level.
 #'
 #' @param x MagPIE object containing IHS_Meth data at regional resolution.
+#' @inheritParams readIHS_Meth
 #' @return MagPIE object of the IHS_Meth data disaggregated to country level.
 #' @author Qianzhi Zhang
-#' @examples
-#' \dontrun{
-#'   a <- convertIHS_Meth(x)
-#' }
 #'
-#' @importFrom magclass where
-#' @importFrom magpiesets findset
-convertIHS_Meth <- function(x) {
-  # ---------------------------------------------------------------------------
-  # Extract Subtype Information
-  #    - Retrieve the subtype string from the comment attached to x.
-  #    - Split the subtype string to determine the temporal resolution (2010-2020 vs. 2018)
-  #      and the data type (Production, Capacity, or Demand).
-  # ---------------------------------------------------------------------------
-  subtype <- getComment(x)
-  subtype <- unlist(strsplit(strsplit(getComment(x), " ")[[1]][3], "_"))
+convertIHS_Meth <- function(x, subtype) {
+
+  subtype <- unlist(strsplit(subtype, "_"))
 
   # ---------------------------------------------------------------------------
   # Separate China-specific Data from Other Countries

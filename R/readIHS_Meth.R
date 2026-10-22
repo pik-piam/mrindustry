@@ -97,14 +97,7 @@ readIHS_Meth <- function(subtype) {
     data <- as.magpie(data, spatial = 1, temporal = 2)
   }
 
-  # ---------------------------------------------------------------------------
-  # Final Cleanup
-  #    - Replace NA values with 0.
-  #    - Add the concatenated subtype string as a comment.
-  # ---------------------------------------------------------------------------
   data[is.na(data)] <- 0
-  subtype <- paste(subtype, collapse = "_")
-  getComment(data) <- subtype
 
   # ---------------------------------------------------------------------------
   # Return the Processed Magpie Object
