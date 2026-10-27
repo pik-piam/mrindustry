@@ -1,8 +1,8 @@
 Type: Package
 Package: mrindustry
 Title: input data generation for the REMIND industry module
-Version: 1.3.6
-Date: 2026-09-04
+Version: 1.4.0
+Date: 2026-10-21
 Authors@R: c(
     person(given = "Falk", family = "Benke", email = "benke@pik-potsdam.de",
            role = c("aut", "cre")),
@@ -38,6 +38,7 @@ Imports:
     countrycode,
     dplyr,
     ggplot2,
+    glue,
     Hmisc,
     magpiesets,
     magrittr,
@@ -54,4 +55,4 @@ Imports:
 Suggests:
     testthat,
 Encoding: UTF-8
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

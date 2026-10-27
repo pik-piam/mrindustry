@@ -11,7 +11,7 @@
 #' @importFrom dplyr arrange bind_rows filter group_by lag lead mutate n
 #'                   row_number select
 #' @importFrom quitte madrat_mule
-#' @importFrom rlang .data .env sym syms
+#' @importFrom rlang .env
 #' @importFrom tidyr nest pivot_longer unnest
 #' @importFrom dplyr desc
 #' @export
