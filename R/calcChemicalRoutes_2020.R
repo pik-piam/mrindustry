@@ -11,19 +11,19 @@ calcChemicalRoutes_2020<- function() {
   # Load Route Data for Individual Chemicals
   #    - Retrieve ammonia, methanol, hvcs, and overall fertilizer data.
   # ---------------------------------------------------------------------------
-  ammonia_route <- calcOutput("AmmoniaRoute", aggregate = TRUE) %>%
+  ammonia_route <- calcOutput("AmmoniaRoute", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell")
   
-  methanol_route <- calcOutput("MethanolRoute", aggregate = TRUE) %>%
+  methanol_route <- calcOutput("MethanolRoute", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell")
   
-  hvc_route <- calcOutput("HVCRoute", aggregate = TRUE) %>%
+  hvc_route <- calcOutput("HVCRoute", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell")
   
-  nfert_all <- calcOutput("FertilizerRoute", aggregate = TRUE) %>% 
+  nfert_all <- calcOutput("FertilizerRoute", regionmapping = "regionmapping_21_EU11.csv") %>% 
     as.data.frame() %>%
     select(-"Cell")
   
@@ -99,23 +99,15 @@ calcChemicalRoutes_2020<- function() {
   
   
   # ---------------------------------------------------------------------------
-  # Convert Data to a Magpie Object and Aggregate to Country Level
+  # Convert Data to a Magpie Object and Disaggregate to Country Level
   #    - Convert the combined data to a magpie object.
-  #    - Collapse dimensions, select the year 2020, and aggregate using regional mapping.
+  #    - Select the year 2020 and disaggregate the regional (EU21) data using chemical production weights.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(Chemical_all, spatial = 1, temporal = 2, datacol = 5)
-  
+
   x <- x[, "y2020", ]
-  
-  x <- toolAggregate(
-    x,
-    rel = map,
-    dim = 1,
-    from = "RegionCode",
-    to = "CountryCode",
-    weight = Chemcial_Total[unique(map$CountryCode), , ]
-  )
+
+  x <- toolDisaggregateFromEU21(x, weight = Chemcial_Total)
   x[is.na(x)] <- 0  # Replace NA values with 0
   
   # Convert from Mt to Gt (megatonnes to gigatonnes)
@@ -129,6 +121,6 @@ calcChemicalRoutes_2020<- function() {
     x = x,
     weight = NULL,
     unit = "Gt Chemical Routes & GtN (fertilizer)",
-    description = "Aggregated chemical route data integrating ammonia, methanol, hvcs, and fertilizer routes. Data are adjusted by conversion factors and aggregated to country level for 2020 (scaled from Mt to Gt)."
+    description = "Aggregated chemical route data integrating ammonia, methanol, hvcs, and fertilizer routes. Data are adjusted by conversion factors and calculated at the resolution of regionmapping_21_EU11 and disaggregated to country level for 2020 (scaled from Mt to Gt)."
   ))
 }

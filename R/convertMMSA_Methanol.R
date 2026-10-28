@@ -5,13 +5,7 @@
 #'
 #' @return MagPIE object of the MMSA_Methanol data aggregated to country level.
 #' @author Qianzhi Zhang
-#' @examples
-#' \dontrun{
-#'   a <- convertMMSA_Methanol(x)
-#' }
 #'
-#' @importFrom magclass where
-#' @importFrom magpiesets findset
 #' @param x a MagPIE object
 convertMMSA_Methanol <- function(x) {
   # ---------------------------------------------------------------------------

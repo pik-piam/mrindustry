@@ -32,7 +32,7 @@ calcAllChemicalUeShares_2020 <- function() {
   #      rows for 'ammonia' and 'methanol' (since these are not processed here).
   #    - Join with the conversion factors and calculate the material-to-UE value.
   # ---------------------------------------------------------------------------
-  ChemicalFlows_2020 <- calcOutput("ChemicalFlows_2020", aggregate = TRUE)[, "y2020", ] %>%
+  ChemicalFlows_2020 <- calcOutput("ChemicalFlows_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     filter(!.data$Data1 %in% c("ammonia", "methanol")) %>%
@@ -44,7 +44,9 @@ calcAllChemicalUeShares_2020 <- function() {
   # Retrieve Industrial Demand Data for Chemicals
   #    - Get the feIndustry data from the FeDemandIndustry output for 2020.
   # ---------------------------------------------------------------------------
-  feIndustry <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = TRUE, scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"] %>%
+  ueChemicals <- calcOutput("FeDemandIndustry", warnNA = FALSE, aggregate = FALSE, scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"]
+
+  feIndustry <- calcOutput("FeDemandIndustry", warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv", scenarios=c("SSP2"))[, "y2020", "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
     select(-"Cell")
   
@@ -85,25 +87,24 @@ calcAllChemicalUeShares_2020 <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # Convert to Magpie Object and Aggregate to Country Level
-  #    - Retrieve regional mapping.
-  #    - Convert the UE data to a magpie object and aggregate from regions to countries.
+  # Convert to Magpie Object and Disaggregate to Country Level
+  #    - Convert the UE data to a magpie object and copy the regional (EU21) shares to the countries.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(AllChemicalUEShares_2020, spatial = 1, temporal = 2)
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
-  
+  x <- toolDisaggregateFromEU21(x)
+
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
-  #    - Create a weight object with the same dimensions as 'x' (all values set to 1).
-  #    - Return the aggregated magpie object along with metadata.
+  #    - ue_share is an intensive variable, so it is aggregated as a mean weighted by total
+  #      chemical UE demand; the aggregated share then equals sum(ue_material) / sum(ue_chemicals).
+  #    - Aggregation targets without chemical UE demand fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
-  weight <- x  # Copy dimensions from x
-  weight[, , ] <- 1
-  
+  weight <- ueChemicals[getItems(x, dim = 1), , ]
+
   return(list(
     x = x,
     weight = weight,
+    aggregationArguments = list(zeroWeight = "fix"),
     unit = "share",  
     description = "Unit energy (UE) share of chemicals including OtherChem in 2020."
   ))

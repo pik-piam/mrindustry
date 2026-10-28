@@ -10,8 +10,8 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   # ---------------------------------------------------------------------------
   # Retrieve baseline ue shares for 2020
   # ---------------------------------------------------------------------------
-
-  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", aggregate = TRUE)[, "y2020", ] %>%
+  
+  AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>%
     as.data.frame() %>%
     select(-"Cell",-"Year")
 
@@ -22,16 +22,18 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   # - Fertilizer demand projections from MagPie
   # and calculate change compared to baseline year
   # ---------------------------------------------------------------------------
+  
+  ueChemicals <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, aggregate = FALSE)[,, "SSP2.ue_chemicals"]
 
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, aggregate = TRUE)[,, "SSP2.ue_chemicals"] %>%
+  feIndustry <- calcOutput("FeDemandIndustry", scenarios=c("SSP2"), warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv")[,, "SSP2.ue_chemicals"] %>%
     as.data.frame() %>%
     select(-"Cell") %>%
     mutate(Year = as.numeric(as.character(.data$Year))) %>%   # Convert factor to character then numeric
     group_by(.data$Region) %>%
     mutate(Ratio = .data$Value / .data$Value[.data$Year == 2020]) %>%
     ungroup()
-
-  IEA_Petrochem_methanol <- calcOutput("IEA_Petrochem", subtype ="production5type_Methanol", aggregate = TRUE)[,,] %>%
+  
+  IEA_Petrochem_methanol <- calcOutput("IEA_Petrochem", subtype ="production5type_Methanol", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell", -"Data1") %>%
     filter(!.data$Year %in% c("X2015")) %>%
@@ -51,8 +53,8 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "methanol") %>%
     filter(!.data$Year %in% 2017)
-
-  IEA_Petrochem_ammonia <- calcOutput("IEA_Petrochem", subtype ="production5type_Ammonia", aggregate = TRUE)[,,] %>%
+  
+  IEA_Petrochem_ammonia <- calcOutput("IEA_Petrochem", subtype ="production5type_Ammonia", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell", -"Data1") %>%
     filter(!.data$Year %in% c("X2015")) %>%
@@ -74,9 +76,9 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     filter(!.data$Year %in% 2017)
 
   IEA_Petrochem_hvc <- (
-    calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", aggregate = TRUE) +
-      calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", aggregate = TRUE) +
-      calcOutput("IEA_Petrochem", subtype = "production5type_BTX", aggregate = TRUE)
+    calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", regionmapping = "regionmapping_21_EU11.csv") +
+      calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", regionmapping = "regionmapping_21_EU11.csv") +
+      calcOutput("IEA_Petrochem", subtype = "production5type_BTX", regionmapping = "regionmapping_21_EU11.csv")
   ) %>%
     as.data.frame() %>%
     select(-"Cell", -"Data1") %>%
@@ -97,8 +99,8 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "hvc") %>%
     filter(!.data$Year %in% 2017)
-
-  MagPie_Fert <- calcOutput("MAgPIEReport", subtype="fertilizer")[,,"SSP2.rcp45"]%>%
+  
+  MagPie_Fert <- calcOutput("MAgPIEReport", subtype="fertilizer", regionmapping = "regionmapping_21_EU11.csv")[,,"SSP2.rcp45"]%>%
     as.data.frame()%>%
     select(-"Cell", -"Data1", -"Data2")%>%
     mutate(Year = as.numeric(as.character(.data$Year))) %>%
@@ -152,22 +154,22 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     ) %>% select(-"ue_sum")
 
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
+  x <- toolDisaggregateFromEU21(x)  # ue shares are intensive, copy the regional (EU21) values to the countries
 
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
-  #    - Create a weight object with the same dimensions as 'x' (all values set to 1).
-  #    - Return the aggregated magpie object along with metadata.
+  #    - ue_share is an intensive variable, so it is aggregated as a mean weighted by total chemical UE
+  #      demand; the aggregated share then equals sum(ue_material) / sum(ue_chemicals).
+  #    - Aggregation targets without chemical UE demand fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
-  weight <- x  # Copy dimensions from x
-  weight[, , ] <- 1
+  weight <- ueChemicals[getItems(x, dim = 1), getYears(x), ]
 
   return(list(
     x = x,
     weight = weight,
-    unit = "share",
-    description = "Material ue shares for 2020-2150 on country level."
+    aggregationArguments = list(zeroWeight = "fix"),
+    unit = "share", 
+    description = "Material ue shares for 2020-2150 at the resolution of regionmapping_21_EU11, disaggregated to country level."
   ))
 }
 

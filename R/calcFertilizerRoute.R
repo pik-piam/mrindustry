@@ -13,22 +13,26 @@ calcFertilizerRoute <- function() {
   # ---------------------------------------------------------------------------
   
   # Urea production data from IFA_Chem
-  Urea_IFA <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  Urea_IFA <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)  # Scale down values
   
   # Ammonium Nitrate (AN) production data from IFA_ChemAppend
-  AN_IFA <- calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  AN_IFA <- calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)
   
   # Calcium Ammonium Nitrate (CAN) production data from IFA_ChemAppend
-  CAN_IFA <- calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  CAN_IFA <- calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)
   
   # Ammonium Sulfate (AS) production data from IFA_ChemAppend
-  AS_IFA <- calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  AS_IFA <- calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(Value = .data$Value / 1000)
   
@@ -39,7 +43,8 @@ calcFertilizerRoute <- function() {
   #    - Convert the production value and change the 'Year' column to numeric.
   # ---------------------------------------------------------------------------
   
-  Ammonia_IFA <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen=TRUE, aggregate = TRUE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+  Ammonia_IFA <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen = TRUE,
+                        regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
     as.data.frame() %>%
     mutate(
       NAmmonia_production = .data$Value / 1000,             # Scale down ammonia production values
@@ -86,41 +91,52 @@ calcFertilizerRoute <- function() {
   
   
   # ---------------------------------------------------------------------------
-  # Load Weighting Data
-  #    - Retrieve non-aggregated Urea production data for the year 2020.
+  # Load Country Level Data for Weighting
+  #    - fertilizer and ammonia production (in N) of the individual countries
   # ---------------------------------------------------------------------------
-  
-  Urea_IFA_all <- calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen=TRUE, aggregate = FALSE)[, c("y2020"), ]
-  
-  
+  years <- c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020")
+  NFert_production_all <- dimSums(mbind(
+    calcOutput("IFA_Chem", subtype = "urea_statistics_production", unitNitrogen = TRUE, aggregate = FALSE)[, years, ],
+    calcOutput("IFA_ChemAppend", subtype = "AN_statistics_production", unitNitrogen = TRUE, aggregate = FALSE)[, years, ],
+    calcOutput("IFA_ChemAppend", subtype = "CAN_statistics_production", unitNitrogen = TRUE, aggregate = FALSE)[, years, ],
+    calcOutput("IFA_ChemAppend", subtype = "AS_statistics_production", unitNitrogen = TRUE, aggregate = FALSE)[, years, ]
+  ), dim = 3)
+  NAmmonia_production_all <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", unitNitrogen = TRUE,
+                                        aggregate = FALSE)[, years, ]
+
   # ---------------------------------------------------------------------------
-  # Aggregate Data to Country Level
-  #    - Retrieve regional mapping.
-  #    - Convert NFert_output to a magpie object and aggregate regional data to country level
-  #      using the production data as weights.
+  # Disaggregate Data to Country Level
+  #    - NFert_production is extensive and is split to the countries of each region
+  #      proportional to their fertilizer production.
+  #    - NFert_ratio is a ratio and is therefore copied to all countries of a region; it is
+  #      aggregated again as a mean weighted by ammonia production (mixed aggregation).
+  #      Zero weights are set to 1e-30 so that aggregation targets without ammonia production fall
+  #      back to an unweighted mean. This mirrors madrat's zeroWeight = "fix", which cannot be used
+  #      here because toolFixWeight does not accept the NA weights of mixed aggregation.
   # ---------------------------------------------------------------------------
-  
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(NFert_output, spatial = 1, temporal = 2)
-  x <- toolAggregate(
-    x,
-    rel = map,
-    dim = 1,
-    from = "RegionCode",
-    to = "CountryCode",
-    weight = Urea_IFA_all[unique(map$CountryCode), , ]
+  x <- mbind(
+    toolDisaggregateFromEU21(x[, , "NFert_production"], weight = NFert_production_all,
+                             zeroWeight = "allow"), # regions without fertilizer production
+    toolDisaggregateFromEU21(x[, , "NFert_ratio"])
   )
   x[is.na(x)] <- 0  # Replace NA values with 0
-  
-  
+
+  weight <- x
+  weight[, , "NFert_production"] <- NA
+  ratioWeight <- NAmmonia_production_all[getItems(x, dim = 1), getYears(x), ]
+  ratioWeight[ratioWeight == 0] <- 1e-30
+  weight[, , "NFert_ratio"] <- ratioWeight
+
   # ---------------------------------------------------------------------------
   # Return Final Aggregated Object and Metadata
   # ---------------------------------------------------------------------------
   
   return(list(
     x = x,
-    weight = NULL,
+    weight = weight,
+    mixed_aggregation = TRUE,
     unit = "MtN Fert",
-    description = "fertilizer conversion ratio derived from IFA chemical data, representing the fraction of ammonia production converted to fertilizer production, aggregated to country level."
+    description = "fertilizer conversion ratio derived from IFA chemical data, representing the fraction of ammonia production converted to fertilizer production, calculated at the resolution of regionmapping_21_EU11 and disaggregated to country level."
   ))
 }
