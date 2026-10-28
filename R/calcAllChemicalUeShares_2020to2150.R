@@ -1,8 +1,8 @@
 #' Calculates shares of ammoFinal, methFinal, HVC, fertilizer and OtherChem
-#' of total chemical UE for 2020-2150 based on the UE shares in 2020 and the 
-#' projected relative increases in production (IEA The Future of Petrochemicals) and 
+#' of total chemical UE for 2020-2150 based on the UE shares in 2020 and the
+#' projected relative increases in production (IEA The Future of Petrochemicals) and
 #' total chemical UE (FeDemandIndustry)
-#' 
+#'
 #' @author Qianzhi Zhang
 #'
 calcAllChemicalUeShares_2020to2150 <- function() {
@@ -14,7 +14,7 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   AllChemicalUeShares_2020 <- calcOutput("AllChemicalUeShares_2020", regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>%
     as.data.frame() %>%
     select(-"Cell",-"Year")
-  
+
   # ---------------------------------------------------------------------------
   # Retrieve Chemical production projections for 2020-2050 (extrapolate between 2017 and 2025 if 2020 is missing)
   # - total Chemical UE projection from calcFeDemandIndustry
@@ -74,7 +74,7 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "ammonia") %>%
     filter(!.data$Year %in% 2017)
-  
+
   IEA_Petrochem_hvc <- (
     calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", regionmapping = "regionmapping_21_EU11.csv") +
       calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", regionmapping = "regionmapping_21_EU11.csv") +
@@ -108,9 +108,9 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     mutate(Ratio = .data$Value / .data$Value[.data$Year == 2020]) %>%
     ungroup() %>%
     mutate(Data1 = "fertilizer")
-  
+
   # ---------------------------------------------------------------------------
-  # Compute future ue shares by dividing the baseline share with the relative change 
+  # Compute future ue shares by dividing the baseline share with the relative change
   # in chemical production respective to the relative change in UE chemicals demand
   # ---------------------------------------------------------------------------
   merged_data <- rbind(IEA_Petrochem_methanol, IEA_Petrochem_ammonia, IEA_Petrochem_hvc, MagPie_Fert) %>%
@@ -124,15 +124,16 @@ calcAllChemicalUeShares_2020to2150 <- function() {
     dplyr::left_join(AllChemicalUeShares_2020, by = c("Region","Data1", "Data2"), suffix=c("",".ue")) %>%
     dplyr::mutate(ue_share = .data$Value.ue * .data$fe_change)%>%
     select("Region","Year","Data1","Data2","ue_share")
-  
+
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
   years <- merged_data %>% select("Year") %>% distinct() %>% filter(.data$Year>2050)
   extended_years <- merged_data %>% filter(.data$Year==2050, .data$Data1 %in% c("ammoFinal","methFinal","hvc")) %>%
-    select(-"Year") %>% crossing(years)
-  extended_data <- merged_data %>% 
+    select(-"Year") %>%
+    tidyr::crossing(years)
+  extended_data <- merged_data %>%
     rbind(extended_years) %>%
     filter(.data$Year >= 2020)
-    
+
   # ---------------------------------------------------------------------------
   # Account for Residual ("OtherChem") Share
   # ---------------------------------------------------------------------------
@@ -142,7 +143,7 @@ calcAllChemicalUeShares_2020to2150 <- function() {
       ue_sum = sum(.data$ue_share, na.rm = TRUE),
       .groups = "drop"
     )
-  
+
   final_data <- extended_data %>%
     bind_rows(
       ue_summary %>%
@@ -150,8 +151,8 @@ calcAllChemicalUeShares_2020to2150 <- function() {
           Data1 = "OtherChem",
           ue_share = 1 - .data$ue_sum
         )
-    ) %>% select(-"ue_sum") 
-  
+    ) %>% select(-"ue_sum")
+
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
   x <- toolDisaggregateFromEU21(x)  # ue shares are intensive, copy the regional (EU21) values to the countries
 

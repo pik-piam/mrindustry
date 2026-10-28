@@ -1,8 +1,8 @@
 #' Calculates mat2ue conversion factors of ammoFinal, methFinal, HVC and fertilizer
-#' for 2020-2150 based on the mat2ue conversion factors in 2020 and the 
-#' projected relative increases in production (IEA The Future of Petrochemicals) and 
+#' for 2020-2150 based on the mat2ue conversion factors in 2020 and the
+#' projected relative increases in production (IEA The Future of Petrochemicals) and
 #' total chemical UE (FeDemandIndustry)
-#' 
+#'
 #' @author Qianzhi Zhang
 #'
 calcAllChemicalMat2Ue_2020to2150 <- function() {
@@ -12,13 +12,13 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
   #    - p37_mat2ue: Conversion factors (mat2ue) for selected products.
   #      The conversion factors are expressed in 2017$/kg or 2017$/kgN.
   # ---------------------------------------------------------------------------
-  
+
   p37_mat2ue <- data.frame(
     Product = c("hvc", "fertilizer", "methFinal", "ammoFinal"),
     mat2ue = c(0.66, 0.73, 0.37, 0.69),  # Conversion factors
     Unit = c("2017$/kg", "2017$/kgN", "2017$/kg", "2017$/kg")
   )
-  
+
   # ---------------------------------------------------------------------------
   # Retrieve Chemical production projections for 2020-2050 (extrapolate between 2017 and 2025 if 2020 is missing)
   # - total Chemical UE projection from calcFeDemandIndustry
@@ -78,7 +78,7 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "ammonia") %>%
     filter(!.data$Year %in% 2017)
-  
+
   IEA_Petrochem_hvc <- (
     calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", regionmapping = "regionmapping_21_EU11.csv") +
       calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", regionmapping = "regionmapping_21_EU11.csv") +
@@ -112,7 +112,7 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     mutate(Ratio = .data$Value / .data$Value[.data$Year == 2020]) %>%
     ungroup() %>%
     mutate(Data1 = "fertilizer")
-  
+
   # ---------------------------------------------------------------------------
   # Compute future mat2ue by dividing the baseline by the relative change in UE chemicals demand of the respective chemical
   # ---------------------------------------------------------------------------
@@ -126,18 +126,19 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     ))%>%
     dplyr::left_join(p37_mat2ue, by = c("Data1" = "Product")) %>%
     dplyr::mutate(new_mat2ue = .data$mat2ue / .data$fe_change)
-  
+
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
   years <- merged_data %>% select("Year") %>% distinct() %>% filter(.data$Year>2050)
   extended_years <- merged_data %>% filter(.data$Year==2050, .data$Data1 %in% c("ammoFinal","methFinal","hvc")) %>%
-    select(-"Year") %>% crossing(years)
-  final_data <- merged_data %>% 
+    select(-"Year") %>%
+    tidyr::crossing(years)
+  final_data <- merged_data %>%
     rbind(extended_years) %>%
     filter(.data$Year >= 2020) %>%
     mutate(all_in = "ue_chemicals"
     ) %>%
     select("Region","Year","Data1","all_in","new_mat2ue")
-  
+
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
   x <- toolDisaggregateFromEU21(x)  # mat2ue is intensive, copy the regional (EU21) values to the countries
 

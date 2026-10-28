@@ -12,5 +12,12 @@
 ^\.vscode$
 ^\.positai$
 ^\.claude$
+^\.agents$
+^AGENTS.md$
+^CLAUDE.md$
+^\.mcp\.json$
+^skills-lock\.json$
 ^_pkgdown\.yml$
+
 ^CODE_STYLE\.md$
+^CONTRIBUTING\.md$

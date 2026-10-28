@@ -2,7 +2,7 @@
 % Please edit documentation in R/calcAllChemicalEnergyDemand_2005to2020.R
 \name{calcAllChemicalEnergyDemand_2005to2020}
 \alias{calcAllChemicalEnergyDemand_2005to2020}
-\title{Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020) 
+\title{Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020)
 and specific energy consumption for the different routes (retrieved from IEA_PetrochemEI and other literature sources).
 The energy demand for OtherChem is calculated as the remaining share of total chemical industry energy demand. 
 Results are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.}
@@ -13,7 +13,7 @@ calcAllChemicalEnergyDemand_2005to2020(CCS = FALSE)
 \item{CCS}{boolean parameter whether CCS technologies are considered as such in 2020 or assumed to be technologies without CCS}
 }
 \description{
-Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020) 
+Calculates chemical energy demand from 2005 to 2020 from chemical production per route (AllChemicalRoutes_2005to2020)
 and specific energy consumption for the different routes (retrieved from IEA_PetrochemEI and other literature sources).
 The energy demand for OtherChem is calculated as the remaining share of total chemical industry energy demand. 
 Results are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.

@@ -16,8 +16,6 @@
 #'
 #' @importFrom dplyr mutate
 #' @importFrom quitte madrat_mule
-#' @importFrom rlang .data
-#' @export
 #'
 readPauliuk <- function(subtype = 'lifetime')
 {
