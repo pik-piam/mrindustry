@@ -13,7 +13,7 @@ calcMethanolRoute <- function() {
   #    - Exclude China ("CHA") and mark the data with a production identifier.
   # ---------------------------------------------------------------------------
   methanol_production <- calcOutput("IHS_Meth", subtype = "Production_2010-2020",
-                                    regionmapping = "regionmapping_21_EU11.csv")[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+                                    regionmapping = "regionmapping_21_EU11.csv")[, 2015:2020, ] %>%
     as.data.frame() %>%
     filter(!.data$Region %in% c("CHA")) %>% 
     mutate(Data1 = "Production")
@@ -22,7 +22,7 @@ calcMethanolRoute <- function() {
   # Load Methanol Production Data for China
   #    - Retrieve production data for China ("CHA") from the specified file.
   # ---------------------------------------------------------------------------
-  methanol_production_china <- calcOutput("ChinaBaogao", regionmapping = "regionmapping_21_EU11.csv")["CHA", c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), "Production"] %>%
+  methanol_production_china <- calcOutput("ChinaBaogao", regionmapping = "regionmapping_21_EU11.csv")["CHA", 2015:2020, "Production"] %>%
     as.data.frame()
   
   # ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ calcMethanolRoute <- function() {
   # ---------------------------------------------------------------------------
   # Load Non-Aggregated Methanol Production Data (for Weighting)
   # ---------------------------------------------------------------------------
-  methanol_production_all <- calcOutput("IHS_Meth", subtype = "Production_2010-2020", aggregate = FALSE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ]
+  methanol_production_all <- calcOutput("IHS_Meth", subtype = "Production_2010-2020", aggregate = FALSE)[, 2015:2020, ]
   
   # ---------------------------------------------------------------------------
   # Disaggregate Regional (EU21) Data to Country Level

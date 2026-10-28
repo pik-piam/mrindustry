@@ -160,14 +160,14 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   # Set Weighting and Return Final Output
   #    - ue_share is an intensive variable, so it is aggregated as a mean weighted by total chemical UE
   #      demand; the aggregated share then equals sum(ue_material) / sum(ue_chemicals).
-  #    - The small floor keeps the weight sum positive for regions without chemical UE demand.
+  #    - Aggregation targets without chemical UE demand fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
-  weight <- x  # Copy dimensions from x
-  weight[, , ] <- ueChemicals[getItems(x, dim = 1), getYears(x), ] + 1e-10
+  weight <- ueChemicals[getItems(x, dim = 1), getYears(x), ]
 
   return(list(
     x = x,
     weight = weight,
+    aggregationArguments = list(zeroWeight = "fix"),
     unit = "share", 
     description = "Material ue shares for 2020-2150 at the resolution of regionmapping_21_EU11, disaggregated to country level."
   ))

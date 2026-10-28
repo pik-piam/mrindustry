@@ -221,22 +221,13 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   # ---------------------------------------------------------------------------
   # Weighting
   #    - specFeDem is aggregated as a mean weighted by the flow through the respective route, so that
-  #      the aggregated value equals sum(energy demand) / sum(flow) 
-  #    - Negative flows of the residual chemOld are floored at 0, and a small floor keeps the weight sum
-  #      positive for routes that are unused in a whole region.
+  #      the aggregated value equals sum(energy demand) / sum(flow)
+  #    - Routes with zero total flow in an aggregation target (e.g. routes unused in a whole region)
+  #      fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
-  routesCountry <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = FALSE, CCS = CCS) %>%
-    as.data.frame() %>%
-    select(-"Cell") %>%
-    mutate(across(c("Region", "Year", "Data1", "Data2"), as.character))
-
-  weight <- as.data.frame(x) %>%
-    select(-"Cell", -"Value") %>%
-    mutate(across(c("Region", "Year", "Data1", "Data2"), as.character)) %>%
-    left_join(routesCountry, by = c("Region", "Year", "Data1", "Data2")) %>%
-    mutate(Value = ifelse(is.na(.data$Value), 0, pmax(.data$Value, 0)) + 1e-10) %>%
-    as.magpie(spatial = "Region", temporal = "Year", datacol = "Value")
-  weight <- weight[getItems(x, dim = 1), getYears(x), getNames(x)]
+  weight <- calcOutput("AllChemicalRoutes_2005to2020", warnNA = FALSE, aggregate = FALSE, CCS = CCS)
+  weight <- addDim(weight, dim = 3.3, dimName = "entyFe", item = getNames(x, dim = 3))
+  weight <- matchDim(weight, x, dim = 1:3, fill = 0)
 
   # ---------------------------------------------------------------------------
   # Return Final Aggregated Object with Metadata
@@ -244,6 +235,7 @@ calcAllChemicalSpecFeDemand_2005to2020 <- function(CCS=FALSE) {
   return(list(
     x = x,
     weight = weight,
+    aggregationArguments = list(zeroWeight = "fix"),
     unit = "GJ/t-output",
     description = "Chemicals specific final energy demand per technology, final energy carrier, region and year"
   ))

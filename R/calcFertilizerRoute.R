@@ -110,7 +110,9 @@ calcFertilizerRoute <- function() {
   #      proportional to their fertilizer production.
   #    - NFert_ratio is a ratio and is therefore copied to all countries of a region; it is
   #      aggregated again as a mean weighted by ammonia production (mixed aggregation).
-  #      The small floor keeps the weight sum positive for regions without ammonia production.
+  #      Zero weights are set to 1e-30 so that aggregation targets without ammonia production fall
+  #      back to an unweighted mean. This mirrors madrat's zeroWeight = "fix", which cannot be used
+  #      here because toolFixWeight does not accept the NA weights of mixed aggregation.
   # ---------------------------------------------------------------------------
   x <- as.magpie(NFert_output, spatial = 1, temporal = 2)
   x <- mbind(
@@ -122,7 +124,9 @@ calcFertilizerRoute <- function() {
 
   weight <- x
   weight[, , "NFert_production"] <- NA
-  weight[, , "NFert_ratio"] <- NAmmonia_production_all[getItems(x, dim = 1), getYears(x), ] + 1e-10
+  ratioWeight <- NAmmonia_production_all[getItems(x, dim = 1), getYears(x), ]
+  ratioWeight[ratioWeight == 0] <- 1e-30
+  weight[, , "NFert_ratio"] <- ratioWeight
 
   # ---------------------------------------------------------------------------
   # Return Final Aggregated Object and Metadata

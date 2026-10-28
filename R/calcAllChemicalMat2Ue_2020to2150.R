@@ -147,16 +147,15 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
   #    - mat2ue converts a material mass into UE, so it is aggregated as a mean weighted by the
   #      material flow (ue_share * ue_chemicals / mat2ue); the aggregated factor then equals
   #      sum(UE) / sum(material flow).
-  #    - The small floor keeps the weight sum positive for regions without production.
+  #    - Aggregation targets without production fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
   ueShares <- calcOutput("AllChemicalUeShares_2020to2150", aggregate = FALSE)[getItems(x, dim = 1), getYears(x), getNames(x)]
   weight <- ueShares * as.vector(ueChemicals[getItems(x, dim = 1), getYears(x), ]) / x
-  weight[!is.finite(weight) | weight < 0] <- 0
-  weight <- weight + 1e-10
 
   return(list(
     x = x,
     weight = weight,
+    aggregationArguments = list(zeroWeight = "fix"),
     unit = "2017$/kg or 2017$/kgN",  # Specify units based on conversion factors
     description = "Calculates the material-to-UE conversion factors for 2020-2150 at the resolution of regionmapping_21_EU11, disaggregated to country level."
   ))

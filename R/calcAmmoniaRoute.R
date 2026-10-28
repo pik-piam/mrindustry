@@ -10,13 +10,13 @@ calcAmmoniaRoute <- function() {
   # Get IFA ammonia production volumes in Kt, convert to Mt and select the years 2015-2020.
   # ============================================================================
   ammonia_production <- (calcOutput("IFA_Chem", subtype = "ammonia_statistics_production",
-                                      regionmapping = "regionmapping_21_EU11.csv") / 1000)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ] %>%
+                                    regionmapping = "regionmapping_21_EU11.csv")[, 2015:2020, ] / 1000) %>%
     as.data.frame()
 
   # ============================================================================
   # Get IEA shares for different ammonia production routes for the Base Year 2020 (IEA_Ammonia)
-  #   - the aggregation to regions warns about a zero weight sum for regions without any
-  #     ammonia production (ENC); these regions get no route shares, which is intended
+  #   - regions without any ammonia production (ENC) have a zero weight sum in the aggregation,
+  #     which calcIEA_Ammonia handles via zeroWeight = "fix"; their production is 0 anyway
   # ============================================================================
   ammonia_share_iea <- calcOutput("IEA_Ammonia", subtype = "BaseYear_2020",
                                   regionmapping = "regionmapping_21_EU11.csv")[, "y2020", ] %>%
@@ -117,7 +117,7 @@ calcAmmoniaRoute <- function() {
   # ============================================================================
   # Load non-aggregated ammonia production data (for weighting purposes)
   # ============================================================================
-  ammonia_production_all <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, c("y2015", "y2016", "y2017", "y2018", "y2019", "y2020"), ]
+  ammonia_production_all <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, 2015:2020, ]
 
   # ============================================================================
   # Convert ammonia route data to a magpie object and disaggregate the regional (EU21) data

@@ -48,6 +48,7 @@ convertIFA_ChemAppend <- function(x, subtype = x) {
     getNames(ammoniaN) <- NULL  
     getNames(ureaN) <- NULL  
     weightData <- ammoniaN - ureaN 
+    # in some countries (e.g. MMR, BOL, AZE) the reported urea N exceeds ammonia N, i.e. no ammonia is left for AN, CAN and AS
     weightData[is.na(weightData) | weightData < 0] <- 0
 
     # Weights for all years of x: years after the last available weight year use the
