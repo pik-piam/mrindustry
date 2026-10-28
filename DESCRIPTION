@@ -1,8 +1,8 @@
 Type: Package
 Package: mrindustry
 Title: input data generation for the REMIND industry module
-Version: 1.4.0
-Date: 2026-10-21
+Version: 1.4.1
+Date: 2026-10-28
 Authors@R: c(
     person(given = "Falk", family = "Benke", email = "benke@pik-potsdam.de",
            role = c("aut", "cre")),
@@ -40,7 +40,6 @@ Imports:
     ggplot2,
     glue,
     Hmisc,
-    magpiesets,
     magrittr,
     purrr,
     quitte (>= 0.3105.0),
