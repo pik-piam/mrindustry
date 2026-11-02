@@ -16,12 +16,6 @@ MagPIE object of the RMI_China data disaggregated to country level.
 Convert RMI (Rocky Mountain Institute) Transforming China’s Chemicals Industry Pathways and Outlook under the Carbon Neutrality Goal 2022.xlsx
 "ES1-3 China Chemical Demand", "ES29 China Chemical Structure" data to ISO country level.
 }
-\examples{
-\dontrun{
-  a <- convertRMI_China(x)
-}
-
-}
 \author{
 Qianzhi Zhang
 }

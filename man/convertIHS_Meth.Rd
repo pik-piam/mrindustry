@@ -4,22 +4,28 @@
 \alias{convertIHS_Meth}
 \title{Convert IHS_Meth}
 \usage{
-convertIHS_Meth(x)
+convertIHS_Meth(x, subtype)
 }
 \arguments{
 \item{x}{MagPIE object containing IHS_Meth data at regional resolution.}
+
+\item{subtype}{Type of Methanol data to read. Available types are:
+               \itemize{
+                 \item Production
+                 \item Capacity
+                 \item Demand
+               }
+Temporal coverage of Methanol data. Available types are:
+               \itemize{
+                 \item 2010-2020: Interpolated 2018 data to 2010-2020 using total global methanol production data.
+                 \item 2018: Data for the year 2018.
+               }}
 }
 \value{
 MagPIE object of the IHS_Meth data disaggregated to country level.
 }
 \description{
 Convert 9TH RUSSIA & CIS OIL & GAS EXECUTIVE SUMMIT 2019 METHANOL INS.xlsx data to ISO country level.
-}
-\examples{
-\dontrun{
-  a <- convertIHS_Meth(x)
-}
-
 }
 \author{
 Qianzhi Zhang

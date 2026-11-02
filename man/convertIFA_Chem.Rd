@@ -15,12 +15,6 @@ MagPIE object of the IFA data disaggregated to country level.
 \description{
 Convert IFA_Chem data to ISO country level.
 }
-\examples{
-\dontrun{
-  a <- convertIFA_Chem(x)
-}
-
-}
 \author{
 Qianzhi Zhang
 }

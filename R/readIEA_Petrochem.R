@@ -164,11 +164,7 @@ readIEA_Petrochem <- function(subtype) {
     data <- as.magpie(data, spatial = 1, temporal = 2)
     }
   data[is.na(data)] <- 0
-  subtype <- paste(subtype, collapse = "_")
-  getComment(data) <- subtype
 
-  # ---------------------------------------------------------------------------
-  # Return the Processed MagPIE Object
-  # ---------------------------------------------------------------------------
+
   return(data)
 }

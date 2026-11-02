@@ -7,21 +7,10 @@
 #' 
 calcAllChemicalRoutes_2020 <- function(CCS=FALSE) {
   
-  AllChemicalRoutes_2020<- calcOutput("AllChemicalRoutes_2005to2020",CCS=CCS,warnNA = FALSE, aggregate = TRUE)[,"y2020",]%>% 
-    as.data.frame() %>%
-    select(-"Cell")
-  
-  Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[,c("y2020"),]
-  
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder") 
-  
-  x <- as.magpie(AllChemicalRoutes_2020, spatial = 1, temporal = 2)
-  # Aggregate the regional data (xReg) to the country level using the mapping
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", weight = Chemical_Total[unique(map$CountryCode), , ])
-  x[is.na(x)] <- 0
-  
+  AllChemicalRoutes_2020 <- calcOutput("AllChemicalRoutes_2005to2020", CCS = CCS, warnNA = FALSE, aggregate = FALSE)[, "y2020", ]
+
   return(list(
-    x = x,
+    x = AllChemicalRoutes_2020,
     weight = NULL,
     unit = "Gt Chemical Routes",
     description = "Chemical route flows filtered for the year 2020"
