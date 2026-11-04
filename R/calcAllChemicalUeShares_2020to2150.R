@@ -38,11 +38,6 @@ calcAllChemicalUeShares_2020to2150 <- function() {
 
   scenarios <- MagPie_Fert %>% select("SSP", "RCP") %>% distinct()
 
-  # country-level chemical UE demand per SSP, used for the aggregation weight
-  ueChemicals <- calcOutput("FeDemandIndustry", scenarios = SSPs, warnNA = FALSE, aggregate = FALSE)[, , "ue_chemicals"] %>%
-    collapseNames()
-  getSets(ueChemicals)[3] <- "SSP"
-
   feIndustry <- calcOutput("FeDemandIndustry", scenarios = SSPs, warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     filter(.data$Data2 == "ue_chemicals") %>%
@@ -176,9 +171,11 @@ calcAllChemicalUeShares_2020to2150 <- function() {
   #      demand; the aggregated share then equals sum(ue_material) / sum(ue_chemicals).
   #    - Aggregation targets without chemical UE demand fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
-  # ueChemicals only has the SSP dimension and is expanded to all products and RCPs by magclass
-  weight <- new.magpie(getItems(x, dim = 1), getYears(x), getNames(x), fill = 1, sets = getSets(x)) *
-    ueChemicals[getItems(x, dim = 1), getYears(x), getItems(x, dim = "SSP")]
+  # country-level chemical UE demand per SSP, used for the aggregation weight
+  ueChemicals <- calcOutput("FeDemandIndustry", scenarios = SSPs, warnNA = FALSE, aggregate = FALSE)[, , "ue_chemicals"] %>%
+    collapseNames()
+  getSets(ueChemicals)[3] <- "SSP"
+  weight <- ueChemicals[, getYears(x), getItems(x, dim = "SSP")]
 
   return(list(
     x = x,
