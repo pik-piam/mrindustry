@@ -15,12 +15,6 @@ MagPIE object of the ChinaBaogao Methanol data disaggregated to country level.
 \description{
 Convert ChinaBaogao Methanol 2023.xlsx data to ISO country level.
 }
-\examples{
-\dontrun{
-  a <- convertChinaBaogao(x)
-}
-
-}
 \author{
 Qianzhi Zhang
 }

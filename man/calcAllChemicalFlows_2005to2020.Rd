@@ -6,7 +6,7 @@
 and assuming constant UE shares of the final chemical flows;
 intermediate ammonia and methanol flows are calculated from the final flows and 
 ammonia-to-fertilizer and methanol-to-hvc ratios.
-Flows are aggregated to the country level.}
+Flows are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.}
 \usage{
 calcAllChemicalFlows_2005to2020()
 }
@@ -15,7 +15,7 @@ Extrapolates Chemical Flows from 2020 to 2005-2020 based on total chemical UE in
 and assuming constant UE shares of the final chemical flows;
 intermediate ammonia and methanol flows are calculated from the final flows and 
 ammonia-to-fertilizer and methanol-to-hvc ratios.
-Flows are aggregated to the country level.
+Flows are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.
 }
 \author{
 Qianzhi Zhang

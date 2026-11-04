@@ -14,11 +14,8 @@
 #' @seealso [calcOutput]
 #'
 #' @importFrom dplyr anti_join arrange bind_rows filter group_by select ungroup
-#' @importFrom rlang .data syms !!!
 #' @importFrom magclass as.magpie
-
-
-#' @export
+#'
 calcCement <- function() {
   transition_year <- 2005
   . <- NULL

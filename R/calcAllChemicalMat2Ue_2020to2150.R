@@ -26,7 +26,10 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
   # - total Chemical UE projection from calcFeDemandIndustry
   # and calculate change compared to baseline year
   # ---------------------------------------------------------------------------
-  MagPie_Fert <- calcOutput("MAgPIEReport", subtype="fertilizer")%>%
+  # scenarios that are available for the switch cm_LU_emi_scen
+  SSPs <- c("SSPs", "SSP2_lowEn")
+
+  MagPie_Fert <- calcOutput("MAgPIEReport", subtype="fertilizer", regionmapping = "regionmapping_21_EU11.csv")%>%
     as.data.frame()%>%
     select(-"Cell")%>%
     rename(SSP = "Data1", RCP = "Data2") %>%
@@ -38,7 +41,22 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
 
   scenarios <- MagPie_Fert %>% select("SSP", "RCP") %>% distinct()
 
-  IEA_Petrochem_methanol <- calcOutput("IEA_Petrochem", subtype ="production5type_Methanol", aggregate = TRUE)[,,] %>%
+  # country-level chemical UE demand per SSP, used for the aggregation weight
+  ueChemicals <- calcOutput("FeDemandIndustry", scenarios = SSPs, warnNA = FALSE, aggregate = FALSE)[, , "ue_chemicals"] %>%
+    collapseNames()
+  getSets(ueChemicals)[3] <- "SSP"
+
+  feIndustry <- calcOutput("FeDemandIndustry", scenarios = SSPs, warnNA = FALSE, regionmapping = "regionmapping_21_EU11.csv") %>%
+    as.data.frame() %>%
+    filter(.data$Data2 == "ue_chemicals") %>%
+    select(-"Cell", -"Data2") %>%
+    rename(SSP = "Data1") %>%
+    mutate(Year = as.numeric(as.character(.data$Year))) %>%   # Convert factor to character then numeric
+    group_by(.data$Region, .data$SSP) %>%
+    mutate(Ratio = .data$Value / .data$Value[.data$Year == 2020]) %>%
+    ungroup()
+
+  IEA_Petrochem_methanol <- calcOutput("IEA_Petrochem", subtype ="production5type_Methanol", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell", -"Data1") %>%
     filter(!.data$Year %in% c("X2015")) %>%
@@ -58,9 +76,9 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "methanol") %>%
     filter(!.data$Year %in% 2017) %>%
-    crossing(scenarios)
+    tidyr::crossing(scenarios)
 
-  IEA_Petrochem_ammonia <- calcOutput("IEA_Petrochem", subtype ="production5type_Ammonia", aggregate = TRUE)[,,] %>%
+  IEA_Petrochem_ammonia <- calcOutput("IEA_Petrochem", subtype ="production5type_Ammonia", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell", -"Data1") %>%
     filter(!.data$Year %in% c("X2015")) %>%
@@ -80,12 +98,12 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "ammonia") %>%
     filter(!.data$Year %in% 2017) %>%
-    crossing(scenarios)
+    tidyr::crossing(scenarios)
 
   IEA_Petrochem_hvc <- (
-    calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", aggregate = TRUE) +
-      calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", aggregate = TRUE) +
-      calcOutput("IEA_Petrochem", subtype = "production5type_BTX", aggregate = TRUE)
+    calcOutput("IEA_Petrochem", subtype = "production5type_Ethylene", regionmapping = "regionmapping_21_EU11.csv") +
+      calcOutput("IEA_Petrochem", subtype = "production5type_Propylene", regionmapping = "regionmapping_21_EU11.csv") +
+      calcOutput("IEA_Petrochem", subtype = "production5type_BTX", regionmapping = "regionmapping_21_EU11.csv")
   ) %>%
     as.data.frame() %>%
     select(-"Cell", -"Data1") %>%
@@ -106,20 +124,7 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     ungroup()%>%
     mutate(Data1 = "hvc") %>%
     filter(!.data$Year %in% 2017) %>%
-    crossing(scenarios)
-
-  # scenarios that are available for the switch cm_LU_emi_scen
-  SSPs <- c("SSPs","SSP2_lowEn")
-
-  feIndustry <- calcOutput("FeDemandIndustry", scenarios=SSPs, warnNA = FALSE, aggregate = TRUE) %>%
-    as.data.frame() %>%
-    filter(.data$Data2 == "ue_chemicals") %>%
-    select(-"Cell", -"Data2") %>%
-    rename(SSP = "Data1") %>%
-    mutate(Year = as.numeric(as.character(.data$Year))) %>%
-    group_by(.data$Region) %>%
-    mutate(Ratio = .data$Value / .data$Value[.data$Year == 2020]) %>%
-    ungroup()
+    tidyr::crossing(scenarios)
 
   # ---------------------------------------------------------------------------
   # Compute future mat2ue by dividing the baseline by the relative change in UE chemicals demand of the respective chemical
@@ -138,7 +143,8 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
   # Extend the data: For each Region and Data1 group, ensure rows exist for 2050, 2055, ..., 2150. (assume increase of ammonia and methanol final demand is the same as of ue_chemicals)
   years <- merged_data %>% select("Year") %>% distinct() %>% filter(.data$Year>2050)
   extended_years <- merged_data %>% filter(.data$Year==2050, .data$Data1 %in% c("ammoFinal","methFinal","hvc")) %>%
-    select(-"Year") %>% crossing(years)
+    select(-"Year") %>%
+    tidyr::crossing(years)
   final_data <- merged_data %>%
     rbind(extended_years) %>%
     filter(.data$Year >= 2020) %>%
@@ -147,22 +153,25 @@ calcAllChemicalMat2Ue_2020to2150 <- function() {
     select("Region","Year","Data1","all_in","SSP","RCP","new_mat2ue")
 
   x <- as.magpie(final_data, spatial = 1, temporal = 2)
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode")
+  x <- toolDisaggregateFromEU21(x)  # mat2ue is intensive, copy the regional (EU21) values to the countries
 
   # ---------------------------------------------------------------------------
   # Set Weighting and Return Final Output
-  #    - Create a weight object with the same dimensions as 'x' (all values set to 1).
-  #    - Return the aggregated magpie object along with metadata.
+  #    - mat2ue converts a material mass into UE, so it is aggregated as a mean weighted by the
+  #      material flow (ue_share * ue_chemicals / mat2ue); the aggregated factor then equals
+  #      sum(UE) / sum(material flow).
+  #    - Aggregation targets without production fall back to an unweighted mean (zeroWeight = "fix").
   # ---------------------------------------------------------------------------
-  weight <- x  # Copy dimensions from x
-  weight[, , ] <- 1
+  ueShares <- calcOutput("AllChemicalUeShares_2020to2150", aggregate = FALSE)[getItems(x, dim = 1), getYears(x), getNames(x)]
+  # ueChemicals only has the SSP dimension and is expanded to all products and RCPs by magclass
+  weight <- ueShares * ueChemicals[getItems(x, dim = 1), getYears(x), getItems(x, dim = "SSP")] / x
 
   return(list(
     x = x,
     weight = weight,
+    aggregationArguments = list(zeroWeight = "fix"),
     unit = "2017$/kg or 2017$/kgN",  # Specify units based on conversion factors
-    description = "Calculates the material-to-UE conversion factors for 2020-2150 on country level."
+    description = "Calculates the material-to-UE conversion factors for 2020-2150 at the resolution of regionmapping_21_EU11, disaggregated to country level."
   ))
 }
 

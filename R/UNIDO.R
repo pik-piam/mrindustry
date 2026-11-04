@@ -75,10 +75,9 @@
 #' @importFrom GDPuc convertGDP
 #' @importFrom madrat toolCountryFill
 #' @importFrom magclass as.magpie
-#' @importFrom magrittr %>%
 #' @importFrom quitte list_to_data_frame madrat_mule
 #' @importFrom readr col_character col_double col_integer col_skip cols read_csv
-#' @importFrom rlang !!! .data is_empty syms
+#' @importFrom rlang is_empty
 #' @importFrom tibble tibble tribble
 #' @importFrom tidyr drop_na expand_grid unite
 
