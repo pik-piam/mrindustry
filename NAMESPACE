@@ -20,6 +20,7 @@ export(convertUNIDO)
 export(convertUSGS)
 export(readADVANCE_WP2)
 export(readIEA_WEIO_2014)
+export(readMFA)
 export(readMueller)
 export(readODYM_RECC)
 export(readPauliuk)
@@ -123,6 +124,7 @@ importFrom(magclass,
 importFrom(magpiesets,findset)
 importFrom(magrittr,"%>%")
 importFrom(mrcommonsenergy,toolGetIEAYear)
+importFrom(purrr,map2)
 importFrom(quitte,
   add_countrycode_,
   as.quitte,
