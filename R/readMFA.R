@@ -5,7 +5,7 @@
 #' config (`--config default --config mrindustry --model all`). That run writes
 #' one csv file per variable (`Time,Region[,Polymer],<variable>`) into
 #' `mrindustry_<model>_<scenario>_eu21/mrindustry/` for every model (steel,
-#' cement, plastics) and scenario (SSP1 to SSP5), and then is copied into the 
+#' cement, plastics) and scenario (SSP1 to SSP5), and then is copied into the
 #' `MFA` source folder.
 #'
 #' The data is on REMIND region level (eu21 region codes), not on ISO country

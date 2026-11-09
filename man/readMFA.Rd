@@ -34,14 +34,13 @@ Read material flow data exported by the Python model remind-mfa
 config (\verb{--config default --config mrindustry --model all}). That run writes
 one csv file per variable (\verb{Time,Region[,Polymer],<variable>}) into
 \verb{mrindustry_<model>_<scenario>_eu21/mrindustry/} for every model (steel,
-cement, plastics) and scenario (SSP1 to SSP5), bundled in one series folder,
-which is the \code{MFA} source folder.
+cement, plastics) and scenario (SSP1 to SSP5), and then is copied into the
+\code{MFA} source folder.
 }
 \details{
 The data is on REMIND region level (eu21 region codes), not on ISO country
 level, and there is no \code{convertMFA()}. Always read it with
-\code{readSource("MFA", subtype, convert = FALSE)}. Values are returned in the
-unit of the export without any conversion.
+\code{readSource("MFA", subtype, convert = FALSE)}.
 }
 \seealso{
 \code{\link[madrat:readSource]{readSource()}}
