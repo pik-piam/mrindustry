@@ -17,6 +17,7 @@ export(convertUNIDO)
 export(convertUSGS)
 export(readADVANCE_WP2)
 export(readIEA_WEIO_2014)
+export(readMFA)
 export(readMueller)
 export(readUNIDO)
 export(readUSGS)
@@ -115,6 +116,7 @@ importFrom(magclass,
 )
 importFrom(magrittr,"%>%")
 importFrom(mrcommonsenergy,toolGetIEAYear)
+importFrom(purrr,map2)
 importFrom(quitte,
   add_countrycode_,
   as.quitte,
