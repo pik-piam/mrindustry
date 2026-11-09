@@ -43,6 +43,7 @@ calcIEA_Ammonia <- function(subtype) {
   return(list(
     x = x,
     weight = Ammonia,
+    aggregationArguments = list(zeroWeight = "fix"), # regions without ammonia production (e.g. ENC)
     unit = "%",
     description = "Share on ammonia production routes in different regions from IEA Ammonia Technology Roadmap 2021"
   ))

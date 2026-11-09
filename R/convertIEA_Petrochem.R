@@ -6,27 +6,14 @@
 #' aggregated to ISO country level.
 #'
 #' @param x MagPIE object containing IEA Petrochem data at regional resolution.
+#' @inheritParams readIEA_Petrochem
 #' @return MagPIE object of the IEA Petrochem data disaggregated to country level.
 #' @author Qianzhi
-#' @examples
-#' \dontrun{
-#'   a <- convertIEA_Petrochem(x)
-#' }
 #'
-#' @importFrom magclass where
-#' @importFrom magpiesets findset
-convertIEA_Petrochem <- function(x) {
-  # ---------------------------------------------------------------------------
-  # Extract Subtype Information
-  #    - The subtype is extracted from the comment attached to x.
-  #    - This string is then split by "_" to determine which processing branch to use.
-  # ---------------------------------------------------------------------------
-  subtype <- unlist(
-    strsplit(
-      strsplit(getComment(x), " ")[[1]][3], "_"
-    )
-  )
-  
+convertIEA_Petrochem <- function(x, subtype) {
+
+  subtype <- unlist(strsplit(subtype, "_"))
+
   # ---------------------------------------------------------------------------
   # Process "production3type" Data
   #    - When the subtype indicates "production3type", the data are disaggregated
@@ -39,16 +26,16 @@ convertIEA_Petrochem <- function(x) {
     Ammonia <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, "y2017", ]
     Methanol_P <- calcOutput("IHS_Meth", subtype ="Production_2010-2020", aggregate = FALSE)[, "y2017", ]
     Chemcial_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, "y2017", ]
-    
+
     # Extract specific chemical slices from x
     x_Ammonia <- x[, , "Ammonia"]
     x_Methanol <- x[, , "Methanol"]
     x_HVCs     <- x[, , "HVCs"]
-    
+
     # Load regional-to-country mapping for 7 regions, excluding "rest" regions
     map <- toolGetMapping("regionmappingIEA_Petrochem_7region.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
-    
+
     # Aggregate each chemical component to country level using corresponding weights
     x_Ammonia <- toolAggregate(x_Ammonia, rel = map, dim = 1, from = "IFAReg", to = "CountryCode",
                                weight = Ammonia[unique(map$CountryCode), , ])
@@ -56,10 +43,10 @@ convertIEA_Petrochem <- function(x) {
                                 weight = Methanol_P[unique(map$CountryCode), , ])
     x_HVCs <- toolAggregate(x_HVCs, rel = map, dim = 1, from = "IFAReg", to = "CountryCode",
                             weight = Chemcial_Total[unique(map$CountryCode), , ])
-    
+
     # Combine aggregated results from the three components
     x <- mbind(x_Ammonia, x_Methanol, x_HVCs)
-    
+
     # ---------------------------------------------------------------------------
     # Process "production5type" Data
     #    - When the subtype indicates "production5type", a specific weight is chosen based on
@@ -71,11 +58,11 @@ convertIEA_Petrochem <- function(x) {
     Ammonia <- calcOutput("IFA_Chem", subtype = "ammonia_statistics_production", aggregate = FALSE)[, "y2017", ]
     Methanol_P <- calcOutput("IHS_Meth", subtype ="Production_2010-2020", aggregate = FALSE)[, "y2017", ]
     Chemcial_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, "y2017", ]
-    
+
     # Load mapping for 7 regions
     map <- toolGetMapping("regionmappingIEA_Petrochem_7region.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
-    
+
     # Choose the appropriate weight based on the second component of the subtype
     specific_weight <- switch(
       subtype[2],
@@ -85,10 +72,10 @@ convertIEA_Petrochem <- function(x) {
       "Propylene" = Chemcial_Total[unique(map$CountryCode), , ],
       "BTX" = Chemcial_Total[unique(map$CountryCode), , ]
     )
-    
+
     # Aggregate the entire x object using the chosen weight
     x <- toolAggregate(x, rel = map, dim = 1, from = "IFAReg", to = "CountryCode", specific_weight)
-    
+
     # ---------------------------------------------------------------------------
     # Process Feedstock and Route Data
     #    - For subtypes "Feedstock", "RouteRTS", or "RouteCTS", use a 5-region mapping.
@@ -98,10 +85,10 @@ convertIEA_Petrochem <- function(x) {
     # Load 5-region mapping for feedstock/route data, excluding "rest" regions
     map <- toolGetMapping("regionmappingIEA_Petrochem_5region.csv", type = "regional", where = "mrindustry") %>%
       dplyr::filter(.data$IFAReg != "rest")
-    
+
     # Retrieve overall weighting data for chemical energy
     ChemFE_TOT <- calcOutput("ChemicalTotal", warnNA = FALSE, aggregate = FALSE)[, "y2017", ]
-    
+
     # Aggregate the x object using the 5-region mapping and overall chemical energy weights
     x <- toolAggregate(x, rel = map, dim = 1, from = "IFAReg", to = "CountryCode",
                        weight = ChemFE_TOT[unique(map$CountryCode), , ])
@@ -112,12 +99,12 @@ convertIEA_Petrochem <- function(x) {
     # -------------------------------------------------------------------------
     stop("Invalid subtype combination")
   }
-  
+
   # ---------------------------------------------------------------------------
   # 6. Finalize and Return
   #    - Fill missing country entries with 0 to ensure completeness.
   # ---------------------------------------------------------------------------
   x <- toolCountryFill(x, fill = 0)
-  
+
   return(x)
 }

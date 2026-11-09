@@ -16,12 +16,6 @@ MagPIE object of the MMSA_Methanol data aggregated to country level.
 Convert MMSA (Methanol Market Services Asia) Global Methanol Outlook 2023 Growth and Decarbonization.xlsx data
 to ISO country level.
 }
-\examples{
-\dontrun{
-  a <- convertMMSA_Methanol(x)
-}
-
-}
 \author{
 Qianzhi Zhang
 }

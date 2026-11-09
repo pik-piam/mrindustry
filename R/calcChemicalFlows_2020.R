@@ -10,7 +10,7 @@ calcChemicalFlows_2020 <- function() {
   #    - Retrieve the aggregated ChemicalRoutes_2020 data.
   #    - Remove the unwanted columns 'Cell' and 'Data2'.
   # ---------------------------------------------------------------------------
-  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", aggregate = TRUE) %>%
+  ChemicalRoutes_2020 <- calcOutput("ChemicalRoutes_2020", regionmapping = "regionmapping_21_EU11.csv") %>%
     as.data.frame() %>%
     select(-"Cell", -"Data2")
   
@@ -46,15 +46,12 @@ calcChemicalFlows_2020 <- function() {
   Chemical_Total <- calcOutput("ChemicalTotal", aggregate = FALSE)[, "y2020", ]
   
   # ---------------------------------------------------------------------------
-  # Convert Data to Magpie Object and Aggregate to Country Level
-  #    - Retrieve regional mapping information.
+  # Convert Data to Magpie Object and Disaggregate to Country Level
   #    - Convert the summarized data to a magpie object.
-  #    - Aggregate the regional data to the country level using the mapping and weights.
+  #    - Disaggregate the regional (EU21) data to the country level using the weights.
   # ---------------------------------------------------------------------------
-  map <- toolGetMapping("regionmappingH12.csv", type = "regional", where = "mappingfolder")
   x <- as.magpie(ChemicalRoute_summarized, spatial = 1, temporal = 2)
-  x <- toolAggregate(x, rel = map, dim = 1, from = "RegionCode", to = "CountryCode", 
-                     weight = Chemical_Total[unique(map$CountryCode), , ])
+  x <- toolDisaggregateFromEU21(x, weight = Chemical_Total)
   x[is.na(x)] <- 0  # Replace any missing values with 0
   
   # ---------------------------------------------------------------------------
@@ -64,7 +61,7 @@ calcChemicalFlows_2020 <- function() {
     x = x,
     weight = NULL,
     unit = "Gt Chemical Flows & GtN (fertilizer)",
-    description = "Aggregated chemical flow data recategorized into key sectors (ammonia, methanol, hvc, final outputs, and fertilizer) and aggregated to country level for 2020."
+    description = "Aggregated chemical flow data recategorized into key sectors (ammonia, methanol, hvc, final outputs, and fertilizer) calculated at the resolution of regionmapping_21_EU11 and disaggregated to country level for 2020."
   ))
 }
 

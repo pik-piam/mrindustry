@@ -139,7 +139,7 @@ calcIndustry_CCS_limits <- function(
     # regional aggregation and applying stage factors
     group_by(.data$period, .data$region, .data$subsector) %>%
     summarise(value = sum(.data$value * .data$factor), .groups = 'drop') %>%
-    complete(crossing(!!!syms(c('region', 'subsector', 'period'))),
+    complete(tidyr::crossing(!!!syms(c('region', 'subsector', 'period'))),
              fill = list(value = 0)) %>%
     full_join(
       ind_activity %>%

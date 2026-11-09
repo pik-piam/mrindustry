@@ -16,12 +16,6 @@ MagPIE object of the IEA Ammonia data disaggregated to country level.
 Convert IEA Ammonia Technology Roadmap 2021 “Fig 2.9 Ammonia production by process route and
 scenario in major ammonia producing regions” data to ISO country level.
 }
-\examples{
-\dontrun{
-  a <- convertIEA_Ammonia(x)
-}
-
-}
 \author{
 Qianzhi Zhang
 }

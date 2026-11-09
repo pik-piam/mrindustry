@@ -4,7 +4,7 @@
 \alias{calcAllChemicalRoutes_2005to2020}
 \title{Calculates chemical route flows (including OtherChem) from 2005 to 2020 
 from total chemical flows based on 2020 route shares.
-Flows are aggregated to the country level.}
+Flows are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.}
 \usage{
 calcAllChemicalRoutes_2005to2020(CCS = FALSE)
 }
@@ -14,7 +14,7 @@ calcAllChemicalRoutes_2005to2020(CCS = FALSE)
 \description{
 Calculates chemical route flows (including OtherChem) from 2005 to 2020 
 from total chemical flows based on 2020 route shares.
-Flows are aggregated to the country level.
+Flows are calculated at the resolution of regionmapping_21_EU11 and disaggregated to the country level.
 }
 \author{
 Qianzhi Zhang
