@@ -15,9 +15,7 @@ names of its sources in \code{Source}.
 }
 \description{
 Lists the sources that each calc function of mrindustry reads, directly or through functions of other
-madrat packages. The list is stored in \code{inst/mrindustry_sources.csv}, so that the sources can be
-determined without R, for example to copy them from the cluster with \code{scripts/fetch_from_hpc.py} in
-remind-mfa. A test checks that the stored list is up to date; to update it, run
+madrat packages. The list is stored in \code{inst/mrindustry_sources.csv} and committed. To update it, run
 \code{getSources_mrindustry("inst/mrindustry_sources.csv")} in the package folder.
 }
 \author{

@@ -1,7 +1,7 @@
 #' Get Sources mrindustry
 #'
 #' Lists the sources that each calc function of mrindustry reads, directly or through functions of other
-#' madrat packages. The list is stored in `inst/mrindustry_sources.csv` and commited. To update it, run
+#' madrat packages. The list is stored in `inst/mrindustry_sources.csv` and committed. To update it, run
 #' `getSources_mrindustry("inst/mrindustry_sources.csv")` in the package folder.
 #'
 #' @param file Path of the csv file the list is written to. If `NULL`, the list is only returned.
