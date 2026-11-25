@@ -17,33 +17,31 @@ trade, before surplus is diverted to excess scrap (t/yr)
 \item \code{cement_production}: cement output before trade and construction losses
 (t/yr)
 \item \code{cement_clinker_ratio}: clinker to cement ratio (t clinker / t cement)
-\item \code{hvc_production}: high value chemicals production for plastics production
-(t/yr)
-\item \code{p37_plasticWaste}: plastic waste available for recycling by polymer
-(t/yr)
+\item \code{plastics_hvc_production}: high value chemicals production for plastics
+production (t/yr), exported as \code{hvc_production}
+\item \code{plastics_waste}: plastic waste available for recycling by polymer
+(t/yr), exported as \code{p37_plasticWaste}
 }}
 }
 \value{
-A \code{\link[magclass:magclass]{magpie}} object with REMIND regions in the
-first dimension, years in the second, and \code{scenario.variable} (or
-\code{scenario.polymer} for \code{p37_plasticWaste}) in the third.
+A \code{\link[magclass:magclass]{magpie}} object with ISO countries (steel
+and cement) or eu21 regions (plastics) in the first dimension, years in the
+second, and \code{scenario.variable} (or \code{scenario.polymer} for
+\code{plastics_waste}) in the third.
 }
 \description{
 Read material flow data exported by the Python model remind-mfa
 (https://github.com/pik-piam/remind-mfa) when run with its \code{mrindustry}
-config (\verb{--config default --config mrindustry --model all}). That run writes
-one csv file per variable (\verb{Time,Region[,Polymer],<variable>}) into
-\verb{mrindustry_<model>_<scenario>_eu21/mrindustry/} for every model (steel,
-cement, plastics) and scenario (SSP1 to SSP5), and then is copied into the
-\code{MFA} source folder.
-}
-\details{
-The data is on REMIND region level (eu21 region codes), not on ISO country
-level, and there is no \code{convertMFA()}. Always read it with
-\code{readSource("MFA", subtype, convert = FALSE)}.
+config (\verb{--config default --config mrindustry --model all}). That run yields
+one csv file per variable in
+\verb{MFA/<version>/<model>_<scenario>_<regionmapping>/} for every model (steel,
+cement, plastics) and scenario, where \verb{<version>} is the remind-mfa version
+and commit, e.g. \verb{1.0.1-b2ef4346}. The version that is read is set in
+\code{inst/extdata/MFA_version.txt}, so that the mrindustry version determines
+the data.
 }
 \seealso{
-\code{\link[madrat:readSource]{readSource()}}
+\code{\link[madrat:readSource]{readSource()}}, \code{\link[=convertMFA]{convertMFA()}}
 }
 \author{
 Tobias Diez

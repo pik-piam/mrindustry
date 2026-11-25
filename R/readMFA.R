@@ -2,15 +2,12 @@
 #'
 #' Read material flow data exported by the Python model remind-mfa
 #' (https://github.com/pik-piam/remind-mfa) when run with its `mrindustry`
-#' config (`--config default --config mrindustry --model all`). That run writes
-#' one csv file per variable (`Time,Region[,Polymer],<variable>`) into
-#' `mrindustry_<model>_<scenario>_eu21/mrindustry/` for every model (steel,
-#' cement, plastics) and scenario (SSP1 to SSP5), and then is copied into the
-#' `MFA` source folder.
-#'
-#' The data is on REMIND region level (eu21 region codes), not on ISO country
-#' level, and there is no `convertMFA()`. Always read it with
-#' `readSource("MFA", subtype, convert = FALSE)`.
+#' config (`--config default --config mrindustry --model all`). That run yields
+#' one csv file per variable in
+#' `MFA/<version>/<model>_<scenario>_<regionmapping>/` for every model (steel,
+#' cement, plastics) and scenario, where `<version>` is the remind-mfa version
+#' and commit, e.g. `1.0.1-b2ef4346` (set in
+#' `inst/extdata/MFA_version.txt`).
 #'
 #' @md
 #' @param subtype One of
@@ -22,14 +19,15 @@
 #'   - `cement_production`: cement output before trade and construction losses
 #'     (t/yr)
 #'   - `cement_clinker_ratio`: clinker to cement ratio (t clinker / t cement)
-#'   - `hvc_production`: high value chemicals production for plastics production
-#'     (t/yr)
-#'   - `p37_plasticWaste`: plastic waste available for recycling by polymer
+#'   - `plastics_hvc_production`: high value chemicals production for plastics
+#'     production (t/yr)
+#'   - `plastics_waste`: plastic waste available for recycling by polymer
 #'     (t/yr)
 #'
-#' @return A [`magpie`][magclass::magclass] object with REMIND regions in the
-#'   first dimension, years in the second, and `scenario.variable` (or
-#'   `scenario.polymer` for `p37_plasticWaste`) in the third.
+#' @return A [`magpie`][magclass::magclass] object with ISO countries (steel
+#'   and cement) or eu21 regions (plastics) in the first dimension, years in the
+#'   second, and `scenario.variable` (or `scenario.polymer` for
+#'   `plastics_waste`) in the third.
 #'
 #' @author Tobias Diez
 #'
@@ -37,19 +35,21 @@
 #' @importFrom purrr map2
 #' @importFrom readr read_csv cols col_character
 #'
-#' @seealso [`readSource()`]
+#' @seealso [`readSource()`], [convertMFA()]
 #' @export
 readMFA <- function(subtype) {
   path <- "./"
+  version <- readLines(toolGetMapping("MFA_version.txt", where = "mrindustry", returnPathOnly = TRUE))
 
   layout <- list(
-    steel_production_total     = list(model = "steel"),
-    steel_production_secondary = list(model = "steel"),
-    steel_scrap                = list(model = "steel"),
-    cement_production          = list(model = "cement"),
-    cement_clinker_ratio       = list(model = "cement"),
-    hvc_production             = list(model = "plastics"),
-    p37_plasticWaste           = list(model = "plastics", dim3 = "Polymer")
+    steel_production_total     = list(model = "steel", regionmapping = "iso249"),
+    steel_production_secondary = list(model = "steel", regionmapping = "iso249"),
+    steel_scrap                = list(model = "steel", regionmapping = "iso249"),
+    cement_production          = list(model = "cement", regionmapping = "iso249"),
+    cement_clinker_ratio       = list(model = "cement", regionmapping = "iso249"),
+    plastics_hvc_production    = list(model = "plastics", regionmapping = "eu21", file = "hvc_production"),
+    plastics_waste             = list(model = "plastics", regionmapping = "eu21", file = "p37_plasticWaste",
+                                      dim3 = "Polymer")
   )
 
   if (!subtype %in% names(layout)) {
@@ -58,17 +58,23 @@ readMFA <- function(subtype) {
   }
 
   model <- layout[[subtype]][["model"]]
+  regionmapping <- layout[[subtype]][["regionmapping"]]
   dim3 <- layout[[subtype]][["dim3"]]
+  file <- layout[[subtype]][["file"]]
+  if (is.null(file)) {
+    file <- subtype
+  }
 
-  # one run folder per scenario: mrindustry_<model>_<scenario>_eu21
-  pattern <- paste0("^mrindustry_", model, "_(.+)_eu21$")
-  runs <- list.files(path, pattern = pattern)
+  # one run folder per scenario: <version>/<model>_<scenario>_<regionmapping>
+  versionPath <- file.path(path, version)
+  pattern <- paste0("^", model, "_(.+)_", regionmapping, "$")
+  runs <- list.files(versionPath, pattern = pattern)
   if (length(runs) == 0) {
-    stop(paste0("No run folders mrindustry_", model, "_<scenario>_eu21 found in ",
-                normalizePath(path)))
+    stop(paste0("No run folders ", model, "_<scenario>_", regionmapping, " found in ",
+                file.path(normalizePath(path), version)))
   }
   scenarios <- sub(pattern, "\\1", runs)
-  files <- file.path(path, runs, "mrindustry", paste0(subtype, ".csv"))
+  files <- file.path(versionPath, runs, paste0(file, ".csv"))
 
   dims <- c("Time", "Region", dim3)
   data <- map2(files, scenarios, function(file, scenario) {

@@ -1,60 +1,123 @@
-# write <dir>/mrindustry_<model>_<scenario>_eu21/mrindustry/<file> as remind-mfa does
-writeRun <- function(dir, model, scenario, file, lines) {
-  run <- file.path(dir, paste0("mrindustry_", model, "_", scenario, "_eu21"), "mrindustry")
-  dir.create(run, recursive = TRUE, showWarnings = FALSE)
-  writeLines(lines, file.path(run, file))
+version <- readLines(system.file("extdata", "MFA_version.txt", package = "mrindustry"))
+countries <- madrat::getISOlist()
+
+# write <mfa>/<folder>/<run>/<file> as the mrindustry export of remind-mfa
+writeRun <- function(mfa, run, file, lines, folder = version) {
+  dir <- file.path(mfa, folder, run)
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  writeLines(lines, file.path(dir, file))
 }
 
-test_that("readMFA combines scenarios into region x year x scenario.variable", {
-  dir <- withr::local_tempdir()
-  writeRun(dir, "steel", "SSP1", "steel_scrap.csv",
-           c("Time,Region,steel_scrap", "2000,EUR,1.5", "2000,USA,2.5", "2005,EUR,3", "2005,USA,4"))
-  writeRun(dir, "steel", "SSP2", "steel_scrap.csv",
-           c("Time,Region,steel_scrap", "2000,EUR,10", "2000,USA,20", "2005,EUR,30", "2005,USA,40"))
-  # a run of another model is not picked up for a steel subtype
-  writeRun(dir, "cement", "SSP2", "cement_production.csv",
-           c("Time,Region,cement_production", "2000,EUR,1", "2000,USA,2"))
-  withr::local_dir(dir)
+writeSteel <- function(mfa, scenario, value, folder = version) {
+  writeRun(mfa, paste0("steel_", scenario, "_iso249"), "steel_scrap.csv",
+           c("Time,Region,steel_scrap", paste0("2000,", countries, ",", value)), folder = folder)
+}
 
-  x <- readMFA("steel_scrap")
-
-  expect_true(magclass::is.magpie(x))
-  expect_equal(dim(x), c(2, 2, 2))
-  expect_equal(unname(magclass::getSets(x)), c("region", "year", "scenario", "variable"))
-  expect_setequal(magclass::getItems(x, dim = 1), c("EUR", "USA"))
-  expect_equal(magclass::getItems(x, dim = 2), c("y2000", "y2005"))
-  expect_setequal(magclass::getItems(x, dim = 3), c("SSP1.steel_scrap", "SSP2.steel_scrap"))
-  expect_equal(as.vector(x["USA", "y2005", "SSP1.steel_scrap"]), 4)
-  expect_equal(as.vector(x["EUR", "y2000", "SSP2.steel_scrap"]), 10)
-})
-
-test_that("readMFA reads p37_plasticWaste into region x year x scenario.polymer", {
-  dir <- withr::local_tempdir()
-  writeRun(dir, "plastics", "SSP2", "p37_plasticWaste.csv",
+writePlastics <- function(mfa) {
+  writeRun(mfa, "plastics_SSP2_eu21", "hvc_production.csv",
+           c("Time,Region,hvc_production", "2000,EWN,1", "2000,ESW,2"))
+  writeRun(mfa, "plastics_SSP2_eu21", "p37_plasticWaste.csv",
            c("Time,Region,Polymer,p37_plasticWaste",
-             "2000,EUR,PET,1", "2000,EUR,Other thermoplastics,2",
-             "2000,USA,PET,3", "2000,USA,Other thermoplastics,4"))
-  withr::local_dir(dir)
+             "2000,EWN,PET,1", "2000,EWN,Other thermoplastics,2",
+             "2000,ESW,PET,3", "2000,ESW,Other thermoplastics,4"))
+}
 
-  x <- readMFA("p37_plasticWaste")
+readMFAFrom <- function(subtype, mfa, convert = FALSE) {
+  madrat::localConfig(mainfolder = withr::local_tempdir(), verbosity = 0, .verbose = FALSE)
+  madrat::redirectSource("MFA", target = mfa)
+  withCallingHandlers(
+    madrat::readSource("MFA", subtype = subtype, convert = convert),
+    warning = function(w) {
+      # madrat's dependency analysis warns about stuff that is not relevant here
+      if (grepl("^Mapping in .* not found!$|could not be found in the scope of packages", conditionMessage(w))) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+}
 
-  expect_equal(dim(x), c(2, 1, 2))
-  expect_equal(unname(magclass::getSets(x)), c("region", "year", "scenario", "polymer"))
-  expect_setequal(magclass::getItems(x, dim = 3), c("SSP2.PET", "SSP2.Other thermoplastics"))
-  expect_equal(as.vector(x["USA", , "SSP2.Other thermoplastics"]), 4)
+test_that("readMFA reads each scenario run into region x year x scenario.variable", {
+  mfa <- withr::local_tempdir()
+  writeSteel(mfa, "SSP2", 1)
+  writeSteel(mfa, "SSP2_lowEn", 2)
+
+  x <- readMFAFrom("steel_scrap", mfa)
+
+  expect_equal(unname(magclass::getSets(x)), c("region", "year", "scenario", "variable"))
+  expect_setequal(magclass::getItems(x, dim = 3), c("SSP2.steel_scrap", "SSP2_lowEn.steel_scrap"))
+  expect_true(all(x[, , "SSP2_lowEn"] == 2))
 })
 
-test_that("readMFA fails clearly on missing runs, unexpected columns and NA", {
-  dir <- withr::local_tempdir()
-  withr::local_dir(dir)
+test_that("readMFA ignores runs of other models and of other versions", {
+  mfa <- withr::local_tempdir()
+  writeSteel(mfa, "SSP2", 1)
+  writeSteel(mfa, "SSP5", 5, folder = "1.0.0-00000000")
+  writePlastics(mfa)
 
-  expect_error(readMFA("cement_production"), "No run folders")
+  x <- readMFAFrom("steel_scrap", mfa)
 
-  writeRun(dir, "cement", "SSP2", "cement_production.csv",
-           c("Time,Region,Polymer,cement_production", "2000,EUR,PET,1"))
-  expect_error(readMFA("cement_production"), "Unexpected columns")
+  expect_equal(magclass::getItems(x, dim = "scenario"), "SSP2")
+})
 
-  writeRun(dir, "cement", "SSP2", "cement_production.csv",
-           c("Time,Region,cement_production", "2000,EUR,", "2000,USA,2"))
-  expect_error(readMFA("cement_production"), "NA values")
+test_that("readMFA reads the polymers of plastics_waste into the third dimension", {
+  mfa <- withr::local_tempdir()
+  writePlastics(mfa)
+
+  x <- readMFAFrom("plastics_waste", mfa)
+
+  expect_equal(unname(magclass::getSets(x)), c("region", "year", "scenario", "polymer"))
+  expect_equal(as.vector(x["EWN", , "SSP2.Other thermoplastics"]), 2)
+})
+
+test_that("readMFA fails if the pinned version has no run of the model", {
+  mfa <- withr::local_tempdir()
+  writeSteel(mfa, "SSP2", 1, folder = "1.0.0-00000000")
+
+  expect_error(readMFAFrom("steel_scrap", mfa), "No run folders steel_<scenario>_iso249")
+})
+
+test_that("readMFA fails on unexpected columns", {
+  mfa <- withr::local_tempdir()
+  writeRun(mfa, "steel_SSP2_iso249", "steel_scrap.csv", c("Time,Region,Polymer,steel_scrap", "2000,DEU,PET,1"))
+
+  expect_error(readMFAFrom("steel_scrap", mfa), "Unexpected columns")
+})
+
+test_that("readMFA fails on missing values", {
+  mfa <- withr::local_tempdir()
+  writeRun(mfa, "steel_SSP2_iso249", "steel_scrap.csv", c("Time,Region,steel_scrap", "2000,DEU,", "2000,FRA,2"))
+
+  expect_error(readMFAFrom("steel_scrap", mfa), "NA values")
+})
+
+test_that("convertMFA keeps steel unchanged", {
+  mfa <- withr::local_tempdir()
+  writeSteel(mfa, "SSP2", 1)
+
+  x <- readMFAFrom("steel_scrap", mfa, convert = TRUE)
+  raw <- readMFAFrom("steel_scrap", mfa)
+
+  expect_identical(dimnames(x[, , "SSP2"]), dimnames(raw))
+  expect_equal(as.vector(x[, , "SSP2"]), as.vector(raw))
+})
+
+test_that("convertMFA gives the SSP2 variants that remind-mfa does not run the SSP2 data", {
+  mfa <- withr::local_tempdir()
+  writeSteel(mfa, "SSP2", 1)
+
+  x <- readMFAFrom("steel_scrap", mfa, convert = TRUE)
+
+  expect_setequal(magclass::getItems(x, dim = "scenario"),
+                  c("SSP2", "SSP2_lowEn", "SSP2_highDemDEU", "SSP2IndiaHigh", "SSP2IndiaMedium"))
+  expect_true(all(x == 1))
+})
+
+test_that("convertMFA keeps the data of SSP2 variants that remind-mfa runs", {
+  mfa <- withr::local_tempdir()
+  writeSteel(mfa, "SSP2", 1)
+  writeSteel(mfa, "SSP2_lowEn", 2)
+
+  x <- readMFAFrom("steel_scrap", mfa, convert = TRUE)
+
+  expect_true(all(x[, , "SSP2_lowEn"] == 2))
 })
