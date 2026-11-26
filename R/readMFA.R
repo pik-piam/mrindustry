@@ -2,26 +2,25 @@
 #'
 #' Read material flow data exported by the Python model remind-mfa
 #' (https://github.com/pik-piam/remind-mfa) when run with its `mrindustry`
-#' config (`--config default --config mrindustry --model all`). That run yields
-#' one csv file per variable in
-#' `MFA/<version>/<model>_<scenario>_<regionmapping>/` for every model (steel,
-#' cement, plastics) and scenario, where `<version>` is the remind-mfa version
-#' and commit, e.g. `1.0.1-b2ef4346` (set in
-#' `inst/extdata/MFA_version.txt`).
+#' config (`--config default --config mrindustry --model all`). That run
+#' yields one csv file per variable for every model (steel, cement, plastics)
+#' and scenario in `MFA/<version>/<model>_<scenario>_<regionmapping>/`, where
+#' `<version>` is the remind-mfa version and commit, e.g. `1.0.1-b2ef4346`.
+#' The version to read is set in `inst/extdata/MFA_version.txt`.
 #'
 #' @md
 #' @param subtype One of
 #'   - `steel_production_total`: total steel output after production and forming
 #'     losses, before trade (t/yr)
-#'   - `steel_production_secondary`: scrap based (EAF) steel output (t/yr)
+#'   - `steel_production_secondary`: scrap-based (EAF) steel output (t/yr)
 #'   - `steel_scrap`: home and new scrap plus old scrap after collection and
 #'     trade, before surplus is diverted to excess scrap (t/yr)
 #'   - `cement_production`: cement output before trade and construction losses
 #'     (t/yr)
 #'   - `cement_clinker_ratio`: clinker to cement ratio (t clinker / t cement)
-#'   - `plastics_hvc_production`: high value chemicals production for plastics
+#'   - `plastics_hvc_production`: high-value chemicals production for plastics
 #'     production (t/yr)
-#'   - `plastics_waste`: plastic waste available for recycling by polymer
+#'   - `plastics_waste`: plastic waste available for recycling, by polymer
 #'     (t/yr)
 #'
 #' @return A [`magpie`][magclass::magclass] object with ISO countries (steel
@@ -35,7 +34,7 @@
 #' @importFrom purrr map2
 #' @importFrom readr read_csv cols col_character
 #'
-#' @seealso [`readSource()`], [convertMFA()]
+#' @seealso [readSource()], [convertMFA()]
 #' @export
 readMFA <- function(subtype) {
   path <- "./"

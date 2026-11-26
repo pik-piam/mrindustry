@@ -13,35 +13,23 @@ convertMFA(x, subtype)
 \itemize{
 \item \code{steel_production_total}: total steel output after production and forming
 losses, before trade (t/yr)
-\item \code{steel_production_secondary}: scrap based (EAF) steel output (t/yr)
+\item \code{steel_production_secondary}: scrap-based (EAF) steel output (t/yr)
 \item \code{steel_scrap}: home and new scrap plus old scrap after collection and
 trade, before surplus is diverted to excess scrap (t/yr)
 \item \code{cement_production}: cement output before trade and construction losses
 (t/yr)
 \item \code{cement_clinker_ratio}: clinker to cement ratio (t clinker / t cement)
-\item \code{plastics_hvc_production}: high value chemicals production for plastics
-production (t/yr), exported as \code{hvc_production}
-\item \code{plastics_waste}: plastic waste available for recycling by polymer
-(t/yr), exported as \code{p37_plasticWaste}
+\item \code{plastics_hvc_production}: high-value chemicals production for plastics
+production (t/yr)
+\item \code{plastics_waste}: plastic waste available for recycling, by polymer
+(t/yr)
 }}
 }
 \value{
-magpie object on ISO country level, with the dimensions of \code{x}
-otherwise unchanged
+magpie object on ISO country level
 }
 \description{
-Steel
-and cement are already exported for all ISO countries and pass unchanged. Plastics
-is exported on eu21 regions by the MFA, so its values are split to the countries of each region:
-\itemize{
-\item \code{plastics_hvc_production} by HVC production in 2017 from \code{IEA_Petrochem}
-\item \code{plastics_waste} by GDP in 2020 (SSP2, average of 2018 to 2022)
-}
-}
-\details{
-remind-mfa does not run the SSP2 variants \code{SSP2_lowEn}, \code{SSP2_highDemDEU},
-\code{SSP2IndiaHigh} and \code{SSP2IndiaMedium} yet, so they get the SSP2 data until
-the export contains them.
+Convert remind-mfa output to ISO country level
 }
 \seealso{
 \code{\link[=readMFA]{readMFA()}}, \code{\link[=toolDisaggregateFromEU21]{toolDisaggregateFromEU21()}}
