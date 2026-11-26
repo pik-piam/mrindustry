@@ -22,7 +22,8 @@
   relative paths (`'./file.xlsx'`).
 - Prefer the *switchboard* pattern if there are subtypes (see `readworldsteel.R`): a named list of
   closures, then `stop('Invalid subtype -- supported subtypes are: ...')`. Document every subtype in `@param subtype` as a markdown list.
-- Currently, no tests are defined. New tests are welcome but must not need source data
-(use fixtures in `tests/testthat/fixtures/`).
+- Tests must not need source data (use fixtures in `tests/testthat/fixtures/`).
+`tests/testthat/helper-FeDemandIndustry.R` shows how to run a calc through `calcOutput()` in a temporary
+madrat folder, with synthetic data for the upstream `calcOutput()`/`readSource()` calls.
 - `Makefile`, `.pre-commit-config.yaml`, `codecov.yml` and `README.md` are overwritten from lucode2
 templates. Do not edit them directly.
