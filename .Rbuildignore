@@ -3,6 +3,7 @@
 ^Makefile$
 ^workflow$
 ^codecov\.yml$
+^\.git$
 ^\.github$
 ^.*CITATION.cff$
 ^.*\.Rproj$
